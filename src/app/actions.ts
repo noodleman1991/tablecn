@@ -182,7 +182,7 @@ export async function updateMemberDetails(data: {
       .where(eq(members.email, updates.email.toLowerCase().trim()))
       .limit(1);
 
-    if (existingMember.length > 0 && existingMember[0].id !== memberId) {
+    if (existingMember.length > 0 && existingMember[0]?.id !== memberId) {
       throw new Error("A member with this email already exists");
     }
   }
@@ -291,15 +291,18 @@ export async function mergeMemberRecords(data: {
     .where(eq(members.id, secondaryMemberId))
     .limit(1);
 
-  if (primaryMember.length === 0 || secondaryMember.length === 0) {
+  const primary = primaryMember[0];
+  const secondary = secondaryMember[0];
+
+  if (!primary || !secondary) {
     throw new Error("One or both members not found");
   }
 
   // Transfer all attendee records from secondary to primary email
   await db
     .update(attendees)
-    .set({ email: primaryMember[0].email })
-    .where(eq(attendees.email, secondaryMember[0].email));
+    .set({ email: primary.email })
+    .where(eq(attendees.email, secondary.email));
 
   // Delete secondary member
   await db.delete(members).where(eq(members.id, secondaryMemberId));

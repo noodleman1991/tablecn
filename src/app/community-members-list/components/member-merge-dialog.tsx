@@ -35,8 +35,9 @@ export function MemberMergeDialog({
 
   // Reset primary selection when members change or dialog opens
   React.useEffect(() => {
-    if (members.length > 0 && !primaryMemberId) {
-      setPrimaryMemberId(members[0].id);
+    const firstMember = members[0];
+    if (firstMember && !primaryMemberId) {
+      setPrimaryMemberId(firstMember.id);
     }
   }, [members, primaryMemberId]);
 

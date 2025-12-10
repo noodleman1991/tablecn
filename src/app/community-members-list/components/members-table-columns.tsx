@@ -152,7 +152,7 @@ export function getMembersTableColumns(
       cell: ({ row }) => row.getValue("totalEventsAttended"),
       meta: {
         className: "hidden md:table-cell",
-      },
+      } as any,
     },
     {
       id: "lastEventDate",
@@ -166,7 +166,7 @@ export function getMembersTableColumns(
       },
       meta: {
         className: "hidden lg:table-cell",
-      },
+      } as any,
     },
     {
       id: "membershipExpiresAt",
@@ -180,7 +180,7 @@ export function getMembersTableColumns(
       },
       meta: {
         className: "hidden lg:table-cell",
-      },
+      } as any,
     },
     {
       id: "actions",
@@ -193,7 +193,7 @@ export function getMembersTableColumns(
       ),
       meta: {
         className: "w-[50px]",
-      },
+      } as any,
     },
   ];
 }

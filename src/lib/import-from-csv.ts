@@ -83,6 +83,9 @@ function readExcelFile(filePath: string): CSVRow[] {
     }
 
     const sheetName = workbook.SheetNames[0]; // Use first sheet
+    if (!sheetName) {
+      throw new Error(`Invalid sheet name in Excel file: ${filePath}`);
+    }
     const worksheet = workbook.Sheets[sheetName];
 
     if (!worksheet) {
@@ -245,7 +248,8 @@ export async function importFromCSV(filePath: string): Promise<ImportResult> {
         .where(eq(attendees.woocommerceOrderId, orderId))
         .limit(1);
 
-      if (existing.length > 0) {
+      const existingAttendee = existing[0];
+      if (existingAttendee) {
         // Update existing - preserve check-in status
         await db
           .update(attendees)
@@ -255,7 +259,7 @@ export async function importFromCSV(filePath: string): Promise<ImportResult> {
             lastName,
             // Don't update checkedIn/checkedInAt - preserve manual check-ins
           })
-          .where(eq(attendees.id, existing[0].id));
+          .where(eq(attendees.id, existingAttendee.id));
 
         result.summary.attendeesUpdated++;
         console.log(

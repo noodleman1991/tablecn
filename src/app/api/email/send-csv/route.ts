@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
   try {
     await requireAuth();
 
-    const body = await request.json();
+    const body = await request.json() as { csvContent?: string; filename?: string; recipientEmail?: string };
     const { csvContent, filename, recipientEmail } = body;
 
     if (!csvContent || !filename) {

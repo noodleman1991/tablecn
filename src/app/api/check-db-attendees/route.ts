@@ -19,7 +19,8 @@ export async function GET() {
       .where(eq(events.id, eventId))
       .limit(1);
 
-    if (event.length === 0) {
+    const eventData = event[0];
+    if (!eventData) {
       results.push({ eventId, error: "Event not found" });
       continue;
     }
@@ -30,10 +31,10 @@ export async function GET() {
       .where(eq(attendees.eventId, eventId));
 
     results.push({
-      eventId: event[0].id,
-      eventName: event[0].name,
-      eventDate: event[0].eventDate,
-      productId: event[0].woocommerceProductId,
+      eventId: eventData.id,
+      eventName: eventData.name,
+      eventDate: eventData.eventDate,
+      productId: eventData.woocommerceProductId,
       attendeesInDB: attendeeList.length,
     });
   }

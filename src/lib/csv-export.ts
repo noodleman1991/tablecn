@@ -186,9 +186,9 @@ export async function emailCSVViaServer(
   });
 
   if (!response.ok) {
-    const error = await response.json();
+    const error = await response.json() as { error?: string };
     throw new Error(error.error || "Failed to send email");
   }
 
-  return await response.json();
+  return await response.json() as { success: boolean; emailId?: string };
 }
