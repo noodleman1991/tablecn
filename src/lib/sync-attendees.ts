@@ -24,11 +24,11 @@ export async function syncAttendeesForEvent(
     .where(eq(events.id, eventId))
     .limit(1);
 
-  if (event.length === 0) {
+  const eventData = event[0];
+  if (!eventData) {
     throw new Error(`Event not found: ${eventId}`);
   }
 
-  const eventData = event[0];
   const eventDate = new Date(eventData.eventDate);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -130,7 +130,8 @@ export async function syncAttendeesForEvent(
       .where(eq(attendees.woocommerceOrderId, order.id.toString()))
       .limit(1);
 
-    if (existing.length > 0) {
+    const existingAttendee = existing[0];
+    if (existingAttendee) {
       // Update existing attendee (in case name changed)
       // IMPORTANT: Preserve check-in status - don't overwrite manual check-ins
       await db
@@ -141,7 +142,7 @@ export async function syncAttendeesForEvent(
           lastName,
           // NOT updating: checkedIn, checkedInAt
         })
-        .where(eq(attendees.id, existing[0].id));
+        .where(eq(attendees.id, existingAttendee.id));
 
       updatedCount++;
     } else {
@@ -199,7 +200,8 @@ async function upsertMember(
     .where(eq(members.email, email))
     .limit(1);
 
-  if (existing.length === 0) {
+  const existingMember = existing[0];
+  if (!existingMember) {
     // Create new member
     await db.insert(members).values({
       email,
@@ -214,10 +216,10 @@ async function upsertMember(
       await db
         .update(members)
         .set({
-          firstName: firstName || existing[0].firstName,
-          lastName: lastName || existing[0].lastName,
+          firstName: firstName || existingMember.firstName,
+          lastName: lastName || existingMember.lastName,
         })
-        .where(eq(members.id, existing[0].id));
+        .where(eq(members.id, existingMember.id));
     }
   }
 }

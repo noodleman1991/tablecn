@@ -23,14 +23,13 @@ export async function GET(request: NextRequest) {
       .where(eq(events.woocommerceProductId, productId))
       .limit(1);
 
-    if (event.length === 0) {
+    const eventData = event[0];
+    if (!eventData) {
       return NextResponse.json(
         { error: "Event not found for this product ID" },
         { status: 404 }
       );
     }
-
-    const eventData = event[0];
 
     // Fetch orders from WooCommerce
     const orders = await getOrdersForProduct(productId);

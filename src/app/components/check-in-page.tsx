@@ -43,7 +43,7 @@ function getCachedPastEvents(): Event[] | null {
     const cached = localStorage.getItem(PAST_EVENTS_CACHE_KEY);
     if (!cached) return null;
 
-    const parsed: CachedData<Event[]> = JSON.parse(cached);
+    const parsed = JSON.parse(cached) as CachedData<Event[]>;
     const isExpired = Date.now() - parsed.timestamp > CACHE_TTL_MS;
 
     if (isExpired) {

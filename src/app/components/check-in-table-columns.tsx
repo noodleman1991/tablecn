@@ -146,7 +146,7 @@ export function getCheckInTableColumns(): ColumnDef<Attendee>[] {
       enableSorting: false,
       meta: {
         className: "hidden md:table-cell",
-      },
+      } as any,
     },
     {
       id: "actions",

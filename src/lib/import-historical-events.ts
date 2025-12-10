@@ -123,9 +123,10 @@ export async function importHistoricalEvents(
 
         let eventId: string;
 
-        if (existingEvent.length > 0) {
+        const foundEvent = existingEvent[0];
+        if (foundEvent) {
           // Event already exists, skip creation
-          eventId = existingEvent[0].id;
+          eventId = foundEvent.id;
           importedEvents.push({
             productId,
             productName,
@@ -144,6 +145,9 @@ export async function importHistoricalEvents(
               eventDate: eventDate,
               woocommerceProductId: productId,
             }).returning();
+            if (!newEvent) {
+              throw new Error(`Failed to create event: ${productName}`);
+            }
             eventId = newEvent.id;
           } else {
             eventId = "dry-run-id";
@@ -196,7 +200,8 @@ export async function importHistoricalEvents(
             .where(eq(attendees.woocommerceOrderId, orderId))
             .limit(1);
 
-          if (existingAttendee.length > 0) {
+          const foundAttendee = existingAttendee[0];
+          if (foundAttendee) {
             // Update existing attendee
             if (!dryRun) {
               await db
@@ -205,10 +210,10 @@ export async function importHistoricalEvents(
                   email,
                   firstName,
                   lastName,
-                  checkedIn: markAsCheckedIn ? true : existingAttendee[0].checkedIn,
-                  checkedInAt: markAsCheckedIn ? eventDate : existingAttendee[0].checkedInAt,
+                  checkedIn: markAsCheckedIn ? true : foundAttendee.checkedIn,
+                  checkedInAt: markAsCheckedIn ? eventDate : foundAttendee.checkedInAt,
                 })
-                .where(eq(attendees.id, existingAttendee[0].id));
+                .where(eq(attendees.id, foundAttendee.id));
             }
 
             updatedCount++;
@@ -222,7 +227,7 @@ export async function importHistoricalEvents(
             });
           } else {
             // Add validation before creating attendee
-            const eventDateObj = new Date(eventData.eventDate);
+            const eventDateObj = new Date(eventDate);
             const today = new Date();
             today.setHours(0, 0, 0, 0);
             eventDateObj.setHours(0, 0, 0, 0);
@@ -263,8 +268,9 @@ export async function importHistoricalEvents(
 
         // Update event attendee count
         const eventIndex = importedEvents.findIndex(e => e.productId === productId);
-        if (eventIndex !== -1) {
-          importedEvents[eventIndex].attendeeCount = createdCount + updatedCount;
+        const eventRecord = importedEvents[eventIndex];
+        if (eventRecord) {
+          eventRecord.attendeeCount = createdCount + updatedCount;
         }
 
         console.log(
@@ -372,7 +378,8 @@ async function upsertMember(
     .where(eq(members.email, email))
     .limit(1);
 
-  if (existing.length === 0) {
+  const existingMember = existing[0];
+  if (!existingMember) {
     // Create new member
     await db.insert(members).values({
       email,
@@ -387,10 +394,10 @@ async function upsertMember(
       await db
         .update(members)
         .set({
-          firstName: firstName || existing[0].firstName,
-          lastName: lastName || existing[0].lastName,
+          firstName: firstName || existingMember.firstName,
+          lastName: lastName || existingMember.lastName,
         })
-        .where(eq(members.id, existing[0].id));
+        .where(eq(members.id, existingMember.id));
     }
   }
 }

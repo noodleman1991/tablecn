@@ -62,6 +62,10 @@ export async function POST() {
           woocommerceProductId: null, // Historical events don't need WC product ID
         }).returning();
 
+        if (!event) {
+          throw new Error(`Failed to create event: ${eventName}`);
+        }
+
         createdEvents.push(event);
         console.log(`[populate] Created event: ${eventName} on ${eventDate.toDateString()}`);
 
@@ -138,7 +142,7 @@ export async function POST() {
         activeMembers: activeCount,
         inactiveMembers: inactiveCount,
       },
-      events: createdEvents.map(e => ({
+      events: createdEvents.filter(e => e !== undefined).map(e => ({
         name: e.name,
         date: e.eventDate,
       })),

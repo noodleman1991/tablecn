@@ -16,11 +16,10 @@ export async function getCachedData<T>(key: string): Promise<T | null> {
       .where(eq(woocommerceCache.cacheKey, key))
       .limit(1);
 
-    if (cached.length === 0) {
+    const entry = cached[0];
+    if (!entry) {
       return null;
     }
-
-    const entry = cached[0];
 
     // Check if expired
     if (entry.expiresAt < new Date()) {
@@ -98,11 +97,10 @@ export async function getCacheAge(key: string): Promise<number | null> {
       .where(eq(woocommerceCache.cacheKey, key))
       .limit(1);
 
-    if (cached.length === 0) {
+    const entry = cached[0];
+    if (!entry) {
       return null;
     }
-
-    const entry = cached[0];
 
     // Check if expired
     if (entry.expiresAt < new Date()) {
@@ -127,7 +125,7 @@ export async function cleanupExpiredCache(): Promise<number> {
       .delete(woocommerceCache)
       .where(lt(woocommerceCache.expiresAt, new Date()));
 
-    const deletedCount = result.rowCount ?? 0;
+    const deletedCount = (result as any).rowCount ?? 0;
     console.log(`[cache] Cleaned up ${deletedCount} expired cache entries`);
     return deletedCount;
   } catch (error) {

@@ -15,11 +15,10 @@ export async function recalculateMembershipForMember(memberId: string) {
     .where(eq(members.id, memberId))
     .limit(1);
 
-  if (member.length === 0) {
+  const memberData = member[0];
+  if (!memberData) {
     throw new Error(`Member not found: ${memberId}`);
   }
-
-  const memberData = member[0];
 
   // Calculate 9 months ago from today
   const nineMonthsAgo = new Date();
@@ -82,8 +81,9 @@ export async function recalculateMembershipForMember(memberId: string) {
   let lastEventDate = null;
   let eventBasedExpiresAt = null;
 
-  if (countableAllEvents.length > 0) {
-    lastEventDate = new Date(countableAllEvents[0].eventDate);
+  const lastCountableEvent = countableAllEvents[0];
+  if (lastCountableEvent) {
+    lastEventDate = new Date(lastCountableEvent.eventDate);
     eventBasedExpiresAt = new Date(lastEventDate);
     eventBasedExpiresAt.setMonth(eventBasedExpiresAt.getMonth() + 9);
   }
@@ -174,12 +174,13 @@ export async function recalculateMembershipByEmail(
     wasUpdated = true;
   }
 
-  if (memberRecord.length === 0) {
+  const currentMember = memberRecord[0];
+  if (!currentMember) {
     throw new Error(`Failed to create/find member: ${email}`);
   }
 
   // Recalculate their membership
-  const result = await recalculateMembershipForMember(memberRecord[0].id);
+  const result = await recalculateMembershipForMember(currentMember.id);
 
   return {
     ...result,
@@ -230,13 +231,17 @@ export async function recalculateMembershipForEvent(eventId: string) {
         .where(eq(members.email, attendee.email))
         .limit(1);
 
-      if (newMember.length > 0) {
-        const result = await recalculateMembershipForMember(newMember[0].id);
+      const newMemberData = newMember[0];
+      if (newMemberData) {
+        const result = await recalculateMembershipForMember(newMemberData.id);
         results.push(result);
       }
     } else {
-      const result = await recalculateMembershipForMember(memberRecord[0].id);
-      results.push(result);
+      const existingMember = memberRecord[0];
+      if (existingMember) {
+        const result = await recalculateMembershipForMember(existingMember.id);
+        results.push(result);
+      }
     }
   }
 
