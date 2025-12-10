@@ -1,4 +1,6 @@
 import { SiteHeader } from "@/components/layouts/site-header";
+import { StackProvider, StackTheme } from "@stackframe/stack";
+import { stackClientApp } from "../stack/client";
 import { ThemeProvider } from "@/components/providers";
 import { TailwindIndicator } from "@/components/tailwind-indicator";
 import { siteConfig } from "@/config/site";
@@ -21,22 +23,21 @@ export const metadata: Metadata = {
   keywords: [
     "nextjs",
     "react",
-    "table",
-    "react-table",
-    "tanstack-table",
-    "shadcn-table",
-    "tablecn",
+    "event management",
+    "attendance tracking",
+    "community membership",
+    "kairos london",
   ],
   authors: [
     {
-      name: "sadmann7",
-      url: "https://www.sadmn.com",
+      name: "Kairos London",
+      url: "https://kairos.london",
     },
   ],
-  creator: "sadmann7",
+  creator: "Kairos London",
   openGraph: {
     type: "website",
-    locale: "en_US",
+    locale: "en_GB",
     url: siteConfig.url,
     title: siteConfig.name,
     description: siteConfig.description,
@@ -47,7 +48,6 @@ export const metadata: Metadata = {
     title: siteConfig.name,
     description: siteConfig.description,
     images: [`${siteConfig.url}/og.jpg`],
-    creator: "@sadmann17",
   },
   icons: {
     icon: "/icon.png",
@@ -72,7 +72,7 @@ export default function RootLayout({ children }: React.PropsWithChildren) {
           fontSans.variable,
           fontMono.variable,
         )}
-      >
+      ><StackProvider app={stackClientApp}><StackTheme>
         <Script
           defer
           data-site-id={siteConfig.url}
@@ -91,7 +91,7 @@ export default function RootLayout({ children }: React.PropsWithChildren) {
           <TailwindIndicator />
         </ThemeProvider>
         <Toaster />
-      </body>
+      </StackTheme></StackProvider></body>
     </html>
   );
 }

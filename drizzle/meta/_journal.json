@@ -1,5 +1,27 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "entries": []
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1764449511094,
+      "tag": "0000_faithful_iron_fist",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1764844075302,
+      "tag": "0001_blue_zaladane",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1765011868035,
+      "tag": "0002_hesitant_dreaming_celestial",
+      "breakpoints": true
+    }
+  ]
 }
