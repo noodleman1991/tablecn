@@ -46,13 +46,12 @@ interface UseDataTableProps<TData>
   extends Omit<
       TableOptions<TData>,
       | "state"
-      | "pageCount"
       | "getCoreRowModel"
       | "manualFiltering"
       | "manualPagination"
       | "manualSorting"
-    >,
-    Required<Pick<TableOptions<TData>, "pageCount">> {
+    > {
+  pageCount?: number; // Make pageCount optional
   initialState?: Omit<Partial<TableState>, "sorting"> & {
     sorting?: ExtendedColumnSort<TData>[];
   };
@@ -65,6 +64,9 @@ interface UseDataTableProps<TData>
   scroll?: boolean;
   shallow?: boolean;
   startTransition?: React.TransitionStartFunction;
+  manualPagination?: boolean; // Allow overriding manual pagination
+  manualSorting?: boolean; // Allow overriding manual sorting
+  manualFiltering?: boolean; // Allow overriding manual filtering
 }
 
 export function useDataTable<TData>(props: UseDataTableProps<TData>) {
@@ -81,6 +83,9 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
     scroll = false,
     shallow = true,
     startTransition,
+    manualPagination = true, // Default to true for backward compatibility
+    manualSorting = true, // Default to true for backward compatibility
+    manualFiltering = true, // Default to true for backward compatibility
     ...tableProps
   } = props;
   const pageKey = queryKeys?.page ?? PAGE_KEY;
@@ -147,7 +152,7 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
         void setPerPage(updaterOrValue.pageSize);
       }
     },
-    [pagination, setPage, setPerPage],
+    [setPage, setPerPage],
   );
 
   const columnIds = React.useMemo(() => {
@@ -172,7 +177,7 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
         setSorting(updaterOrValue as ExtendedColumnSort<TData>[]);
       }
     },
-    [sorting, setSorting],
+    [setSorting],
   );
 
   const filterableColumns = React.useMemo(() => {
@@ -271,7 +276,7 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
     ...tableProps,
     columns,
     initialState,
-    pageCount,
+    ...(pageCount !== undefined && pageCount !== -1 && { pageCount }), // Conditionally include pageCount
     state: {
       pagination,
       sorting,
@@ -296,9 +301,9 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
     getFacetedMinMaxValues: getFacetedMinMaxValues(),
-    manualPagination: true,
-    manualSorting: true,
-    manualFiltering: true,
+    manualPagination: manualPagination, // Use the configurable value
+    manualSorting: manualSorting, // Use the configurable value
+    manualFiltering: manualFiltering, // Use the configurable value
     meta: {
       ...tableProps.meta,
       queryKeys: {

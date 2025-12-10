@@ -1,66 +1,75 @@
 import { Suspense } from "react";
-import { DataTableSkeleton } from "@/components/data-table/data-table-skeleton";
-import { Shell } from "@/components/shell";
-import { getValidFilters } from "@/lib/data-table";
-import type { SearchParams } from "@/types";
-import { FeatureFlagsProvider } from "./components/feature-flags-provider";
-import { TasksTable } from "./components/tasks-table";
-import {
-  getEstimatedHoursRange,
-  getTaskPriorityCounts,
-  getTaskStatusCounts,
-  getTasks,
-} from "./lib/queries";
-import { searchParamsCache } from "./lib/validations";
+import { Skeleton } from "@/components/ui/skeleton";
+import { CheckInPage } from "./components/check-in-page";
+import { getFutureEvents, getAttendeesForEvent, getEventById } from "./actions";
+import { requireAuth } from "@/lib/auth";
 
 interface IndexPageProps {
-  searchParams: Promise<SearchParams>;
+  searchParams: Promise<{ eventId?: string }>;
 }
 
-export default function IndexPage(props: IndexPageProps) {
+export const metadata = {
+  title: "Event Check-In",
+  description: "Check in attendees for events",
+};
+
+export default async function IndexPage(props: IndexPageProps) {
+  // Require authentication
+  await requireAuth();
+
+  const searchParams = await props.searchParams;
+  const eventId = searchParams.eventId;
+
   return (
-    <Shell>
-      <Suspense
-        fallback={
-          <DataTableSkeleton
-            columnCount={7}
-            filterCount={2}
-            cellWidths={[
-              "10rem",
-              "30rem",
-              "10rem",
-              "10rem",
-              "6rem",
-              "6rem",
-              "6rem",
-            ]}
-            shrinkZero
-          />
-        }
-      >
-        <FeatureFlagsProvider>
-          <TasksTableWrapper {...props} />
-        </FeatureFlagsProvider>
-      </Suspense>
-    </Shell>
+    <Suspense
+      fallback={
+        <div className="container flex flex-col gap-6 py-8">
+          <Skeleton className="h-12 w-64" />
+          <Skeleton className="h-32 w-full" />
+          <div className="grid gap-4 md:grid-cols-3">
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+          <Skeleton className="h-96 w-full" />
+        </div>
+      }
+    >
+      <CheckInPageWrapper eventId={eventId} />
+    </Suspense>
   );
 }
 
-async function TasksTableWrapper(props: IndexPageProps) {
-  const searchParams = await props.searchParams;
-  const search = searchParamsCache.parse(searchParams);
+async function CheckInPageWrapper({ eventId }: { eventId?: string }) {
+  const futureEvents = await getFutureEvents();
 
-  const validFilters = getValidFilters(search.filters);
+  // Determine selected event ID
+  let selectedEventId: string | undefined;
 
-  const promises = Promise.all([
-    getTasks({
-      ...search,
-      filters: validFilters,
-    }),
-    getTaskStatusCounts(),
-    getTaskPriorityCounts(),
-    getEstimatedHoursRange(),
-  ]);
+  if (eventId) {
+    // If eventId is provided, verify it exists (could be past or future event)
+    const event = await getEventById(eventId);
+    if (event) {
+      selectedEventId = eventId;
+    } else {
+      // If event doesn't exist, fall back to first future event
+      selectedEventId = futureEvents[0]?.id;
+    }
+  } else {
+    // No eventId provided, use first future event
+    selectedEventId = futureEvents[0]?.id;
+  }
 
-  return <TasksTable promises={promises} />;
+  // Get attendees for the selected event
+  const attendees = selectedEventId
+    ? await getAttendeesForEvent(selectedEventId)
+    : [];
+
+  return (
+    <CheckInPage
+      futureEvents={futureEvents}
+      initialEventId={selectedEventId}
+      initialAttendees={attendees}
+    />
+  );
 }
