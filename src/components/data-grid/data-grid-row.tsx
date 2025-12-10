@@ -1,7 +1,12 @@
 "use client";
 
-import type { Row, TableMeta, VisibilityState } from "@tanstack/react-table";
-import type { VirtualItem, Virtualizer } from "@tanstack/react-virtual";
+import type {
+  ColumnPinningState,
+  Row,
+  TableMeta,
+  VisibilityState,
+} from "@tanstack/react-table";
+import type { VirtualItem } from "@tanstack/react-virtual";
 import * as React from "react";
 import { DataGridCell } from "@/components/data-grid/data-grid-cell";
 import { useComposedRefs } from "@/lib/compose-refs";
@@ -16,26 +21,31 @@ import type {
   CellPosition,
   Direction,
   RowHeightValue,
-  SelectionState,
 } from "@/types/data-grid";
 
 interface DataGridRowProps<TData> extends React.ComponentProps<"div"> {
   row: Row<TData>;
   tableMeta: TableMeta<TData>;
-  rowVirtualizer: Virtualizer<HTMLDivElement, Element>;
   virtualItem: VirtualItem;
+  measureElement: (node: Element | null) => void;
   rowMapRef: React.RefObject<Map<number, HTMLDivElement>>;
   rowHeight: RowHeightValue;
+  columnVisibility: VisibilityState;
+  columnPinning: ColumnPinningState;
   focusedCell: CellPosition | null;
   editingCell: CellPosition | null;
-  selectionState?: SelectionState;
-  columnVisibility?: VisibilityState;
+  cellSelectionKeys: Set<string>;
+  searchMatchColumns: Set<string> | null;
+  activeSearchMatch: CellPosition | null;
   dir: Direction;
   readOnly: boolean;
-  stretchColumns?: boolean;
+  stretchColumns: boolean;
 }
 
 export const DataGridRow = React.memo(DataGridRowImpl, (prev, next) => {
+  const prevRowIndex = prev.virtualItem.index;
+  const nextRowIndex = next.virtualItem.index;
+
   // Re-render if row identity changed
   if (prev.row.id !== next.row.id) {
     return false;
@@ -50,9 +60,6 @@ export const DataGridRow = React.memo(DataGridRowImpl, (prev, next) => {
   if (prev.virtualItem.start !== next.virtualItem.start) {
     return false;
   }
-
-  const prevRowIndex = prev.virtualItem.index;
-  const nextRowIndex = next.virtualItem.index;
 
   // Re-render if focus state changed for this row
   const prevHasFocus = prev.focusedCell?.rowIndex === prevRowIndex;
@@ -84,10 +91,9 @@ export const DataGridRow = React.memo(DataGridRowImpl, (prev, next) => {
     }
   }
 
-  // Re-render if selection state changed (different Set reference means selection changed)
-  if (
-    prev.selectionState?.selectedCells !== next.selectionState?.selectedCells
-  ) {
+  // Re-render if this row's selected cells changed
+  // Using stable Set reference that only includes this row's cells
+  if (prev.cellSelectionKeys !== next.cellSelectionKeys) {
     return false;
   }
 
@@ -101,8 +107,23 @@ export const DataGridRow = React.memo(DataGridRowImpl, (prev, next) => {
     return false;
   }
 
+  // Re-render if column pinning state changed
+  if (prev.columnPinning !== next.columnPinning) {
+    return false;
+  }
+
   // Re-render if readOnly changed
   if (prev.readOnly !== next.readOnly) {
+    return false;
+  }
+
+  // Re-render if search match columns changed for this row
+  if (prev.searchMatchColumns !== next.searchMatchColumns) {
+    return false;
+  }
+
+  // Re-render if active search match changed for this row
+  if (prev.activeSearchMatch?.columnId !== next.activeSearchMatch?.columnId) {
     return false;
   }
 
@@ -114,16 +135,19 @@ function DataGridRowImpl<TData>({
   row,
   tableMeta,
   virtualItem,
-  rowVirtualizer,
+  measureElement,
   rowMapRef,
   rowHeight,
+  columnVisibility,
+  columnPinning,
   focusedCell,
   editingCell,
-  selectionState,
-  columnVisibility,
+  cellSelectionKeys,
+  searchMatchColumns,
+  activeSearchMatch,
   dir,
   readOnly,
-  stretchColumns = false,
+  stretchColumns,
   className,
   style,
   ref,
@@ -136,13 +160,13 @@ function DataGridRowImpl<TData>({
       if (typeof virtualRowIndex === "undefined") return;
 
       if (node) {
-        rowVirtualizer.measureElement(node);
+        measureElement(node);
         rowMapRef.current?.set(virtualRowIndex, node);
       } else {
         rowMapRef.current?.delete(virtualRowIndex);
       }
     },
-    [virtualRowIndex, rowVirtualizer, rowMapRef],
+    [virtualRowIndex, measureElement, rowMapRef],
   );
 
   const rowRef = useComposedRefs(ref, onRowChange);
@@ -151,11 +175,11 @@ function DataGridRowImpl<TData>({
 
   // Memoize visible cells to avoid recreating cell array on every render
   // Though TanStack returns new Cell wrappers, memoizing the array helps React's reconciliation
-  // Include columnVisibility to recalculate when columns are hidden/shown, without this the cells under the column header will be still visible
-  const visibleCells = React.useMemo(() => {
-    void columnVisibility;
-    return row.getVisibleCells();
-  }, [row, columnVisibility]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: columnVisibility and columnPinning are used for calculating the visible cells
+  const visibleCells = React.useMemo(
+    () => row.getVisibleCells(),
+    [row, columnVisibility, columnPinning],
+  );
 
   return (
     <div
@@ -180,6 +204,7 @@ function DataGridRowImpl<TData>({
     >
       {visibleCells.map((cell, colIndex) => {
         const columnId = cell.column.id;
+
         const isCellFocused =
           focusedCell?.rowIndex === virtualRowIndex &&
           focusedCell?.columnId === columnId;
@@ -187,9 +212,11 @@ function DataGridRowImpl<TData>({
           editingCell?.rowIndex === virtualRowIndex &&
           editingCell?.columnId === columnId;
         const isCellSelected =
-          selectionState?.selectedCells.has(
-            getCellKey(virtualRowIndex, columnId),
-          ) ?? false;
+          cellSelectionKeys?.has(getCellKey(virtualRowIndex, columnId)) ??
+          false;
+
+        const isSearchMatch = searchMatchColumns?.has(columnId) ?? false;
+        const isActiveSearchMatch = activeSearchMatch?.columnId === columnId;
 
         return (
           <div
@@ -225,6 +252,8 @@ function DataGridRowImpl<TData>({
                 isFocused={isCellFocused}
                 isEditing={isCellEditing}
                 isSelected={isCellSelected}
+                isSearchMatch={isSearchMatch}
+                isActiveSearchMatch={isActiveSearchMatch}
                 readOnly={readOnly}
               />
             )}

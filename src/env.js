@@ -11,12 +11,17 @@ export const env = createEnv({
       .enum(["development", "test", "production"])
       .default("development"),
     DATABASE_URL: z.string().url(),
+    // Your community management system
     WOOCOMMERCE_URL: z.string().url(),
     WOOCOMMERCE_CONSUMER_KEY: z.string().min(1),
     WOOCOMMERCE_CONSUMER_SECRET: z.string().min(1),
     RESEND_API_KEY: z.string().min(1),
     CRON_SECRET: z.string().min(1),
     STACK_SECRET_SERVER_KEY: z.string().min(1),
+    // Demo features (UploadThing, Redis)
+    UPLOADTHING_TOKEN: z.string().optional(),
+    UPSTASH_REDIS_REST_URL: z.string().url().optional(),
+    UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
   },
 
   /**
@@ -37,6 +42,7 @@ export const env = createEnv({
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
+    // Your community management system
     WOOCOMMERCE_URL: process.env.WOOCOMMERCE_URL,
     WOOCOMMERCE_CONSUMER_KEY: process.env.WOOCOMMERCE_CONSUMER_KEY,
     WOOCOMMERCE_CONSUMER_SECRET: process.env.WOOCOMMERCE_CONSUMER_SECRET,
@@ -46,6 +52,10 @@ export const env = createEnv({
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_STACK_PROJECT_ID: process.env.NEXT_PUBLIC_STACK_PROJECT_ID,
     NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY: process.env.NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY,
+    // Demo features
+    UPLOADTHING_TOKEN: process.env.UPLOADTHING_TOKEN,
+    UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
+    UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

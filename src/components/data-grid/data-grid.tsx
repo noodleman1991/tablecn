@@ -12,12 +12,20 @@ import { flexRender, getCommonPinningStyles } from "@/lib/data-grid";
 import { cn } from "@/lib/utils";
 import type { Direction } from "@/types/data-grid";
 
+const EMPTY_CELL_SELECTION_SET = new Set<string>();
+
 interface DataGridProps<TData>
-  extends Omit<ReturnType<typeof useDataGrid<TData>>, "dir">,
+  extends Omit<
+      ReturnType<typeof useDataGrid<TData>>,
+      "dir" | "virtualTotalSize" | "virtualItems" | "measureElement"
+    >,
     Omit<React.ComponentProps<"div">, "contextMenu"> {
   dir?: Direction;
   height?: number;
   stretchColumns?: boolean;
+  virtualTotalSize: number;
+  virtualItems: ReturnType<typeof useDataGrid<TData>>["virtualItems"];
+  measureElement: ReturnType<typeof useDataGrid<TData>>["measureElement"];
 }
 
 export function DataGrid<TData>({
@@ -28,13 +36,17 @@ export function DataGrid<TData>({
   dir = "ltr",
   table,
   tableMeta,
-  rowVirtualizer,
+  virtualTotalSize,
+  virtualItems,
+  measureElement,
   columns,
-  searchState,
   columnSizeVars,
+  searchState,
+  searchMatchesByRow,
+  activeSearchMatch,
+  cellSelectionMap,
   focusedCell,
   editingCell,
-  selectionState,
   rowHeight,
   contextMenu,
   pasteDialog,
@@ -47,8 +59,9 @@ export function DataGrid<TData>({
   const rows = table.getRowModel().rows;
   const readOnly = tableMeta?.readOnly ?? false;
   const columnVisibility = table.getState().columnVisibility;
+  const columnPinning = table.getState().columnPinning;
 
-  const onGridContextMenu = React.useCallback(
+  const onDataGridContextMenu = React.useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
       event.preventDefault();
     },
@@ -94,7 +107,7 @@ export function DataGrid<TData>({
           ...columnSizeVars,
           maxHeight: `${height}px`,
         }}
-        onContextMenu={onGridContextMenu}
+        onContextMenu={onDataGridContextMenu}
       >
         <div
           role="rowgroup"
@@ -165,13 +178,22 @@ export function DataGrid<TData>({
           data-slot="grid-body"
           className="relative grid"
           style={{
-            height: `${rowVirtualizer.getTotalSize()}px`,
+            height: `${virtualTotalSize}px`,
             contain: "strict",
           }}
         >
-          {rowVirtualizer.getVirtualItems().map((virtualItem) => {
+          {virtualItems.map((virtualItem) => {
             const row = rows[virtualItem.index];
             if (!row) return null;
+
+            const cellSelectionKeys =
+              cellSelectionMap?.get(virtualItem.index) ??
+              EMPTY_CELL_SELECTION_SET;
+
+            const searchMatchColumns =
+              searchMatchesByRow?.get(virtualItem.index) ?? null;
+            const isActiveSearchRow =
+              activeSearchMatch?.rowIndex === virtualItem.index;
 
             return (
               <DataGridRow
@@ -180,12 +202,15 @@ export function DataGrid<TData>({
                 tableMeta={tableMeta}
                 rowMapRef={rowMapRef}
                 virtualItem={virtualItem}
-                rowVirtualizer={rowVirtualizer}
+                measureElement={measureElement}
                 rowHeight={rowHeight}
+                columnVisibility={columnVisibility}
+                columnPinning={columnPinning}
                 focusedCell={focusedCell}
                 editingCell={editingCell}
-                selectionState={selectionState}
-                columnVisibility={columnVisibility}
+                cellSelectionKeys={cellSelectionKeys}
+                searchMatchColumns={searchMatchColumns}
+                activeSearchMatch={isActiveSearchRow ? activeSearchMatch : null}
                 dir={dir}
                 readOnly={readOnly}
                 stretchColumns={stretchColumns}

@@ -1,8 +1,11 @@
+import { Suspense } from "react";
+
 import { SiteHeader } from "@/components/layouts/site-header";
 import { StackProvider, StackTheme } from "@stackframe/stack";
 import { stackClientApp } from "../stack/client";
 import { ThemeProvider } from "@/components/providers";
 import { TailwindIndicator } from "@/components/tailwind-indicator";
+import { UploadThingSSR } from "@/components/uploadthing-ssr";
 import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 
@@ -72,26 +75,33 @@ export default function RootLayout({ children }: React.PropsWithChildren) {
           fontSans.variable,
           fontMono.variable,
         )}
-      ><StackProvider app={stackClientApp}><StackTheme>
-        <Script
-          defer
-          data-site-id={siteConfig.url}
-          src="https://assets.onedollarstats.com/stonks.js"
-        />
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <div className="relative flex min-h-screen flex-col">
-            <SiteHeader />
-            <main className="flex-1">{children}</main>
-          </div>
-          <TailwindIndicator />
-        </ThemeProvider>
-        <Toaster />
-      </StackTheme></StackProvider></body>
+      >
+        <StackProvider app={stackClientApp}>
+          <StackTheme>
+            <Suspense>
+              <UploadThingSSR />
+            </Suspense>
+            <Script
+              defer
+              data-site-id={siteConfig.url}
+              src="https://assets.onedollarstats.com/stonks.js"
+            />
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <div className="relative flex min-h-screen flex-col">
+                <SiteHeader />
+                <main className="flex-1">{children}</main>
+              </div>
+              <TailwindIndicator />
+            </ThemeProvider>
+            <Toaster />
+          </StackTheme>
+        </StackProvider>
+      </body>
     </html>
   );
 }
