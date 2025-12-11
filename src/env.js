@@ -18,6 +18,9 @@ export const env = createEnv({
     RESEND_API_KEY: z.string().min(1),
     CRON_SECRET: z.string().min(1),
     STACK_SECRET_SERVER_KEY: z.string().min(1),
+    // Audio Recordings Authorization
+    AUDIO_RECORDING_SESSION_SECRET: z.string().min(32),
+    HCAPTCHA_SECRET_KEY: z.string().min(1),
     // Demo features (UploadThing, Redis)
     UPLOADTHING_TOKEN: z.string().optional(),
     UPSTASH_REDIS_REST_URL: z.string().url().optional(),
@@ -33,6 +36,7 @@ export const env = createEnv({
     NEXT_PUBLIC_APP_URL: z.string().url(),
     NEXT_PUBLIC_STACK_PROJECT_ID: z.string().min(1),
     NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY: z.string().min(1),
+    NEXT_PUBLIC_HCAPTCHA_SITE_KEY: z.string().min(1),
   },
 
   /**
@@ -49,9 +53,13 @@ export const env = createEnv({
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     CRON_SECRET: process.env.CRON_SECRET,
     STACK_SECRET_SERVER_KEY: process.env.STACK_SECRET_SERVER_KEY,
+    // Audio Recordings Authorization
+    AUDIO_RECORDING_SESSION_SECRET: process.env.AUDIO_RECORDING_SESSION_SECRET,
+    HCAPTCHA_SECRET_KEY: process.env.HCAPTCHA_SECRET_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_STACK_PROJECT_ID: process.env.NEXT_PUBLIC_STACK_PROJECT_ID,
     NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY: process.env.NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY,
+    NEXT_PUBLIC_HCAPTCHA_SITE_KEY: process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY,
     // Demo features
     UPLOADTHING_TOKEN: process.env.UPLOADTHING_TOKEN,
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
