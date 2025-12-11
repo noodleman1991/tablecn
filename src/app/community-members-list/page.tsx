@@ -1,10 +1,11 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MembersPage } from "./components/members-page";
 import { getMembers } from "../actions";
 import { requireAuth } from "@/lib/auth";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Community Members List",
   description: "View and manage community membership",
 };
