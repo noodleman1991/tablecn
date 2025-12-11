@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CheckInPage } from "./components/check-in-page";
 import { getFutureEvents, getAttendeesForEvent, getEventById } from "./actions";
@@ -8,7 +9,7 @@ interface IndexPageProps {
   searchParams: Promise<{ eventId?: string }>;
 }
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Event Check-In",
   description: "Check in attendees for events",
 };
