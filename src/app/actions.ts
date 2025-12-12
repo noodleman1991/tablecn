@@ -2,20 +2,26 @@
 
 import { db } from "@/db";
 import { attendees, events, members } from "@/db/schema";
-import { eq, desc, gte, lt } from "drizzle-orm";
+import { eq, desc, gte, lt, isNull, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { syncAttendeesForEvent } from "@/lib/sync-attendees";
 import { getCacheAge } from "@/lib/cache-utils";
 
 /**
  * Get all events sorted by date (most recent first)
+ * Excludes merged events
  */
 export async function getEvents() {
-  return await db.select().from(events).orderBy(desc(events.eventDate));
+  return await db
+    .select()
+    .from(events)
+    .where(isNull(events.mergedIntoEventId))
+    .orderBy(desc(events.eventDate));
 }
 
 /**
  * Get future events (today and onwards) sorted by date (soonest first)
+ * Excludes merged events
  */
 export async function getFutureEvents() {
   const today = new Date();
@@ -24,12 +30,18 @@ export async function getFutureEvents() {
   return await db
     .select()
     .from(events)
-    .where(gte(events.eventDate, today))
+    .where(
+      and(
+        gte(events.eventDate, today),
+        isNull(events.mergedIntoEventId)
+      )
+    )
     .orderBy(events.eventDate);
 }
 
 /**
  * Get past events (before today) sorted by date (most recent first)
+ * Excludes merged events
  */
 export async function getPastEvents() {
   const today = new Date();
@@ -38,7 +50,12 @@ export async function getPastEvents() {
   return await db
     .select()
     .from(events)
-    .where(lt(events.eventDate, today))
+    .where(
+      and(
+        lt(events.eventDate, today),
+        isNull(events.mergedIntoEventId)
+      )
+    )
     .orderBy(desc(events.eventDate));
 }
 

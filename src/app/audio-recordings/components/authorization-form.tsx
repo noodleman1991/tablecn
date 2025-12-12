@@ -26,6 +26,11 @@ import { toast } from "sonner";
 import { Loader2, ShieldCheck } from "lucide-react";
 import { env } from "@/env";
 
+interface AuthorizationAPIResponse {
+  success: boolean;
+  error?: string;
+}
+
 const formSchema = z.object({
   email: z
     .string()
@@ -68,7 +73,7 @@ export function AuthorizationForm() {
         }),
       });
 
-      const result = await response.json();
+      const result = await response.json() as AuthorizationAPIResponse;
 
       if (response.ok && result.success) {
         toast.success("Authorization successful!");

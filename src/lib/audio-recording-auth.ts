@@ -11,6 +11,13 @@ import {
 } from "./audio-recording-session";
 import type { AuthorizationResult } from "@/types/audio-recording-auth";
 
+interface HCaptchaVerificationResponse {
+  success: boolean;
+  challenge_ts?: string;
+  hostname?: string;
+  "error-codes"?: string[];
+}
+
 export async function verifyEmailForAudioRecordings(
   email: string,
   captchaToken: string,
@@ -31,7 +38,7 @@ export async function verifyEmailForAudioRecordings(
       },
     );
 
-    const captchaResult = await captchaVerification.json();
+    const captchaResult = await captchaVerification.json() as HCaptchaVerificationResponse;
 
     if (!captchaResult.success) {
       return {
