@@ -1,17 +1,22 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { events, attendees } from "@/db/schema";
-import { like, sql } from "drizzle-orm";
+import { like, sql, and, isNull } from "drizzle-orm";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q") || "";
 
-  // Find all events matching the query
+  // Find all events matching the query (excluding merged events)
   const matchingEvents = await db
     .select()
     .from(events)
-    .where(like(events.name, `%${query}%`))
+    .where(
+      and(
+        like(events.name, `%${query}%`),
+        isNull(events.mergedIntoEventId)
+      )
+    )
     .orderBy(sql`${events.eventDate} DESC`)
     .limit(20);
 

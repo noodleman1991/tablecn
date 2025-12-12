@@ -8,6 +8,7 @@ import {
   extractEventDate,
 } from "@/lib/woocommerce";
 import { eq } from "drizzle-orm";
+import { mergeDuplicateEvents } from "@/lib/merge-events";
 
 /**
  * Cron job to auto-discover events from WooCommerce
@@ -83,12 +84,26 @@ export async function GET(request: NextRequest) {
       createdCount++;
     }
 
+    // Merge any duplicate events
+    console.log("[discover-events] Starting merge process...");
+    const mergeResult = await mergeDuplicateEvents();
+
     return NextResponse.json({
       success: true,
       totalProducts: products.length,
       eventProducts: eventProducts.length,
-      created: createdCount,
-      skipped: skippedCount,
+      events: {
+        created: createdCount,
+        skipped: skippedCount,
+      },
+      merges: {
+        groupsFound: mergeResult.groupsFound,
+        groupsMerged: mergeResult.groupsMerged,
+        groupsFailed: mergeResult.groupsFailed,
+        eventsMerged: mergeResult.totalEventsMerged,
+        attendeesAffected: mergeResult.totalAttendeesAffected,
+      },
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     console.error("[discover-events] Error:", error);

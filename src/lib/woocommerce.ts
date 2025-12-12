@@ -111,7 +111,7 @@ export async function getOrdersForProduct(productId: string, eventDate?: Date): 
           const ordersResponse = await woocommerce.get("orders", {
             per_page: perPage,
             page: page,
-            status: "completed,processing",
+            status: "completed,processing,on-hold,pending",
             ...dateParams,
           });
 
@@ -148,7 +148,7 @@ export async function getOrdersForProduct(productId: string, eventDate?: Date): 
             per_page: perPage,
             page: page,
             product: productId,
-            status: "completed,processing",
+            status: "completed,processing,on-hold,pending",
             ...dateParams,
           });
 
