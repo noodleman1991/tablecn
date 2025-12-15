@@ -76,6 +76,8 @@ export const attendees = pgTable("attendees", {
   firstName: varchar("first_name", { length: 128 }),
   lastName: varchar("last_name", { length: 128 }),
   woocommerceOrderId: varchar("woocommerce_order_id", { length: 128 }),
+  locallyModified: boolean("locally_modified").notNull().default(false),
+  manuallyAdded: boolean("manually_added").notNull().default(false),
   checkedIn: boolean("checked_in").notNull().default(false),
   checkedInAt: timestamp("checked_in_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
