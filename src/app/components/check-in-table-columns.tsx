@@ -7,8 +7,11 @@ import { toast } from "sonner";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { type Attendee } from "@/db/schema";
 import { checkInAttendee, undoCheckIn } from "@/app/actions";
+import { EditableAttendeeCell } from "./editable-attendee-cell";
+import { AttendeeActionsCell } from "./attendee-actions-cell";
 
 // Memoized action cell for performance
 const ActionCell = React.memo(
@@ -55,15 +58,54 @@ const ActionCell = React.memo(
 
 ActionCell.displayName = "ActionCell";
 
-export function getCheckInTableColumns(): ColumnDef<Attendee>[] {
+interface CheckInTableHandlers {
+  onDelete: (attendee: Attendee) => void;
+}
+
+export type { CheckInTableHandlers };
+
+export function getCheckInTableColumns(
+  handlers: CheckInTableHandlers
+): ColumnDef<Attendee>[] {
   return [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+          className="translate-y-[2px]"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+          className="translate-y-[2px]"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
     {
       id: "firstName",
       accessorKey: "firstName",
       header: ({ column }) => (
         <DataTableColumnHeader column={column} label="First Name" />
       ),
-      cell: ({ row }) => row.getValue("firstName") || "-",
+      cell: ({ row }) => (
+        <EditableAttendeeCell
+          value={row.getValue("firstName")}
+          attendeeId={row.original.id}
+          field="firstName"
+          placeholder="First name"
+        />
+      ),
       meta: {
         label: "First Name",
         placeholder: "Search first name...",
@@ -77,7 +119,14 @@ export function getCheckInTableColumns(): ColumnDef<Attendee>[] {
       header: ({ column }) => (
         <DataTableColumnHeader column={column} label="Last Name" />
       ),
-      cell: ({ row }) => row.getValue("lastName") || "-",
+      cell: ({ row }) => (
+        <EditableAttendeeCell
+          value={row.getValue("lastName")}
+          attendeeId={row.original.id}
+          field="lastName"
+          placeholder="Last name"
+        />
+      ),
       meta: {
         label: "Last Name",
         placeholder: "Search last name...",
@@ -91,12 +140,41 @@ export function getCheckInTableColumns(): ColumnDef<Attendee>[] {
       header: ({ column }) => (
         <DataTableColumnHeader column={column} label="Email" />
       ),
+      cell: ({ row }) => (
+        <EditableAttendeeCell
+          value={row.getValue("email")}
+          attendeeId={row.original.id}
+          field="email"
+          placeholder="email@example.com"
+        />
+      ),
       meta: {
         label: "Email",
         placeholder: "Search email...",
         variant: "text",
       },
       enableColumnFilter: true,
+    },
+    {
+      id: "source",
+      header: "Source",
+      cell: ({ row }) => {
+        const attendee = row.original;
+
+        if (attendee.manuallyAdded) {
+          return <Badge variant="secondary">Manual</Badge>;
+        }
+
+        if (attendee.locallyModified) {
+          return <Badge variant="outline">Edited</Badge>;
+        }
+
+        return null;
+      },
+      enableSorting: false,
+      meta: {
+        className: "hidden md:table-cell",
+      } as any,
     },
     {
       id: "checkedIn",
@@ -146,6 +224,18 @@ export function getCheckInTableColumns(): ColumnDef<Attendee>[] {
       enableSorting: false,
       meta: {
         className: "hidden md:table-cell",
+      } as any,
+    },
+    {
+      id: "row-actions",
+      cell: ({ row }) => (
+        <AttendeeActionsCell
+          attendee={row.original}
+          onDelete={handlers.onDelete}
+        />
+      ),
+      meta: {
+        className: "w-[50px]",
       } as any,
     },
     {

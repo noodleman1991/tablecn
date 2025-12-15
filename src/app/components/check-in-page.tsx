@@ -25,6 +25,7 @@ import { CheckInTable } from "./check-in-table";
 import { toast } from "sonner";
 import { getPastEvents, refreshAttendeesForEvent, getSyncCacheAge } from "../actions";
 import { cn } from "@/lib/utils";
+import { AddManualAttendeeDialog } from "./add-manual-attendee-dialog";
 
 // Cache configuration
 const PAST_EVENTS_CACHE_KEY = "tablecn_past_events";
@@ -201,8 +202,11 @@ export function CheckInPage({
                 return;
               }
               setSelectedEventId(value);
-              router.push(`/?eventId=${value}`);
-              // router.refresh() is not needed - Next.js automatically re-fetches with new query param
+              // Preserve existing query params (perPage, filters, etc.) when changing events
+              const params = new URLSearchParams(searchParams.toString());
+              params.set('eventId', value);
+              params.set('page', '1'); // Reset to page 1 for new event
+              router.push(`/?${params.toString()}`);
             }}
           >
             <SelectTrigger className="w-full md:w-[600px]">
@@ -300,6 +304,7 @@ export function CheckInPage({
                 })()}
               </div>
               <div className="flex gap-2">
+                <AddManualAttendeeDialog eventId={selectedEvent.id} />
                 {selectedEvent && (() => {
                   const eventDate = new Date(selectedEvent.eventDate);
                   const today = new Date();

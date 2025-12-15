@@ -351,3 +351,229 @@ export async function getSyncCacheAge(eventId: string): Promise<number | null> {
   const cacheKey = `sync:event:${eventId}`;
   return await getCacheAge(cacheKey);
 }
+
+/**
+ * Helper: Upsert member record
+ */
+async function upsertMemberHelper(
+  email: string,
+  firstName: string,
+  lastName: string,
+) {
+  const existing = await db
+    .select()
+    .from(members)
+    .where(eq(members.email, email))
+    .limit(1);
+
+  const existingMember = existing[0];
+  if (!existingMember) {
+    // Create new member
+    await db.insert(members).values({
+      email,
+      firstName,
+      lastName,
+      isActiveMember: false,
+      totalEventsAttended: 0,
+    });
+  } else {
+    // Update name if provided and different
+    if (firstName || lastName) {
+      await db
+        .update(members)
+        .set({
+          firstName: firstName || existingMember.firstName,
+          lastName: lastName || existingMember.lastName,
+        })
+        .where(eq(members.id, existingMember.id));
+    }
+  }
+}
+
+/**
+ * Create a manual attendee (door purchase)
+ * Auto-creates member record
+ */
+export async function createManualAttendee(data: {
+  eventId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  checkedIn: boolean;
+}) {
+  "use server";
+
+  const normalizedEmail = data.email.toLowerCase().trim();
+
+  // Check for duplicate
+  const existing = await db
+    .select()
+    .from(attendees)
+    .where(
+      and(
+        eq(attendees.eventId, data.eventId),
+        eq(attendees.email, normalizedEmail)
+      )
+    )
+    .limit(1);
+
+  if (existing.length > 0) {
+    throw new Error("This email is already registered for this event");
+  }
+
+  // 1. Create attendee record
+  const newAttendee = await db
+    .insert(attendees)
+    .values({
+      eventId: data.eventId,
+      email: normalizedEmail,
+      firstName: data.firstName.trim(),
+      lastName: data.lastName.trim(),
+      woocommerceOrderId: null, // Manual entry
+      manuallyAdded: true,
+      locallyModified: false,
+      checkedIn: data.checkedIn,
+      checkedInAt: data.checkedIn ? new Date() : null,
+    })
+    .returning();
+
+  // 2. Auto-create/update member record
+  await upsertMemberHelper(
+    normalizedEmail,
+    data.firstName.trim(),
+    data.lastName.trim()
+  );
+
+  revalidatePath("/");
+
+  return {
+    success: true,
+    attendee: newAttendee[0],
+  };
+}
+
+/**
+ * Update attendee details with smart member merging
+ * Sets locallyModified flag to protect from WooCommerce sync overwrites
+ */
+export async function updateAttendeeDetails(
+  attendeeId: string,
+  field: "email" | "firstName" | "lastName",
+  value: string
+) {
+  "use server";
+
+  const normalizedValue = field === "email" ? value.toLowerCase().trim() : value.trim();
+
+  // Get current attendee
+  const [currentAttendee] = await db
+    .select()
+    .from(attendees)
+    .where(eq(attendees.id, attendeeId))
+    .limit(1);
+
+  if (!currentAttendee) {
+    throw new Error("Attendee not found");
+  }
+
+  // Check if email is changing
+  const emailChanged = field === "email" && normalizedValue !== currentAttendee.email;
+
+  if (emailChanged) {
+    // Check if new email already exists in members table
+    const [existingMember] = await db
+      .select()
+      .from(members)
+      .where(eq(members.email, normalizedValue))
+      .limit(1);
+
+    if (existingMember) {
+      // Update existing member's data
+      // Don't create duplicate member
+      console.log(
+        `[update-attendee] Email ${normalizedValue} exists in members, updating that member's record`
+      );
+    } else {
+      // Create new member record for new email
+      await upsertMemberHelper(
+        normalizedValue,
+        currentAttendee.firstName || "",
+        currentAttendee.lastName || ""
+      );
+    }
+  }
+
+  // Update attendee record
+  await db
+    .update(attendees)
+    .set({
+      [field]: normalizedValue,
+      locallyModified: true, // Mark as edited
+    })
+    .where(eq(attendees.id, attendeeId));
+
+  revalidatePath("/");
+
+  return { success: true };
+}
+
+/**
+ * Delete an attendee record
+ */
+export async function deleteAttendee(attendeeId: string) {
+  "use server";
+
+  await db.delete(attendees).where(eq(attendees.id, attendeeId));
+
+  revalidatePath("/");
+
+  return { success: true };
+}
+
+/**
+ * Merge two attendee records
+ * Keeps primary attendee, transfers check-in status from secondary if needed, then deletes secondary
+ */
+export async function mergeAttendeeRecords(data: {
+  primaryAttendeeId: string;
+  secondaryAttendeeId: string;
+}) {
+  "use server";
+
+  const { primaryAttendeeId, secondaryAttendeeId } = data;
+
+  // Get both attendees
+  const [primary] = await db
+    .select()
+    .from(attendees)
+    .where(eq(attendees.id, primaryAttendeeId))
+    .limit(1);
+
+  const [secondary] = await db
+    .select()
+    .from(attendees)
+    .where(eq(attendees.id, secondaryAttendeeId))
+    .limit(1);
+
+  if (!primary || !secondary) {
+    throw new Error("One or both attendees not found");
+  }
+
+  // Keep primary's data, but preserve check-in status if secondary was checked in
+  if (secondary.checkedIn && !primary.checkedIn) {
+    await db
+      .update(attendees)
+      .set({
+        checkedIn: true,
+        checkedInAt: secondary.checkedInAt,
+      })
+      .where(eq(attendees.id, primaryAttendeeId));
+  }
+
+  // Delete secondary attendee
+  await db.delete(attendees).where(eq(attendees.id, secondaryAttendeeId));
+
+  revalidatePath("/");
+
+  return { success: true };
+}

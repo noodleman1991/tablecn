@@ -144,7 +144,8 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
   const onPaginationChange = React.useCallback(
     (updaterOrValue: Updater<PaginationState>) => {
       if (typeof updaterOrValue === "function") {
-        const newPagination = updaterOrValue(pagination);
+        // Use current page/perPage from hook state, not stale closure
+        const newPagination = updaterOrValue({ pageIndex: page - 1, pageSize: perPage });
         void setPage(newPagination.pageIndex + 1);
         void setPerPage(newPagination.pageSize);
       } else {
@@ -152,7 +153,7 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
         void setPerPage(updaterOrValue.pageSize);
       }
     },
-    [setPage, setPerPage],
+    [page, perPage, setPage, setPerPage],
   );
 
   const columnIds = React.useMemo(() => {
