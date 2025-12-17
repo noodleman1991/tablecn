@@ -61,6 +61,11 @@ export function getMembersTableColumns(
           placeholder="First name"
         />
       ),
+      sortingFn: (rowA, rowB, columnId) => {
+        const a = (rowA.getValue(columnId) as string | null) ?? "";
+        const b = (rowB.getValue(columnId) as string | null) ?? "";
+        return a.toLowerCase().localeCompare(b.toLowerCase());
+      },
       meta: {
         label: "First Name",
         placeholder: "Search first name...",
@@ -83,6 +88,11 @@ export function getMembersTableColumns(
           placeholder="Last name"
         />
       ),
+      sortingFn: (rowA, rowB, columnId) => {
+        const a = (rowA.getValue(columnId) as string | null) ?? "";
+        const b = (rowB.getValue(columnId) as string | null) ?? "";
+        return a.toLowerCase().localeCompare(b.toLowerCase());
+      },
       meta: {
         label: "Last Name",
         placeholder: "Search last name...",
