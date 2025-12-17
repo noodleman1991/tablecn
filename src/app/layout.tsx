@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 
-import { SiteHeader } from "@/components/layouts/site-header";
+import { ConditionalSiteHeader } from "@/components/layouts/conditional-site-header";
 import { StackProvider, StackTheme } from "@stackframe/stack";
 import { stackClientApp } from "../stack/client";
 import { ThemeProvider } from "@/components/providers";
@@ -14,7 +14,7 @@ import "@/styles/globals.css";
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Toaster } from "@/components/ui/sonner";
-import { fontMono, fontSans } from "@/lib/fonts";
+import { fontMono, fontSans, feijoaDisplay, obviouslyRegular, obviouslySemiBold } from "@/lib/fonts";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -74,6 +74,9 @@ export default function RootLayout({ children }: React.PropsWithChildren) {
           "min-h-screen bg-background font-sans antialiased",
           fontSans.variable,
           fontMono.variable,
+          feijoaDisplay.variable,
+          obviouslyRegular.variable,
+          obviouslySemiBold.variable,
         )}
       >
         <StackProvider app={stackClientApp}>
@@ -88,7 +91,7 @@ export default function RootLayout({ children }: React.PropsWithChildren) {
               disableTransitionOnChange
             >
               <div className="relative flex min-h-screen flex-col">
-                <SiteHeader />
+                <ConditionalSiteHeader />
                 <main className="flex-1">{children}</main>
               </div>
               <TailwindIndicator />

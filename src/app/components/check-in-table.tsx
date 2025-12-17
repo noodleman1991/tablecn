@@ -45,6 +45,8 @@ export function CheckInTable({ attendees }: CheckInTableProps) {
     enableRowSelection: true,
     getRowId: (row) => row.id,
     manualPagination: false, // Use client-side pagination
+    manualSorting: false, // Enable client-side sorting
+    manualFiltering: false, // Enable client-side filtering
   });
 
   const selectedRows = table.getFilteredSelectedRowModel().rows;

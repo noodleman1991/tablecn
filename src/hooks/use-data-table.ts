@@ -178,7 +178,7 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
         setSorting(updaterOrValue as ExtendedColumnSort<TData>[]);
       }
     },
-    [setSorting],
+    [sorting, setSorting],
   );
 
   const filterableColumns = React.useMemo(() => {
