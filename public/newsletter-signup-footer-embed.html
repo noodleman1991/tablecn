@@ -3,16 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign up to the Kairos events newsletter</title>
+    <title>Newsletter Signup</title>
     <style>
-        @font-face {
-            font-family: 'Feijoa Display';
-            src: url('fonts/Feijoa_Display.otf') format('opentype');
-            font-weight: 400;
-            font-style: normal;
-            font-display: swap;
-        }
-
         @font-face {
             font-family: 'Obviously';
             src: url('fonts/Obviously-Regular.otf') format('opentype');
@@ -29,46 +21,46 @@
             font-display: swap;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
+        /* Scoped reset - only affects this form wrapper */
+        #kairos-newsletter-footer-form,
+        #kairos-newsletter-footer-form * {
             box-sizing: border-box;
         }
 
-        body {
+        div#kairos-newsletter-footer-form {
+            margin: 0;
+            padding: 0;
             font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-
-        .newsletter-container {
-            background-color: rgb(101, 30, 29);
-            padding: 60px 40px;
-            border-radius: 8px;
-            max-width: 600px;
+            background-color: transparent;
             width: 100%;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
 
-        .newsletter-title {
-            font-family: 'Feijoa Display', Georgia, serif;
-            font-weight: 400;
-            font-size: 42px;
-            color: white;
-            text-align: center;
-            margin-bottom: 40px;
-            line-height: 1.2;
+        #kairos-newsletter-footer-form .newsletter-container {
+            background-color: transparent;
+            padding: 0;
+            max-width: 750px;
+            width: 100%;
+            margin: 5px auto 0 auto;
+            box-shadow: none;
         }
 
-        .form-group {
-            margin-bottom: 24px;
+        /* Grid layout with high specificity */
+        #kairos-newsletter-footer-form .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 0 0 16px 0;
+            padding: 0;
         }
 
-        .form-input {
+        #kairos-newsletter-footer-form .form-group {
+            margin: 0 0 16px 0;
+            padding: 0;
+        }
+
+        /* Highly specific input styling to override Divi */
+        #kairos-newsletter-footer-form input.form-input[type="text"],
+        #kairos-newsletter-footer-form input.form-input[type="email"] {
             width: 100%;
             padding: 16px 20px;
             font-family: 'Obviously', Arial, sans-serif;
@@ -78,45 +70,75 @@
             border-radius: 4px;
             background-color: white;
             color: #333;
+            box-shadow: none;
+            outline: none;
+            max-width: none;
+            line-height: normal;
+            height: auto;
+            margin: 0;
         }
 
-        .form-input::placeholder {
-            color: rgb(101, 30, 29);
-            opacity: 0.7;
+        #kairos-newsletter-footer-form input.form-input::placeholder {
+            color: #666;
+            opacity: 1;
         }
 
-        .submit-button {
+        /* Highly specific button styling */
+        #kairos-newsletter-footer-form button.submit-button {
             width: 100%;
             padding: 18px 20px;
             font-family: 'Obviously Semibold', Arial, sans-serif;
             font-weight: 600;
-            font-size: 18px;
+            font-size: 19.8px;
             color: white;
             background-color: rgb(101, 30, 29);
-            border: 2px solid white;
+            border: none;
             border-radius: 4px;
             cursor: pointer;
             transition: all 0.3s ease;
+            box-shadow: none;
+            text-transform: none;
+            letter-spacing: normal;
+            max-width: none;
+            line-height: normal;
+            height: auto;
+            margin: 0;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
-        .submit-button:hover {
+        #kairos-newsletter-footer-form button.submit-button::after {
+            content: '›';
+            font-size: 24px;
+            opacity: 0;
+            transform: translateX(-10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        #kairos-newsletter-footer-form button.submit-button:hover {
             background-color: rgb(121, 40, 39);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
 
-        .submit-button:active {
+        #kairos-newsletter-footer-form button.submit-button:hover::after {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        #kairos-newsletter-footer-form button.submit-button:active {
             transform: translateY(0);
         }
 
-        .submit-button:disabled {
+        #kairos-newsletter-footer-form button.submit-button:disabled {
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
         }
 
-        .message {
-            margin-top: 24px;
+        #kairos-newsletter-footer-form .message {
+            margin: 16px 0 0 0;
             padding: 16px;
             border-radius: 4px;
             text-align: center;
@@ -125,44 +147,52 @@
             display: none;
         }
 
-        .message.success {
+        #kairos-newsletter-footer-form .message.success {
             background-color: #d4edda;
             color: #155724;
             border: 1px solid #c3e6cb;
+            display: block;
         }
 
-        .message.error {
+        #kairos-newsletter-footer-form .message.error {
             background-color: #f8d7da;
             color: #721c24;
             border: 1px solid #f5c6cb;
+            display: block;
         }
 
-        .message.visible {
+        #kairos-newsletter-footer-form .message.visible {
             display: block;
         }
 
         /* Tablet */
-        @media (max-width: 768px) {
+        @media (max-width: 900px) {
             .newsletter-container {
-                padding: 50px 32px;
-                max-width: 500px;
-            }
-
-            .newsletter-title {
-                font-size: 36px;
-                margin-bottom: 32px;
+                max-width: 600px;
             }
         }
 
-        /* Mobile */
-        @media (max-width: 600px) {
+        /* Mobile landscape / Small tablet */
+        @media (max-width: 768px) {
             .newsletter-container {
-                padding: 40px 24px;
+                max-width: 500px;
+                padding: 20px 0;
             }
 
-            .newsletter-title {
-                font-size: 28px;
-                margin-bottom: 28px;
+            .form-row {
+                gap: 12px;
+            }
+
+            .form-group {
+                margin-bottom: 12px;
+            }
+        }
+
+        /* Mobile portrait */
+        @media (max-width: 600px) {
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 12px;
             }
 
             .form-input {
@@ -174,10 +204,6 @@
                 padding: 16px;
                 font-size: 16px;
             }
-
-            .form-group {
-                margin-bottom: 20px;
-            }
         }
 
         /* Small mobile */
@@ -187,12 +213,7 @@
             }
 
             .newsletter-container {
-                padding: 32px 20px;
-            }
-
-            .newsletter-title {
-                font-size: 24px;
-                margin-bottom: 24px;
+                padding: 16px 0;
             }
 
             .form-input {
@@ -206,17 +227,21 @@
             }
 
             .form-group {
-                margin-bottom: 16px;
+                margin-bottom: 10px;
+            }
+
+            .form-row {
+                gap: 10px;
+                margin-bottom: 10px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="newsletter-container">
-        <h1 class="newsletter-title">Sign up to the Kairos events newsletter</h1>
-
-        <form id="newsletterForm" novalidate>
-            <div class="form-group">
+    <div id="kairos-newsletter-footer-form">
+        <div class="newsletter-container">
+            <form id="newsletterForm" novalidate>
+            <div class="form-row">
                 <input
                     type="text"
                     id="firstName"
@@ -226,9 +251,6 @@
                     required
                     autocomplete="given-name"
                 >
-            </div>
-
-            <div class="form-group">
                 <input
                     type="text"
                     id="lastName"
@@ -258,6 +280,7 @@
         </form>
 
         <div id="message" class="message"></div>
+        </div>
     </div>
 
     <script>
@@ -269,13 +292,28 @@
             const messageDiv = document.getElementById('message');
             const FORM_ENDPOINT = 'https://app.loops.so/api/newsletter-form/cmj2q3e7e02af230iu03ul7kf';
 
+            let messageTimeout;
+
             function showMessage(text, type) {
+                // Clear any existing timeout
+                if (messageTimeout) {
+                    clearTimeout(messageTimeout);
+                }
+
                 messageDiv.textContent = text;
                 messageDiv.className = 'message ' + type + ' visible';
+
+                // Auto-hide after 5 seconds
+                messageTimeout = setTimeout(function() {
+                    hideMessage();
+                }, 5000);
             }
 
             function hideMessage() {
                 messageDiv.className = 'message';
+                if (messageTimeout) {
+                    clearTimeout(messageTimeout);
+                }
             }
 
             function validateEmail(email) {
@@ -338,6 +376,11 @@
                     if (data.success) {
                         showMessage('Success! Please check your email to confirm your subscription.', 'success');
                         form.reset();
+                        // Re-enable button after 5 seconds
+                        setTimeout(function() {
+                            submitButton.disabled = false;
+                            submitButton.textContent = 'Subscribe';
+                        }, 5000);
                     } else {
                         showMessage(data.message || 'Something went wrong. Please try again.', 'error');
                         submitButton.disabled = false;
