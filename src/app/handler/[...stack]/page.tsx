@@ -3,7 +3,7 @@ import { StackHandler } from "@stackframe/stack";
 
 export default function Handler() {
   return (
-    <Suspense>
+    <Suspense fallback={null}>
         <StackHandler fullPage />;
     </Suspense>
   );

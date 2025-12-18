@@ -91,7 +91,9 @@ export default function RootLayout({ children }: React.PropsWithChildren) {
               disableTransitionOnChange
             >
               <div className="relative flex min-h-screen flex-col">
-                <ConditionalSiteHeader />
+                  <Suspense fallback={null}>
+                    <ConditionalSiteHeader />
+                  </Suspense>
                 <main className="flex-1">{children}</main>
               </div>
               <TailwindIndicator />
