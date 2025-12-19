@@ -63,7 +63,7 @@ export function NewsletterSignupForm() {
       formData.append("firstName", data.firstName);
       formData.append("lastName", data.lastName);
       formData.append("email", data.email);
-      formData.append("source", "Website Signup");
+      formData.append("source", "Mailchimp Resubscription Dec 2025");
 
       const response = await fetch(LOOPS_ENDPOINT, {
         method: "POST",
@@ -76,6 +76,18 @@ export function NewsletterSignupForm() {
       const result = (await response.json()) as LoopsAPIResponse;
 
       if (response.ok && result.success) {
+        // Track re-subscription in background (don't block success flow)
+        fetch("/api/loops/track-resubscription", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email: data.email }),
+        }).catch((error) => {
+          // Silently log error - don't show to user
+          console.error("Failed to track resubscription:", error);
+        });
+
         setIsSuccess(true);
         toast.success("Success! Check your email to confirm your subscription.");
         form.reset();
