@@ -359,7 +359,7 @@
                 formData.append('firstName', firstName);
                 formData.append('lastName', lastName);
                 formData.append('email', email);
-                formData.append('source', 'Newsletter Signup Form');
+                formData.append('source', 'Mailchimp Resubscription Dec 2025');
 
                 // Submit to Loops.so
                 fetch(FORM_ENDPOINT, {
@@ -374,6 +374,17 @@
                 })
                 .then(function(data) {
                     if (data.success) {
+                        // Track re-subscription in background
+                        fetch('/api/loops/track-resubscription', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ email: email })
+                        }).catch(function(error) {
+                            console.error('Failed to track resubscription:', error);
+                        });
+
                         showMessage('Success! Please check your email to confirm your subscription.', 'success');
                         form.reset();
                         // Re-enable button after 5 seconds
