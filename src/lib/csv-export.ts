@@ -4,6 +4,10 @@
 
 import type { Attendee, Member, Event } from "@/db/schema";
 import { format } from "date-fns";
+import {
+  groupAttendeesByPerson,
+  getCheckInStatusDisplay,
+} from "./attendee-grouping";
 
 /**
  * Convert data to CSV format
@@ -27,6 +31,7 @@ function arrayToCSV(data: string[][]): string {
 
 /**
  * Export event door list to CSV
+ * Uses shared grouping utility to ensure consistency with UI table
  */
 export function exportDoorListToCSV(
   event: Event,
@@ -36,21 +41,36 @@ export function exportDoorListToCSV(
     "Email",
     "First Name",
     "Last Name",
+    "Tickets",
     "WooCommerce Order ID",
     "Checked In",
     "Checked In At",
   ];
 
-  const rows = attendees.map((attendee) => [
-    attendee.email,
-    attendee.firstName || "",
-    attendee.lastName || "",
-    attendee.woocommerceOrderId || "",
-    attendee.checkedIn ? "Yes" : "No",
-    attendee.checkedInAt
-      ? format(new Date(attendee.checkedInAt), "PPpp")
-      : "",
-  ]);
+  // Use shared grouping utility (same logic as UI table)
+  const grouped = groupAttendeesByPerson(attendees);
+
+  // Create CSV rows from grouped data
+  const rows = grouped.map((group) => {
+    const orderIds = group.orderIds.join(", ");
+    const checkedInStatus = getCheckInStatusDisplay(group);
+
+    // Format most recent check-in time
+    let checkedInAt = "";
+    if (group.mostRecentCheckIn) {
+      checkedInAt = format(new Date(group.mostRecentCheckIn), "PPpp");
+    }
+
+    return [
+      group.email,
+      group.firstName || "",
+      group.lastName || "",
+      group.ticketCount.toString(),
+      orderIds,
+      checkedInStatus,
+      checkedInAt,
+    ];
+  });
 
   return arrayToCSV([headers, ...rows]);
 }

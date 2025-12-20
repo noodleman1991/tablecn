@@ -55,7 +55,7 @@ export const events = pgTable("events", {
     .primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   eventDate: timestamp("event_date").notNull(),
-  woocommerceProductId: varchar("woocommerce_product_id", { length: 128 }),
+  woocommerceProductId: varchar("woocommerce_product_id", { length: 128 }).unique(),
   mergedIntoEventId: varchar("merged_into_event_id", { length: 30 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")

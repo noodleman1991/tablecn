@@ -1,0 +1,222 @@
+"use client";
+
+import * as React from "react";
+import { flexRender } from "@tanstack/react-table";
+import { DataTable } from "@/components/data-table/data-table";
+import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
+import { DataTablePagination } from "@/components/data-table/data-table-pagination";
+import { useDataTable } from "@/hooks/use-data-table";
+import type { Attendee } from "@/db/schema";
+import { getCheckInTableColumns, type CheckInTableHandlers, renderSubRow } from "./check-in-table-columns-grouped";
+import { groupAttendeesByPerson, type GroupedAttendee } from "@/lib/attendee-grouping";
+import { deleteAttendee } from "@/app/actions";
+import { AttendeeDeleteDialog } from "./attendee-delete-dialog";
+import { AttendeeMergeDialog } from "./attendee-merge-dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+
+interface CheckInTableProps {
+  attendees: Attendee[];
+}
+
+export function CheckInTable({ attendees }: CheckInTableProps) {
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [mergeDialogOpen, setMergeDialogOpen] = React.useState(false);
+  const [selectedAttendee, setSelectedAttendee] = React.useState<Attendee | null>(null);
+  const [isDeletingBulk, setIsDeletingBulk] = React.useState(false);
+
+  // Expanded rows state
+  const [expandedRows, setExpandedRows] = React.useState<Set<string>>(new Set());
+
+  // Transform attendees into grouped data
+  const groupedAttendees = React.useMemo(
+    () => groupAttendeesByPerson(attendees),
+    [attendees]
+  );
+
+  const toggleRow = React.useCallback((id: string) => {
+    setExpandedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const handlers = React.useMemo<CheckInTableHandlers>(() => ({
+    onDelete: (attendee: Attendee) => {
+      setSelectedAttendee(attendee);
+      setDeleteDialogOpen(true);
+    },
+    expandedRows,
+    toggleRow,
+  }), [expandedRows, toggleRow]);
+
+  const columns = React.useMemo(() => getCheckInTableColumns(handlers), [handlers]);
+
+  const { table } = useDataTable({
+    data: groupedAttendees,
+    columns,
+    initialState: {
+      pagination: { pageIndex: 0, pageSize: 20 },
+      sorting: [{ id: "lastName", desc: false }],
+      columnVisibility: {},
+    },
+    enableAdvancedFilter: false,
+    enableRowSelection: true,
+    getRowId: (row) => row.id,
+    manualPagination: false,
+    manualSorting: false,
+    manualFiltering: false,
+  });
+
+  const selectedRows = table.getFilteredSelectedRowModel().rows;
+  const selectedGroupedAttendees = selectedRows.map((row) => row.original);
+
+  // Flatten grouped attendees back to individual attendees for bulk operations
+  const selectedAttendees = selectedGroupedAttendees.flatMap(g => g.tickets);
+
+  const handleBulkMerge = () => {
+    if (selectedAttendees.length < 2) {
+      toast.error("Please select at least 2 attendees to merge");
+      return;
+    }
+    setMergeDialogOpen(true);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedAttendees.length === 0) {
+      toast.error("Please select attendees to delete");
+      return;
+    }
+
+    const totalTickets = selectedAttendees.length;
+    const message = totalTickets === selectedGroupedAttendees.length
+      ? `Are you sure you want to delete ${totalTickets} attendee(s)?`
+      : `Are you sure you want to delete ${selectedGroupedAttendees.length} person(s) with ${totalTickets} total ticket(s)?`;
+
+    if (!confirm(message)) {
+      return;
+    }
+
+    setIsDeletingBulk(true);
+    try {
+      for (const attendee of selectedAttendees) {
+        await deleteAttendee(attendee.id);
+      }
+      toast.success(`Successfully deleted ${totalTickets} ticket(s)`);
+      table.resetRowSelection();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete attendees"
+      );
+    } finally {
+      setIsDeletingBulk(false);
+    }
+  };
+
+  const handleMergeComplete = () => {
+    table.resetRowSelection();
+  };
+
+  return (
+    <>
+      {selectedGroupedAttendees.length > 0 && (
+        <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-3 mb-4">
+          <Badge variant="secondary" className="font-normal">
+            {selectedGroupedAttendees.length} selected ({selectedAttendees.length} total tickets)
+          </Badge>
+          <div className="flex gap-2 ml-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleBulkMerge}
+              disabled={selectedAttendees.length < 2 || isDeletingBulk}
+            >
+              Merge Selected
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleBulkDelete}
+              disabled={isDeletingBulk}
+            >
+              {isDeletingBulk ? "Deleting..." : "Delete Selected"}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Custom table with expandable rows */}
+      <div className="flex w-full flex-col gap-2.5 overflow-auto">
+        <DataTableToolbar table={table} />
+        <div className="overflow-hidden rounded-md border">
+          <table className="w-full caption-bottom text-sm">
+            <thead className="[&_tr]:border-b">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id} className="border-b transition-colors hover:bg-muted/50">
+                  {headerGroup.headers.map((header) => (
+                    <th
+                      key={header.id}
+                      className="h-12 px-4 text-left align-middle font-medium text-muted-foreground"
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(header.column.columnDef.header, header.getContext())}
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody className="[&_tr:last-child]:border-0">
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <React.Fragment key={row.id}>
+                    <tr
+                      data-state={row.getIsSelected() && "selected"}
+                      className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <td key={cell.id} className="p-4 align-middle">
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </td>
+                      ))}
+                    </tr>
+                    {/* Render sub-rows if expanded */}
+                    {renderSubRow(row, handlers)}
+                  </React.Fragment>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    No results.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <DataTablePagination table={table} />
+      </div>
+
+      <AttendeeDeleteDialog
+        attendee={selectedAttendee}
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+      />
+      <AttendeeMergeDialog
+        attendees={selectedAttendees}
+        open={mergeDialogOpen}
+        onOpenChange={setMergeDialogOpen}
+        onMergeComplete={handleMergeComplete}
+      />
+    </>
+  );
+}

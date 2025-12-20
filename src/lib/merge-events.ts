@@ -2,7 +2,7 @@ import "server-only";
 
 import { db } from "@/db";
 import { attendees, events, type Event } from "@/db/schema";
-import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, sql, count } from "drizzle-orm";
 import { format } from "date-fns";
 import { recalculateMembershipByEmail } from "@/lib/calculate-membership";
 import { invalidateCache } from "@/lib/cache-utils";
@@ -258,10 +258,24 @@ export async function mergeEventGroup(group: DuplicateEventGroup): Promise<Merge
   console.log(`[merge-events] Merging group: ${group.sharedPrefix} on ${dateStr}`);
 
   try {
+    // Query ACTUAL attendee counts for each event (don't trust stale attendeeCount field)
+    const eventsWithCounts = await Promise.all(
+      group.events.map(async (event) => {
+        const result = await db
+          .select({ count: count() })
+          .from(attendees)
+          .where(eq(attendees.eventId, event.id));
+        return {
+          ...event,
+          actualAttendeeCount: result[0]?.count || 0,
+        };
+      })
+    );
+
     // Sort events: most attendees first, then by product ID
-    const sortedEvents = [...group.events].sort((a, b) => {
-      if (b.attendeeCount !== a.attendeeCount) {
-        return b.attendeeCount - a.attendeeCount;
+    const sortedEvents = [...eventsWithCounts].sort((a, b) => {
+      if (b.actualAttendeeCount !== a.actualAttendeeCount) {
+        return b.actualAttendeeCount - a.actualAttendeeCount;  // Use REAL count
       }
       return (a.woocommerceProductId || "").localeCompare(b.woocommerceProductId || "");
     });
@@ -275,10 +289,10 @@ export async function mergeEventGroup(group: DuplicateEventGroup): Promise<Merge
 
     console.log(`[merge-events] 🔀 Merging group: ${group.sharedPrefix} on ${dateStr}`);
     console.log(`[merge-events]   Primary: "${primary.name}"`);
-    console.log(`[merge-events]     └─ ${primary.attendeeCount} attendees, product ${primary.woocommerceProductId}`);
+    console.log(`[merge-events]     └─ ${primary.actualAttendeeCount} attendees (ACTUAL), product ${primary.woocommerceProductId}`);
     console.log(`[merge-events]   Secondary events (${secondaries.length}):`);
     secondaries.forEach(e => {
-      console.log(`[merge-events]     └─ "${e.name}" (${e.attendeeCount} attendees, product ${e.woocommerceProductId})`);
+      console.log(`[merge-events]     └─ "${e.name}" (${e.actualAttendeeCount} attendees ACTUAL, product ${e.woocommerceProductId})`);
     });
 
     // Create merged name
@@ -314,11 +328,14 @@ export async function mergeEventGroup(group: DuplicateEventGroup): Promise<Merge
         .set({ name: mergedName })
         .where(eq(events.id, primary.id));
 
-      // 4. Mark secondary events as merged (DO NOT DELETE)
-      await tx
-        .update(events)
-        .set({ mergedIntoEventId: primary.id })
-        .where(inArray(events.id, secondaryIds));
+      // 4. DELETE secondary events (unique constraint prevents duplicates now)
+      if (secondaryIds.length > 0) {
+        await tx
+          .delete(events)
+          .where(inArray(events.id, secondaryIds));
+
+        console.log(`[merge-events]   🗑️  Deleted ${secondaryIds.length} secondary events`);
+      }
     });
 
     console.log(`[merge-events] ✅ Transaction committed successfully`);

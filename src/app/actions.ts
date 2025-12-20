@@ -78,9 +78,14 @@ export async function getEventById(eventId: string) {
  */
 export async function getAttendeesForEvent(eventId: string) {
   // Sync attendees if event is today or in the future
-  await syncAttendeesForEvent(eventId);
+  const syncResult = await syncAttendeesForEvent(eventId);
 
-  // Return attendees from database
+  // If sync returned cached attendees, use them
+  if (syncResult.reason === 'cached' && syncResult.cachedAttendees) {
+    return syncResult.cachedAttendees;
+  }
+
+  // Otherwise, fresh sync happened - query database
   return await db
     .select()
     .from(attendees)
