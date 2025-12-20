@@ -21,7 +21,7 @@ import {
   generateDoorListFilename,
   emailCSVViaServer,
 } from "@/lib/csv-export";
-import { CheckInTable } from "./check-in-table";
+import { CheckInTable } from "./check-in-table-grouped";
 import { toast } from "sonner";
 import { getPastEvents, refreshAttendeesForEvent, getSyncCacheAge } from "../actions";
 import { cn } from "@/lib/utils";

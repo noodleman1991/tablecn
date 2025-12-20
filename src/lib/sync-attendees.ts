@@ -1,10 +1,10 @@
 import "server-only";
 
 import { db } from "@/db";
-import { attendees, events, members } from "@/db/schema";
+import { attendees, events, members, type Attendee } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getOrdersForProductCached } from "./woocommerce";
-import { getCacheAge, setCachedData } from "./cache-utils";
+import { getCacheAge, setCachedData, getCachedData } from "./cache-utils";
 import { toZonedTime } from "date-fns-tz";
 
 /**
@@ -77,7 +77,6 @@ function extractTicketAttendees(
     const ticketIdMeta = lineItem.meta_data?.find((m: any) => m.key === ticketIdKey);
     const ticketId = ticketIdMeta?.value || `${lineItem.id}-${index}`;
 
-    console.log(`[DEBUG] Extracted ticket: uid=${uid}, ticketId=${ticketId}, email=${email}`);
 
     attendees.push({
       firstName,
@@ -179,10 +178,20 @@ export async function syncAttendeesForEvent(
     console.log(
       `[sync-attendees] Using cached sync result for ${eventData.name} (${minutesOld} minutes old)`,
     );
+
+    // Retrieve cached data including attendees
+    const cachedData = await getCachedData<{
+      created: number;
+      updated: number;
+      timestamp: number;
+      attendees?: Attendee[];
+    }>(cacheKey);
+
     return {
       synced: false,
-      reason: "cached",
+      reason: "cached" as const,
       cacheAgeSeconds: cacheAge,
+      cachedAttendees: cachedData?.attendees,
     };
   }
 
@@ -222,36 +231,6 @@ export async function syncAttendeesForEvent(
 
   // Process each order
   for (const order of orders) {
-    // DEBUG: Enhanced logging to understand WooCommerce data structure
-    console.log(`\n[DEBUG] ===== Processing Order ${order.id} =====`);
-    console.log('[DEBUG] Order number:', order.number);
-    console.log('[DEBUG] Order meta_data keys:', order.meta_data?.map((m: any) => m.key).join(', '));
-    console.log('[DEBUG] Line items count:', order.line_items?.length);
-
-    // Log complete line items structure for analysis
-    order.line_items?.forEach((item: any, idx: number) => {
-      console.log(`[DEBUG] Line item ${idx}:`, {
-        id: item.id,
-        product_id: item.product_id,
-        variation_id: item.variation_id,
-        quantity: item.quantity,
-        name: item.name,
-        meta_keys: item.meta_data?.map((m: any) => m.key) || [],
-      });
-    });
-
-    // Log any ticket-related meta data
-    const ticketMetaKeys = order.meta_data?.filter((m: any) =>
-      m.key.toLowerCase().includes('ticket') ||
-      m.key.toLowerCase().includes('attendee')
-    ) || [];
-    if (ticketMetaKeys.length > 0) {
-      console.log('[DEBUG] Ticket-related meta_data:', ticketMetaKeys.map((m: any) => ({
-        key: m.key,
-        value: typeof m.value === 'object' ? '[object]' : m.value,
-      })));
-    }
-
     // Process line items to get tickets per product
     const relevantLineItems = order.line_items?.filter((item: any) => {
       const itemProductId = item.product_id?.toString();
@@ -268,16 +247,10 @@ export async function syncAttendeesForEvent(
       continue;
     }
 
-    console.log(`[DEBUG] Order ${order.id}: Found ${relevantLineItems.length} matching line items`);
-
     // Process each line item
     for (const lineItem of relevantLineItems) {
-      console.log(`[DEBUG] Processing line item ${lineItem.id} (qty: ${lineItem.quantity})`);
-
       // Extract all tickets from this line item
       const ticketsFromLineItem = extractTicketAttendees(order, lineItem);
-
-      console.log(`[DEBUG] Extracted ${ticketsFromLineItem.length} tickets from line item ${lineItem.id}`);
 
       // Create/update attendee for each ticket
       for (const ticket of ticketsFromLineItem) {
@@ -287,14 +260,20 @@ export async function syncAttendeesForEvent(
           continue;
         }
 
-        // SMART DUPLICATE DETECTION:
-        // 1. First check by ticketId (if we have it and it's not a fallback)
-        // 2. Then check by (eventId + email) to catch WooCommerce data inconsistencies
-        // This prevents duplicates when WooCommerce returns different data structures between syncs
+        // TICKET-BASED DUPLICATE DETECTION
+        // TicketId is the unique identifier - if it exists and matches, it's the same ticket
+        // If ticketId doesn't exist in database, this is a NEW ticket (create it)
+        //
+        // IMPORTANT: Do NOT match by email+name - same person can legitimately buy multiple tickets
+        // Example: maria-goddard@live.co.uk bought ticket 17257 on Nov 4 and ticket 17915 on Dec 6
+        // These are 2 separate purchases, not duplicates!
+        //
+        // Previous bug: We were matching by (email + firstName + lastName) which incorrectly
+        // merged separate ticket purchases for the same person, causing data loss.
 
         let existingAttendee = null;
 
-        // Try to find by ticketId first (most specific)
+        // Only check by ticketId (the unique identifier)
         if (ticket.ticketId && !ticket.ticketId.includes('fallback')) {
           const byTicketId = await db
             .select()
@@ -304,21 +283,8 @@ export async function syncAttendeesForEvent(
           existingAttendee = byTicketId[0];
         }
 
-        // If not found by ticketId, check by (eventId + email)
-        // This catches cases where:
-        // - Same person but different ticketId (WooCommerce API inconsistency)
-        // - Fallback tickets that might duplicate real tickets
-        if (!existingAttendee) {
-          const byEmail = await db
-            .select()
-            .from(attendees)
-            .where(and(
-              eq(attendees.eventId, eventId),
-              eq(attendees.email, ticket.email)
-            ))
-            .limit(1);
-          existingAttendee = byEmail[0];
-        }
+        // If not found by ticketId, this is a NEW ticket → create it
+        // No fallback to email+name matching (that was causing the bug)
 
         if (existingAttendee) {
           // Skip update if locally modified
@@ -339,7 +305,6 @@ export async function syncAttendeesForEvent(
             })
             .where(eq(attendees.id, existingAttendee.id));
 
-          console.log(`[DEBUG] Updated attendee ${existingAttendee.id} (ticket ${ticket.ticketId})`);
           updatedCount++;
         } else {
           // Create new attendee
@@ -354,7 +319,6 @@ export async function syncAttendeesForEvent(
             checkedIn: false,
           });
 
-          console.log(`[DEBUG] Created new attendee (ticket ${ticket.ticketId})`);
           createdCount++;
         }
 
@@ -368,13 +332,21 @@ export async function syncAttendeesForEvent(
     `[sync-attendees] Sync complete: ${createdCount} created, ${updatedCount} updated`,
   );
 
-  // Cache the sync result
+  // Query the synced attendees to cache them
+  const syncedAttendees = await db
+    .select()
+    .from(attendees)
+    .where(eq(attendees.eventId, eventId))
+    .orderBy(attendees.email);
+
+  // Cache the sync result including attendee data
   await setCachedData(
     cacheKey,
     {
       created: createdCount,
       updated: updatedCount,
       timestamp: Date.now(),
+      attendees: syncedAttendees,
     },
     8 * 60 * 60
   );

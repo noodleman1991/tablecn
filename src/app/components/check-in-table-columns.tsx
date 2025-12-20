@@ -184,7 +184,8 @@ export function getCheckInTableColumns(
           return <Badge variant="outline">Edited</Badge>;
         }
 
-        return null;
+        // Show WooCommerce badge for regular synced tickets
+        return <Badge variant="default" className="bg-blue-100 text-blue-800 hover:bg-blue-100">WooCommerce</Badge>;
       },
       enableSorting: false,
       meta: {

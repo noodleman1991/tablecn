@@ -7,6 +7,7 @@ import { eq } from "drizzle-orm";
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const eventId = searchParams.get("eventId");
+  const forceRefresh = searchParams.get("forceRefresh") === "true";
 
   if (!eventId) {
     return NextResponse.json(
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
 
   try {
     // Run the sync
-    const result = await syncAttendeesForEvent(eventId);
+    const result = await syncAttendeesForEvent(eventId, forceRefresh);
 
     // Get the synced attendees
     const syncedAttendees = await db
