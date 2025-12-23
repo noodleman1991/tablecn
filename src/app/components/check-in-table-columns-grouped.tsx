@@ -315,6 +315,9 @@ export function getCheckInTableColumns(
       ),
       enableSorting: false,
       enableHiding: false,
+      meta: {
+        className: "w-[36px] px-1",
+      } as any,
     },
     {
       id: "firstName",
@@ -339,6 +342,7 @@ export function getCheckInTableColumns(
         label: "First Name",
         placeholder: "Search first name...",
         variant: "text",
+        className: "max-w-[120px]",
       },
       enableColumnFilter: true,
     },
@@ -365,6 +369,7 @@ export function getCheckInTableColumns(
         label: "Last Name",
         placeholder: "Search last name...",
         variant: "text",
+        className: "hidden lg:table-cell",
       },
       enableColumnFilter: true,
     },
@@ -391,6 +396,7 @@ export function getCheckInTableColumns(
         label: "Email",
         placeholder: "Search email...",
         variant: "text",
+        className: "hidden xl:table-cell",
       },
       enableColumnFilter: true,
     },
@@ -409,12 +415,19 @@ export function getCheckInTableColumns(
         );
       },
       enableSorting: true,
+      enableHiding: true,
       meta: {
-        className: "w-[80px]",
+        label: "Tickets",
+        className: "hidden",
       } as any,
     },
     {
       id: "source",
+      accessorFn: (row) => {
+        if (row.isManuallyAdded) return "manual";
+        if (row.isLocallyModified) return "edited";
+        return "woocommerce";
+      },
       header: "Source",
       cell: ({ row }) => {
         const grouped = row.original;
@@ -431,8 +444,10 @@ export function getCheckInTableColumns(
         return <Badge variant="default" className="bg-blue-100 text-blue-800 hover:bg-blue-100">WooCommerce</Badge>;
       },
       enableSorting: false,
+      enableHiding: true,
       meta: {
-        className: "hidden md:table-cell",
+        label: "Source",
+        className: "hidden",
       } as any,
     },
     {
@@ -496,8 +511,10 @@ export function getCheckInTableColumns(
         return ids.length > 0 ? ids.join(", ") : "-";
       },
       enableSorting: false,
+      enableHiding: true,
       meta: {
-        className: "hidden md:table-cell",
+        label: "Order ID",
+        className: "hidden",
       } as any,
     },
     {
@@ -513,7 +530,7 @@ export function getCheckInTableColumns(
         );
       },
       meta: {
-        className: "w-[50px]",
+        className: "hidden 2xl:table-cell w-[50px]",
       } as any,
     },
     {
@@ -565,17 +582,21 @@ export function getCheckInTableColumns(
             size="sm"
             variant="outline"
             onClick={handleUndoAll}
-            className="min-h-[44px] min-w-[44px]"
+            className="min-h-[44px] px-2 md:px-4"
           >
-            Undo All
+            <span className="hidden md:inline">Undo All</span>
+            <span className="md:hidden">Undo</span>
           </Button>
         ) : (
           <Button
             size="sm"
             onClick={handleCheckInAll}
-            className="min-h-[44px] min-w-[44px]"
+            className="min-h-[44px] px-2 md:px-4"
           >
-            Check In {grouped.checkedInStatus === "none" ? "All" : "Remaining"}
+            <span className="hidden md:inline">
+              Check In {grouped.checkedInStatus === "none" ? "All" : "Remaining"}
+            </span>
+            <span className="md:hidden">Check</span>
           </Button>
         );
       },

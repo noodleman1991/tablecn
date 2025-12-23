@@ -303,7 +303,7 @@ export function CheckInPage({
                   );
                 })()}
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-2">
                 <AddManualAttendeeDialog eventId={selectedEvent.id} />
                 {selectedEvent && (() => {
                   const eventDate = new Date(selectedEvent.eventDate);
@@ -317,10 +317,11 @@ export function CheckInPage({
                       size="sm"
                       onClick={handleRefresh}
                       disabled={isRefreshing}
-                      className="min-h-[44px] gap-2"
+                      className="min-h-[44px] w-full sm:w-auto gap-2"
                     >
                       <RefreshCw className={cn("size-4", isRefreshing && "animate-spin")} />
-                      {isRefreshing ? "Refreshing..." : "Refresh"}
+                      <span className="sm:hidden">Refresh</span>
+                      <span className="hidden sm:inline">{isRefreshing ? "Refreshing..." : "Refresh"}</span>
                     </Button>
                   );
                 })()}
@@ -333,10 +334,11 @@ export function CheckInPage({
                     downloadCSV(csv, filename);
                     toast.success("CSV downloaded successfully");
                   }}
-                  className="min-h-[44px] gap-2"
+                  className="min-h-[44px] w-full sm:w-auto gap-2"
                 >
                   <Download className="size-4" />
-                  Download CSV
+                  <span className="sm:hidden">CSV</span>
+                  <span className="hidden sm:inline">Download CSV</span>
                 </Button>
                 <Button
                   variant="outline"
@@ -353,10 +355,11 @@ export function CheckInPage({
                       );
                     }
                   }}
-                  className="min-h-[44px] gap-2"
+                  className="min-h-[44px] w-full sm:w-auto gap-2"
                 >
                   <Mail className="size-4" />
-                  Send Email
+                  <span className="sm:hidden">Email</span>
+                  <span className="hidden sm:inline">Send Email</span>
                 </Button>
               </div>
             </CardHeader>

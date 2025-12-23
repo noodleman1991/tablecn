@@ -13,6 +13,7 @@ import { MemberMergeDialog } from "./member-merge-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { DataTableScrollToggle } from "@/components/data-table/data-table-scroll-toggle";
 
 interface MembersTableProps {
   members: Member[];
@@ -24,6 +25,7 @@ export function MembersTable({ members }: MembersTableProps) {
   const [mergeDialogOpen, setMergeDialogOpen] = React.useState(false);
   const [selectedMember, setSelectedMember] = React.useState<Member | null>(null);
   const [isDeletingBulk, setIsDeletingBulk] = React.useState(false);
+  const [horizontalScrollEnabled, setHorizontalScrollEnabled] = React.useState(false);
 
   const handlers = React.useMemo<MembersTableHandlers>(() => ({
     onUpdateMember: async (memberId: string, field: string, value: string) => {
@@ -108,16 +110,18 @@ export function MembersTable({ members }: MembersTableProps) {
   return (
     <>
       {selectedMembers.length > 0 && (
-        <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-3 mb-4">
-          <Badge variant="secondary" className="font-normal">
-            {selectedMembers.length} selected
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 rounded-lg border bg-muted/50 p-3 mb-4">
+          <Badge variant="secondary" className="font-normal text-xs sm:text-sm">
+            <span className="sm:hidden">{selectedMembers.length} sel.</span>
+            <span className="hidden sm:inline">{selectedMembers.length} selected</span>
           </Badge>
-          <div className="flex gap-2 ml-auto">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:ml-auto">
             <Button
               variant="outline"
               size="sm"
               onClick={handleBulkMerge}
               disabled={selectedMembers.length < 2 || isDeletingBulk}
+              className="min-h-[44px] w-full sm:w-auto"
             >
               Merge Selected
             </Button>
@@ -126,14 +130,20 @@ export function MembersTable({ members }: MembersTableProps) {
               size="sm"
               onClick={handleBulkDelete}
               disabled={isDeletingBulk}
+              className="min-h-[44px] w-full sm:w-auto"
             >
               {isDeletingBulk ? "Deleting..." : "Delete Selected"}
             </Button>
           </div>
         </div>
       )}
-      <DataTable table={table}>
-        <DataTableToolbar table={table} />
+      <DataTable table={table} className={horizontalScrollEnabled ? "overflow-x-auto" : ""}>
+        <DataTableToolbar table={table}>
+          <DataTableScrollToggle
+            enabled={horizontalScrollEnabled}
+            onToggle={() => setHorizontalScrollEnabled(!horizontalScrollEnabled)}
+          />
+        </DataTableToolbar>
       </DataTable>
       <MemberDeleteDialog
         member={selectedMember}
