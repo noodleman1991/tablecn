@@ -112,20 +112,22 @@ export function MembersPage({ members }: MembersPageProps) {
               size="sm"
               onClick={handleDownloadCSV}
               disabled={isDownloading}
-              className="min-h-[44px] w-full sm:w-auto"
+              className="min-h-[44px] w-full sm:w-auto gap-2"
             >
-              <Download className="mr-2 size-4" />
-              Download CSV
+              <Download className="size-4" />
+              <span className="sm:hidden">CSV</span>
+              <span className="hidden sm:inline">Download CSV</span>
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={handleEmailCSV}
               disabled={isEmailing}
-              className="min-h-[44px] w-full sm:w-auto"
+              className="min-h-[44px] w-full sm:w-auto gap-2"
             >
-              <Mail className="mr-2 size-4" />
-              Send Email
+              <Mail className="size-4" />
+              <span className="sm:hidden">Email</span>
+              <span className="hidden sm:inline">Send Email</span>
             </Button>
           </div>
         </CardHeader>

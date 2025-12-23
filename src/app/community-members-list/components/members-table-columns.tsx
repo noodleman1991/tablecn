@@ -45,6 +45,9 @@ export function getMembersTableColumns(
       ),
       enableSorting: false,
       enableHiding: false,
+      meta: {
+        className: "w-[36px] px-1",
+      } as any,
     },
     {
       id: "firstName",
@@ -70,6 +73,7 @@ export function getMembersTableColumns(
         label: "First Name",
         placeholder: "Search first name...",
         variant: "text",
+        className: "max-w-[120px]",
       },
       enableColumnFilter: true,
     },
@@ -97,6 +101,7 @@ export function getMembersTableColumns(
         label: "Last Name",
         placeholder: "Search last name...",
         variant: "text",
+        className: "hidden lg:table-cell",
       },
       enableColumnFilter: true,
     },
@@ -120,6 +125,7 @@ export function getMembersTableColumns(
         label: "Email",
         placeholder: "Search email...",
         variant: "text",
+        className: "hidden xl:table-cell",
       },
       enableColumnFilter: true,
     },
@@ -160,8 +166,10 @@ export function getMembersTableColumns(
         <DataTableColumnHeader column={column} label="Events Attended" />
       ),
       cell: ({ row }) => row.getValue("totalEventsAttended"),
+      enableHiding: true,
       meta: {
-        className: "hidden md:table-cell",
+        label: "Events Attended",
+        className: "hidden",
       } as any,
     },
     {
@@ -174,8 +182,10 @@ export function getMembersTableColumns(
         const date = row.getValue("lastEventDate") as Date | null;
         return date ? format(new Date(date), "PPP") : "-";
       },
+      enableHiding: true,
       meta: {
-        className: "hidden lg:table-cell",
+        label: "Last Event",
+        className: "hidden",
       } as any,
     },
     {
@@ -188,8 +198,10 @@ export function getMembersTableColumns(
         const date = row.getValue("membershipExpiresAt") as Date | null;
         return date ? format(new Date(date), "PPP") : "-";
       },
+      enableHiding: true,
       meta: {
-        className: "hidden lg:table-cell",
+        label: "Membership Expires",
+        className: "hidden",
       } as any,
     },
     {

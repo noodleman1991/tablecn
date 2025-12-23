@@ -15,6 +15,8 @@ import { AttendeeMergeDialog } from "./attendee-merge-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { DataTableScrollToggle } from "@/components/data-table/data-table-scroll-toggle";
 
 interface CheckInTableProps {
   attendees: Attendee[];
@@ -25,6 +27,7 @@ export function CheckInTable({ attendees }: CheckInTableProps) {
   const [mergeDialogOpen, setMergeDialogOpen] = React.useState(false);
   const [selectedAttendee, setSelectedAttendee] = React.useState<Attendee | null>(null);
   const [isDeletingBulk, setIsDeletingBulk] = React.useState(false);
+  const [horizontalScrollEnabled, setHorizontalScrollEnabled] = React.useState(false);
 
   // Expanded rows state
   const [expandedRows, setExpandedRows] = React.useState<Set<string>>(new Set());
@@ -64,7 +67,9 @@ export function CheckInTable({ attendees }: CheckInTableProps) {
     initialState: {
       pagination: { pageIndex: 0, pageSize: 20 },
       sorting: [{ id: "lastName", desc: false }],
-      columnVisibility: {},
+      columnVisibility: {
+        source: false,
+      },
     },
     enableAdvancedFilter: false,
     enableRowSelection: true,
@@ -126,16 +131,20 @@ export function CheckInTable({ attendees }: CheckInTableProps) {
   return (
     <>
       {selectedGroupedAttendees.length > 0 && (
-        <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-3 mb-4">
-          <Badge variant="secondary" className="font-normal">
-            {selectedGroupedAttendees.length} selected ({selectedAttendees.length} total tickets)
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 rounded-lg border bg-muted/50 p-3 mb-4">
+          <Badge variant="secondary" className="font-normal text-xs sm:text-sm">
+            <span className="sm:hidden">{selectedGroupedAttendees.length} sel.</span>
+            <span className="hidden sm:inline">
+              {selectedGroupedAttendees.length} selected ({selectedAttendees.length} total tickets)
+            </span>
           </Badge>
-          <div className="flex gap-2 ml-auto">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:ml-auto">
             <Button
               variant="outline"
               size="sm"
               onClick={handleBulkMerge}
               disabled={selectedAttendees.length < 2 || isDeletingBulk}
+              className="min-h-[44px] w-full sm:w-auto"
             >
               Merge Selected
             </Button>
@@ -144,6 +153,7 @@ export function CheckInTable({ attendees }: CheckInTableProps) {
               size="sm"
               onClick={handleBulkDelete}
               disabled={isDeletingBulk}
+              className="min-h-[44px] w-full sm:w-auto"
             >
               {isDeletingBulk ? "Deleting..." : "Delete Selected"}
             </Button>
@@ -153,8 +163,16 @@ export function CheckInTable({ attendees }: CheckInTableProps) {
 
       {/* Custom table with expandable rows */}
       <div className="flex w-full flex-col gap-2.5 overflow-auto">
-        <DataTableToolbar table={table} />
-        <div className="overflow-hidden rounded-md border">
+        <DataTableToolbar table={table}>
+          <DataTableScrollToggle
+            enabled={horizontalScrollEnabled}
+            onToggle={() => setHorizontalScrollEnabled(!horizontalScrollEnabled)}
+          />
+        </DataTableToolbar>
+        <div className={cn(
+          "overflow-hidden rounded-md border",
+          horizontalScrollEnabled && "overflow-x-auto"
+        )}>
           <table className="w-full caption-bottom text-sm">
             <thead className="[&_tr]:border-b">
               {table.getHeaderGroups().map((headerGroup) => (
@@ -162,7 +180,10 @@ export function CheckInTable({ attendees }: CheckInTableProps) {
                   {headerGroup.headers.map((header) => (
                     <th
                       key={header.id}
-                      className="h-12 px-4 text-left align-middle font-medium text-muted-foreground"
+                      className={cn(
+                        "h-12 px-4 text-left align-middle font-medium text-muted-foreground",
+                        header.column.columnDef.meta?.className,
+                      )}
                     >
                       {header.isPlaceholder
                         ? null
@@ -181,7 +202,13 @@ export function CheckInTable({ attendees }: CheckInTableProps) {
                       className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
                     >
                       {row.getVisibleCells().map((cell) => (
-                        <td key={cell.id} className="p-4 align-middle">
+                        <td
+                          key={cell.id}
+                          className={cn(
+                            "p-4 align-middle",
+                            cell.column.columnDef.meta?.className,
+                          )}
+                        >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </td>
                       ))}
