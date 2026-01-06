@@ -94,9 +94,102 @@ export async function getAttendeesForEvent(eventId: string) {
 }
 
 /**
+ * Match attendee to existing member or create new one
+ * Returns memberId and whether manual selection is needed
+ */
+async function matchOrCreateMember(data: {
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+}): Promise<{
+  memberId?: string;
+  ambiguous?: boolean;
+  possibleMatches?: Array<{ id: string; email: string; firstName: string; lastName: string }>;
+}> {
+  const { email, firstName, lastName } = data;
+
+  // Strategy 1: Exact email match (highest confidence)
+  const [exactEmailMatch] = await db
+    .select()
+    .from(members)
+    .where(eq(members.email, email))
+    .limit(1);
+
+  if (exactEmailMatch) {
+    return { memberId: exactEmailMatch.id };
+  }
+
+  // Strategy 2: Name match (if email doesn't match)
+  if (firstName && lastName) {
+    const nameMatches = await db
+      .select()
+      .from(members)
+      .where(
+        and(
+          sql`LOWER(${members.firstName}) = LOWER(${firstName})`,
+          sql`LOWER(${members.lastName}) = LOWER(${lastName})`
+        )
+      );
+
+    if (nameMatches.length === 1) {
+      // Single name match - but different email
+      // Return as ambiguous for manual confirmation
+      return {
+        ambiguous: true,
+        possibleMatches: nameMatches.map(m => ({
+          id: m.id,
+          email: m.email,
+          firstName: m.firstName || "",
+          lastName: m.lastName || "",
+        })),
+      };
+    } else if (nameMatches.length > 1) {
+      // Multiple name matches
+      return {
+        ambiguous: true,
+        possibleMatches: nameMatches.map(m => ({
+          id: m.id,
+          email: m.email,
+          firstName: m.firstName || "",
+          lastName: m.lastName || "",
+        })),
+      };
+    }
+  }
+
+  // Strategy 3: No match found - create new member
+  const [newMember] = await db
+    .insert(members)
+    .values({
+      email,
+      firstName: firstName || "",
+      lastName: lastName || "",
+      isActiveMember: false, // Will be calculated based on attendance
+      totalEventsAttended: 0,
+    })
+    .returning();
+
+  return { memberId: newMember.id };
+}
+
+/**
  * Check in an attendee
  */
 export async function checkInAttendee(attendeeId: string) {
+  "use server";
+
+  // Get attendee details
+  const [attendee] = await db
+    .select()
+    .from(attendees)
+    .where(eq(attendees.id, attendeeId))
+    .limit(1);
+
+  if (!attendee) {
+    throw new Error("Attendee not found");
+  }
+
+  // Step 1: Check-in the attendee
   await db
     .update(attendees)
     .set({
@@ -104,6 +197,81 @@ export async function checkInAttendee(attendeeId: string) {
       checkedInAt: new Date(),
     })
     .where(eq(attendees.id, attendeeId));
+
+  // Step 2: Match to community member
+  const memberResult = await matchOrCreateMember({
+    email: attendee.email,
+    firstName: attendee.firstName,
+    lastName: attendee.lastName,
+  });
+
+  // Step 3: If ambiguous match, return options for user to choose
+  if (memberResult.ambiguous) {
+    return {
+      success: true,
+      requiresManualMatch: true,
+      possibleMatches: memberResult.possibleMatches,
+      attendeeId,
+    };
+  }
+
+  // Step 4: Recalculate membership status
+  if (memberResult.memberId) {
+    const { recalculateMembershipForMember } = await import("@/lib/calculate-membership");
+    await recalculateMembershipForMember(memberResult.memberId);
+  }
+
+  revalidatePath("/");
+  return { success: true };
+}
+
+/**
+ * Manually confirm which member an attendee should be linked to
+ * Called when automatic matching is ambiguous
+ */
+export async function confirmMemberMatch(data: {
+  attendeeId: string;
+  memberId: string;
+}) {
+  "use server";
+
+  const { attendeeId, memberId } = data;
+
+  // Get attendee details
+  const [attendee] = await db
+    .select()
+    .from(attendees)
+    .where(eq(attendees.id, attendeeId))
+    .limit(1);
+
+  if (!attendee) {
+    throw new Error("Attendee not found");
+  }
+
+  // Get member details
+  const [member] = await db
+    .select()
+    .from(members)
+    .where(eq(members.id, memberId))
+    .limit(1);
+
+  if (!member) {
+    throw new Error("Member not found");
+  }
+
+  // Update attendee email to match member's email
+  // This ensures attendance is counted for the correct person
+  await db
+    .update(attendees)
+    .set({
+      email: member.email,
+      locallyModified: true, // Mark as manually edited
+    })
+    .where(eq(attendees.id, attendeeId));
+
+  // Recalculate membership status
+  const { recalculateMembershipForMember } = await import("@/lib/calculate-membership");
+  await recalculateMembershipForMember(memberId);
 
   revalidatePath("/");
   return { success: true };
@@ -434,7 +602,8 @@ export async function createManualAttendee(data: {
       email: normalizedEmail,
       firstName: data.firstName.trim(),
       lastName: data.lastName.trim(),
-      woocommerceOrderId: null, // Manual entry
+      ticketId: null, // Manual entry has no WooCommerce ticket
+      woocommerceOrderId: null, // Manual entry has no WooCommerce order
       manuallyAdded: true,
       locallyModified: false,
       checkedIn: data.checkedIn,

@@ -1,13 +1,11 @@
 /**
- * Check-in Table Columns (Grouped Version)
+ * Check-in Table Columns (Order-Based Grouping)
  *
- * This version works with GroupedAttendee instead of Attendee.
- * - Shows grouped rows with ticket counts
- * - Expandable rows to show individual tickets
- * - Individual ticket check-ins
- * - Edit dialogs for grouped attendees
- *
- * IMPORTANT: Once tested, this will replace check-in-table-columns.tsx
+ * This version works with GroupedOrder instead of Attendee.
+ * - Groups tickets by woocommerceOrderId (ORDER-based)
+ * - Main row shows booker information
+ * - Expandable rows to show individual ticket holders
+ * - Individual ticket check-ins and edits
  */
 
 "use client";
@@ -23,7 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import type { Attendee } from "@/db/schema";
 import { checkInAttendee, undoCheckIn, updateAttendeeDetails } from "@/app/actions";
 import { AttendeeActionsCell } from "./attendee-actions-cell";
-import type { GroupedAttendee } from "@/lib/attendee-grouping";
+import type { GroupedOrder } from "@/lib/attendee-grouping";
 import { getCheckInStatusDisplay, isActuallyGrouped } from "@/lib/attendee-grouping";
 import {
   Dialog,
@@ -35,16 +33,46 @@ import {
 } from "@/components/ui/dialog";
 
 /**
- * Editable cell for grouped attendees
- * Shows dialog if grouped with 2+ tickets
+ * Editable cell for booker information (main row)
+ * Booker info is NOT editable directly - only ticket holder info can be edited
  */
-function EditableGroupedCell({
+function BookerDisplayCell({
+  order,
+  field,
+  value,
+  placeholder,
+}: {
+  order: GroupedOrder;
+  field: "bookerFirstName" | "bookerLastName" | "bookerEmail";
+  value: string | null;
+  placeholder: string;
+}) {
+  // Booker info is read-only display with (Booker) badge
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-sm">
+        {value || <span className="text-muted-foreground">{placeholder}</span>}
+      </span>
+      {order.ticketCount > 1 && (
+        <Badge variant="outline" className="text-xs">
+          Booker
+        </Badge>
+      )}
+    </div>
+  );
+}
+
+/**
+ * DEPRECATED: Old editable cell for person-based grouping
+ * Keeping for reference but not used in order-based grouping
+ */
+function EditableGroupedCell_OLD({
   grouped,
   field,
   value,
   placeholder,
 }: {
-  grouped: GroupedAttendee;
+  grouped: any;
   field: "firstName" | "lastName" | "email";
   value: string | null;
   placeholder: string;
@@ -178,6 +206,66 @@ interface CheckInTableHandlers {
 export type { CheckInTableHandlers };
 
 /**
+ * Editable field component for individual ticket fields
+ */
+function EditableTicketField({
+  ticket,
+  field,
+  value,
+  placeholder,
+}: {
+  ticket: Attendee;
+  field: "firstName" | "lastName" | "email";
+  value: string | null;
+  placeholder: string;
+}) {
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [editValue, setEditValue] = React.useState(value || "");
+
+  const handleSave = async () => {
+    if (editValue === value) {
+      setIsEditing(false);
+      return;
+    }
+
+    try {
+      await updateAttendeeDetails(ticket.id, field, editValue);
+      toast.success(`Updated ${field}`);
+    } catch (error) {
+      toast.error("Failed to update");
+    }
+    setIsEditing(false);
+  };
+
+  return isEditing ? (
+    <input
+      type="text"
+      value={editValue}
+      onChange={(e) => setEditValue(e.target.value)}
+      onBlur={handleSave}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          handleSave();
+        } else if (e.key === "Escape") {
+          setEditValue(value || "");
+          setIsEditing(false);
+        }
+      }}
+      autoFocus
+      className="w-full rounded border border-input bg-background px-2 py-1 text-sm"
+      placeholder={placeholder}
+    />
+  ) : (
+    <div
+      onClick={() => setIsEditing(true)}
+      className="cursor-pointer rounded px-2 py-1 hover:bg-muted/50"
+    >
+      {value || <span className="text-muted-foreground">{placeholder}</span>}
+    </div>
+  );
+}
+
+/**
  * Sub-row component for individual tickets within a group
  */
 function TicketSubRow({
@@ -207,13 +295,45 @@ function TicketSubRow({
     });
   };
 
+  // Check if ticket holder is different from booker
+  const isDifferentPerson =
+    ticket.bookerFirstName && ticket.bookerLastName &&
+    (ticket.firstName !== ticket.bookerFirstName || ticket.lastName !== ticket.bookerLastName);
+
   return (
     <tr className="border-b bg-muted/30">
       <td className="p-2 pl-12" colSpan={5}>
-        <div className="flex items-center gap-4 text-sm">
-          <span className="text-muted-foreground">
-            Ticket {index + 1} of {total}
-          </span>
+        <div className="flex items-center justify-between text-sm">
+          <div className="flex flex-col gap-1 flex-1">
+            <div className="flex gap-2 items-center">
+              <EditableTicketField
+                ticket={ticket}
+                field="firstName"
+                value={ticket.firstName}
+                placeholder="First name"
+              />
+              <EditableTicketField
+                ticket={ticket}
+                field="lastName"
+                value={ticket.lastName}
+                placeholder="Last name"
+              />
+            </div>
+            <EditableTicketField
+              ticket={ticket}
+              field="email"
+              value={ticket.email}
+              placeholder="email@example.com"
+            />
+            <div className="text-xs text-muted-foreground px-2">
+              Ticket {index + 1} of {total} • Order #{ticket.woocommerceOrderId || "-"}
+              {isDifferentPerson && (
+                <span className="ml-2">
+                  • Booked by: {ticket.bookerFirstName} {ticket.bookerLastName}
+                </span>
+              )}
+            </div>
+          </div>
           <Badge variant={ticket.checkedIn ? "default" : "outline"} className="text-xs">
             {ticket.checkedIn ? (
               <>
@@ -227,9 +347,6 @@ function TicketSubRow({
               </>
             )}
           </Badge>
-          <span className="text-muted-foreground">
-            Order: {ticket.woocommerceOrderId || "-"}
-          </span>
         </div>
       </td>
       <td className="p-2">
@@ -257,7 +374,7 @@ function TicketSubRow({
 
 export function getCheckInTableColumns(
   handlers: CheckInTableHandlers
-): ColumnDef<GroupedAttendee>[] {
+): ColumnDef<GroupedOrder>[] {
   const { expandedRows, toggleRow } = handlers;
 
   return [
@@ -320,16 +437,16 @@ export function getCheckInTableColumns(
       } as any,
     },
     {
-      id: "firstName",
-      accessorKey: "firstName",
+      id: "bookerFirstName",
+      accessorKey: "bookerFirstName",
       header: ({ column }) => (
         <DataTableColumnHeader column={column} label="First Name" />
       ),
       cell: ({ row }) => (
-        <EditableGroupedCell
-          grouped={row.original}
-          field="firstName"
-          value={row.getValue("firstName")}
+        <BookerDisplayCell
+          order={row.original}
+          field="bookerFirstName"
+          value={row.getValue("bookerFirstName")}
           placeholder="First name"
         />
       ),
@@ -347,16 +464,16 @@ export function getCheckInTableColumns(
       enableColumnFilter: true,
     },
     {
-      id: "lastName",
-      accessorKey: "lastName",
+      id: "bookerLastName",
+      accessorKey: "bookerLastName",
       header: ({ column }) => (
         <DataTableColumnHeader column={column} label="Last Name" />
       ),
       cell: ({ row }) => (
-        <EditableGroupedCell
-          grouped={row.original}
-          field="lastName"
-          value={row.getValue("lastName")}
+        <BookerDisplayCell
+          order={row.original}
+          field="bookerLastName"
+          value={row.getValue("bookerLastName")}
           placeholder="Last name"
         />
       ),
@@ -374,16 +491,16 @@ export function getCheckInTableColumns(
       enableColumnFilter: true,
     },
     {
-      id: "email",
-      accessorKey: "email",
+      id: "bookerEmail",
+      accessorKey: "bookerEmail",
       header: ({ column }) => (
         <DataTableColumnHeader column={column} label="Email" />
       ),
       cell: ({ row }) => (
-        <EditableGroupedCell
-          grouped={row.original}
-          field="email"
-          value={row.getValue("email")}
+        <BookerDisplayCell
+          order={row.original}
+          field="bookerEmail"
+          value={row.getValue("bookerEmail")}
           placeholder="email@example.com"
         />
       ),
@@ -503,14 +620,14 @@ export function getCheckInTableColumns(
       enableColumnFilter: true,
     },
     {
-      id: "orderIds",
-      accessorKey: "orderIds",
+      id: "woocommerceOrderId",
+      accessorKey: "woocommerceOrderId",
       header: "Order ID",
       cell: ({ row }) => {
-        const ids = row.getValue("orderIds") as string[];
-        return ids.length > 0 ? ids.join(", ") : "-";
+        const orderId = row.getValue("woocommerceOrderId") as string | null;
+        return orderId || "-";
       },
-      enableSorting: false,
+      enableSorting: true,
       enableHiding: true,
       meta: {
         label: "Order ID",
@@ -607,24 +724,24 @@ export function getCheckInTableColumns(
 }
 
 /**
- * Render function for expanded rows (shows individual tickets)
+ * Render function for expanded rows (shows individual ticket holders)
  */
 export function renderSubRow(
-  row: Row<GroupedAttendee>,
+  row: Row<GroupedOrder>,
   handlers: CheckInTableHandlers
 ) {
-  const grouped = row.original;
+  const order = row.original;
 
-  if (!isActuallyGrouped(grouped) || !handlers.expandedRows.has(grouped.id)) {
+  if (!isActuallyGrouped(order) || !handlers.expandedRows.has(order.id)) {
     return null;
   }
 
-  return grouped.tickets.map((ticket, index) => (
+  return order.tickets.map((ticket, index) => (
     <TicketSubRow
       key={ticket.id}
       ticket={ticket}
       index={index}
-      total={grouped.ticketCount}
+      total={order.ticketCount}
       onDelete={handlers.onDelete}
     />
   ));

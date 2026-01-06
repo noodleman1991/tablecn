@@ -163,3 +163,138 @@ export function getCheckInStatusDisplay(grouped: GroupedAttendee): string {
     return "No";
   }
 }
+
+/**
+ * Order-Based Grouping (new approach for multi-ticket orders)
+ */
+
+export interface GroupedOrder {
+  // Unique identifier for the group (woocommerceOrderId or generated ID for manual attendees)
+  id: string;
+
+  // Booker information (from first ticket's booker fields)
+  bookerFirstName: string | null;
+  bookerLastName: string | null;
+  bookerEmail: string | null;
+
+  // Aggregated data
+  ticketCount: number;
+  tickets: Attendee[];  // All individual ticket records
+
+  // Check-in status aggregation
+  allCheckedIn: boolean;
+  someCheckedIn: boolean;
+  checkedInCount: number;
+  checkedInStatus: "all" | "partial" | "none";
+
+  // Source flags (for Manual/Edited badges)
+  isManuallyAdded: boolean;
+  isLocallyModified: boolean;
+
+  // WooCommerce order ID (null for manually added attendees)
+  woocommerceOrderId: string | null;
+
+  // Timestamps
+  mostRecentCheckIn: Date | null;
+
+  // Original event ID (all tickets in group have same eventId)
+  eventId: string;
+}
+
+/**
+ * Groups attendees by ORDER (woocommerceOrderId)
+ * - Same order ID = grouped together
+ * - Null/undefined order IDs = each treated as separate "order" (manually added)
+ * - Main row shows booker information
+ * - Sub-rows show individual ticket holder information
+ */
+export function groupAttendeesByOrder(attendees: Attendee[]): GroupedOrder[] {
+  // Group by woocommerceOrderId
+  // Use Map with special handling for null/undefined orderIds
+  const grouped = new Map<string, Attendee[]>();
+
+  for (const attendee of attendees) {
+    // For manually added attendees (no orderID), treat each as separate group
+    const key = attendee.woocommerceOrderId || `manual-${attendee.id}`;
+
+    if (!grouped.has(key)) {
+      grouped.set(key, []);
+    }
+
+    grouped.get(key)!.push(attendee);
+  }
+
+  // Transform each group into GroupedOrder
+  const result: GroupedOrder[] = [];
+
+  for (const [key, tickets] of grouped.entries()) {
+    // Sort tickets by ticketId for consistency (or creation date as fallback)
+    tickets.sort((a, b) => {
+      if (a.ticketId && b.ticketId) {
+        return a.ticketId.localeCompare(b.ticketId);
+      }
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    });
+
+    const first = tickets[0]!;
+
+    // Calculate check-in status
+    const checkedInTickets = tickets.filter(t => t.checkedIn);
+    const checkedInCount = checkedInTickets.length;
+    const allCheckedIn = checkedInCount === tickets.length;
+    const someCheckedIn = checkedInCount > 0;
+
+    let checkedInStatus: "all" | "partial" | "none";
+    if (allCheckedIn) {
+      checkedInStatus = "all";
+    } else if (someCheckedIn) {
+      checkedInStatus = "partial";
+    } else {
+      checkedInStatus = "none";
+    }
+
+    // Get most recent check-in time
+    const checkInTimes = tickets
+      .filter(t => t.checkedInAt)
+      .map(t => t.checkedInAt!)
+      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+    const mostRecentCheckIn = checkInTimes.length > 0 ? checkInTimes[0]! : null;
+
+    // Aggregate source flags
+    const isManuallyAdded = tickets.some(t => t.manuallyAdded);
+    const isLocallyModified = tickets.some(t => t.locallyModified);
+
+    // Use booker information from first ticket (all tickets in order have same booker)
+    // Fallback: If booker fields are NULL, use first ticket holder's info
+    const bookerFirstName = first.bookerFirstName || first.firstName;
+    const bookerLastName = first.bookerLastName || first.lastName;
+    const bookerEmail = first.bookerEmail || first.email;
+
+    result.push({
+      id: key,
+      bookerFirstName,
+      bookerLastName,
+      bookerEmail,
+      ticketCount: tickets.length,
+      tickets,
+      allCheckedIn,
+      someCheckedIn,
+      checkedInCount,
+      checkedInStatus,
+      isManuallyAdded,
+      isLocallyModified,
+      woocommerceOrderId: first.woocommerceOrderId,
+      mostRecentCheckIn,
+      eventId: first.eventId,
+    });
+  }
+
+  // Sort by order ID for consistent ordering
+  result.sort((a, b) => {
+    const orderIdA = a.woocommerceOrderId || "";
+    const orderIdB = b.woocommerceOrderId || "";
+    return orderIdB.localeCompare(orderIdA); // Descending (newest orders first)
+  });
+
+  return result;
+}
