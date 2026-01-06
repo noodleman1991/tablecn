@@ -272,6 +272,7 @@ export async function importFromCSV(filePath: string): Promise<ImportResult> {
           email,
           firstName,
           lastName,
+          ticketId: null, // CSV imports don't have individual ticket IDs
           woocommerceOrderId: orderId,
           checkedIn: isHistoricalEvent, // Only auto-check-in for past events
           checkedInAt: isHistoricalEvent ? eventDate : null, // Use event date, not import date

@@ -89,13 +89,19 @@ export function CheckInPage({
   const [selectedEventId, setSelectedEventId] = useState<string | undefined>(
     initialEventId,
   );
-  const [pastEvents, setPastEvents] = useState<Event[]>(() => {
-    return getCachedPastEvents() || [];
-  });
+  const [pastEvents, setPastEvents] = useState<Event[]>([]);
   const [isPending, startTransition] = useTransition();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [cacheAge, setCacheAge] = useState<number | null>(null);
   const [attendees, setAttendees] = useState<Attendee[]>(initialAttendees);
+
+  // Load cached past events on client-side only (after hydration)
+  useEffect(() => {
+    const cached = getCachedPastEvents();
+    if (cached && cached.length > 0) {
+      setPastEvents(cached);
+    }
+  }, []);
 
   const allEvents = [...futureEvents, ...pastEvents];
   const selectedEvent = allEvents.find((e) => e.id === selectedEventId);

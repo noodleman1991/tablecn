@@ -84,6 +84,10 @@ function extractTicketAttendees(
       email,
       ticketId,
       uid,
+      // Booker information (person who placed the order)
+      bookerFirstName: order.billing?.first_name || '',
+      bookerLastName: order.billing?.last_name || '',
+      bookerEmail: order.billing?.email || '',
     });
   }
 
@@ -99,6 +103,10 @@ function extractTicketAttendees(
         email: order.billing?.email || '',
         ticketId: `${lineItem.id}-fallback-${i}`,
         uid: `fallback-${lineItem.id}-${i}`,
+        // In fallback, booker and ticket holder are the same
+        bookerFirstName: order.billing?.first_name || '',
+        bookerLastName: order.billing?.last_name || '',
+        bookerEmail: order.billing?.email || '',
       });
     }
   }
@@ -278,7 +286,7 @@ export async function syncAttendeesForEvent(
           const byTicketId = await db
             .select()
             .from(attendees)
-            .where(eq(attendees.woocommerceOrderId, ticket.ticketId))
+            .where(eq(attendees.ticketId, ticket.ticketId)) // FIX: Use ticketId field
             .limit(1);
           existingAttendee = byTicketId[0];
         }
@@ -300,7 +308,11 @@ export async function syncAttendeesForEvent(
               email: ticket.email,
               firstName: ticket.firstName,
               lastName: ticket.lastName,
-              woocommerceOrderId: ticket.ticketId, // Update ticketId in case it changed
+              ticketId: ticket.ticketId, // FIX: Update ticketId field
+              woocommerceOrderId: order.id.toString(), // FIX: Store actual order ID
+              bookerFirstName: ticket.bookerFirstName,
+              bookerLastName: ticket.bookerLastName,
+              bookerEmail: ticket.bookerEmail,
               // NOT updating: checkedIn, checkedInAt, locallyModified, manuallyAdded
             })
             .where(eq(attendees.id, existingAttendee.id));
@@ -313,7 +325,11 @@ export async function syncAttendeesForEvent(
             email: ticket.email,
             firstName: ticket.firstName,
             lastName: ticket.lastName,
-            woocommerceOrderId: ticket.ticketId,
+            ticketId: ticket.ticketId, // FIX: Store ticket ID
+            woocommerceOrderId: order.id.toString(), // FIX: Store order ID
+            bookerFirstName: ticket.bookerFirstName,
+            bookerLastName: ticket.bookerLastName,
+            bookerEmail: ticket.bookerEmail,
             manuallyAdded: false,
             locallyModified: false,
             checkedIn: false,

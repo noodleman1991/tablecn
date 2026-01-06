@@ -8,7 +8,7 @@ import { DataTablePagination } from "@/components/data-table/data-table-paginati
 import { useDataTable } from "@/hooks/use-data-table";
 import type { Attendee } from "@/db/schema";
 import { getCheckInTableColumns, type CheckInTableHandlers, renderSubRow } from "./check-in-table-columns-grouped";
-import { groupAttendeesByPerson, type GroupedAttendee } from "@/lib/attendee-grouping";
+import { groupAttendeesByOrder, type GroupedOrder } from "@/lib/attendee-grouping";
 import { deleteAttendee } from "@/app/actions";
 import { AttendeeDeleteDialog } from "./attendee-delete-dialog";
 import { AttendeeMergeDialog } from "./attendee-merge-dialog";
@@ -32,9 +32,9 @@ export function CheckInTable({ attendees }: CheckInTableProps) {
   // Expanded rows state
   const [expandedRows, setExpandedRows] = React.useState<Set<string>>(new Set());
 
-  // Transform attendees into grouped data
-  const groupedAttendees = React.useMemo(
-    () => groupAttendeesByPerson(attendees),
+  // Transform attendees into grouped data (by ORDER)
+  const groupedOrders = React.useMemo(
+    () => groupAttendeesByOrder(attendees),
     [attendees]
   );
 
@@ -62,11 +62,11 @@ export function CheckInTable({ attendees }: CheckInTableProps) {
   const columns = React.useMemo(() => getCheckInTableColumns(handlers), [handlers]);
 
   const { table } = useDataTable({
-    data: groupedAttendees,
+    data: groupedOrders,
     columns,
     initialState: {
       pagination: { pageIndex: 0, pageSize: 20 },
-      sorting: [{ id: "lastName", desc: false }],
+      sorting: [{ id: "bookerLastName", desc: false }], // Sort by booker last name
       columnVisibility: {
         source: false,
       },
@@ -80,10 +80,10 @@ export function CheckInTable({ attendees }: CheckInTableProps) {
   });
 
   const selectedRows = table.getFilteredSelectedRowModel().rows;
-  const selectedGroupedAttendees = selectedRows.map((row) => row.original);
+  const selectedGroupedOrders = selectedRows.map((row) => row.original);
 
-  // Flatten grouped attendees back to individual attendees for bulk operations
-  const selectedAttendees = selectedGroupedAttendees.flatMap(g => g.tickets);
+  // Flatten grouped orders back to individual attendees for bulk operations
+  const selectedAttendees = selectedGroupedOrders.flatMap(g => g.tickets);
 
   const handleBulkMerge = () => {
     if (selectedAttendees.length < 2) {
@@ -100,9 +100,9 @@ export function CheckInTable({ attendees }: CheckInTableProps) {
     }
 
     const totalTickets = selectedAttendees.length;
-    const message = totalTickets === selectedGroupedAttendees.length
+    const message = totalTickets === selectedGroupedOrders.length
       ? `Are you sure you want to delete ${totalTickets} attendee(s)?`
-      : `Are you sure you want to delete ${selectedGroupedAttendees.length} person(s) with ${totalTickets} total ticket(s)?`;
+      : `Are you sure you want to delete ${selectedGroupedOrders.length} order(s) with ${totalTickets} total ticket(s)?`;
 
     if (!confirm(message)) {
       return;
@@ -130,12 +130,12 @@ export function CheckInTable({ attendees }: CheckInTableProps) {
 
   return (
     <>
-      {selectedGroupedAttendees.length > 0 && (
+      {selectedGroupedOrders.length > 0 && (
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 rounded-lg border bg-muted/50 p-3 mb-4">
           <Badge variant="secondary" className="font-normal text-xs sm:text-sm">
-            <span className="sm:hidden">{selectedGroupedAttendees.length} sel.</span>
+            <span className="sm:hidden">{selectedGroupedOrders.length} sel.</span>
             <span className="hidden sm:inline">
-              {selectedGroupedAttendees.length} selected ({selectedAttendees.length} total tickets)
+              {selectedGroupedOrders.length} selected ({selectedAttendees.length} total tickets)
             </span>
           </Badge>
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:ml-auto">

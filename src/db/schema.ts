@@ -75,7 +75,11 @@ export const attendees = pgTable("attendees", {
   email: varchar("email", { length: 255 }).notNull(),
   firstName: varchar("first_name", { length: 128 }),
   lastName: varchar("last_name", { length: 128 }),
-  woocommerceOrderId: varchar("woocommerce_order_id", { length: 128 }),
+  ticketId: varchar("ticket_id", { length: 128 }), // NEW: Individual WooCommerce ticket ID
+  woocommerceOrderId: varchar("woocommerce_order_id", { length: 128 }), // Now stores actual order ID
+  bookerFirstName: varchar("booker_first_name", { length: 128 }),  // Order purchaser's first name
+  bookerLastName: varchar("booker_last_name", { length: 128 }),   // Order purchaser's last name
+  bookerEmail: varchar("booker_email", { length: 255 }),           // Order purchaser's email
   locallyModified: boolean("locally_modified").notNull().default(false),
   manuallyAdded: boolean("manually_added").notNull().default(false),
   checkedIn: boolean("checked_in").notNull().default(false),
