@@ -33,7 +33,7 @@ interface TicketDataEntry {
 function extractTicketAttendees(
   order: any,
   lineItem: any
-): Array<{ firstName: string; lastName: string; email: string; ticketId: string; uid: string }> {
+): Array<{ firstName: string; lastName: string; email: string; ticketId: string; uid: string; bookerFirstName: string; bookerLastName: string; bookerEmail: string }> {
   const attendees = [];
 
   // Find _ticket_data in line item meta_data

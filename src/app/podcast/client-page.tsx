@@ -52,7 +52,7 @@ export function PodcastClientPage({ podcast, locale }: PodcastClientPageProps) {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       {/* Podcast Header */}
-      <PodcastHeader podcast={podcast} locale={locale} />
+      <PodcastHeader podcast={podcast} />
 
       {/* Audio Player - Sticky */}
       <div className="sticky top-4 z-10 mb-8">
