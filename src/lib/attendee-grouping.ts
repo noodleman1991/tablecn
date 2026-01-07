@@ -145,16 +145,16 @@ export function ungroupAttendee(grouped: GroupedAttendee): Attendee[] {
 }
 
 /**
- * Checks if a GroupedAttendee is actually a group (2+ tickets)
+ * Checks if a GroupedAttendee or GroupedOrder is actually a group (2+ tickets)
  */
-export function isActuallyGrouped(grouped: GroupedAttendee): boolean {
+export function isActuallyGrouped(grouped: GroupedAttendee | GroupedOrder): boolean {
   return grouped.ticketCount > 1;
 }
 
 /**
  * Gets the check-in status display string
  */
-export function getCheckInStatusDisplay(grouped: GroupedAttendee): string {
+export function getCheckInStatusDisplay(grouped: GroupedAttendee | GroupedOrder): string {
   if (grouped.checkedInStatus === "all") {
     return "Yes";
   } else if (grouped.checkedInStatus === "partial") {

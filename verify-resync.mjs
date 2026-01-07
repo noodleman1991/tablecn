@@ -135,6 +135,28 @@ async function verifyResync() {
       console.log(`     ${row.total_events_attended} events: ${row.member_count} members`);
     });
 
+    // 7.5. Check for duplicate tickets (should be 0 after cleanup and constraint)
+    console.log('\n🔍 Duplicate Ticket Check:');
+    const duplicateCheck = await client.query(`
+      SELECT ticket_id, event_id, COUNT(*) as count
+      FROM tablecn_attendees
+      WHERE ticket_id IS NOT NULL
+      GROUP BY ticket_id, event_id
+      HAVING COUNT(*) > 1
+    `);
+
+    if (duplicateCheck.rows.length > 0) {
+      console.log(`   ⚠️  WARNING: Found ${duplicateCheck.rows.length} duplicate ticket groups!`);
+      duplicateCheck.rows.slice(0, 5).forEach((row, index) => {
+        console.log(`   ${index + 1}. Ticket ${row.ticket_id}: ${row.count} duplicates`);
+      });
+      if (duplicateCheck.rows.length > 5) {
+        console.log(`   ... and ${duplicateCheck.rows.length - 5} more`);
+      }
+    } else {
+      console.log('   ✓ No duplicate tickets found!');
+    }
+
     // 8. Multi-ticket order verification
     console.log('\n🎫 Multi-Ticket Orders (different names):');
     const multiTicketResult = await client.query(`

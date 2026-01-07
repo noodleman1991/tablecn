@@ -1,24 +1,42 @@
 import { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
-import Layout from '@/components/layout/layout';
-import { Section } from '@/components/layout/section';
 import { PodcastClientPage } from './client-page';
 
-interface PodcastPageProps {
-    params: Promise<{ locale: string }>;
+export const metadata: Metadata = {
+    title: 'Podcast - Stichting Boerengroep',
+    description: 'Listen to our podcast episodes',
+};
+
+interface Episode {
+    id: string;
+    title: string;
+    description: string;
+    audioUrl: string;
+    audioType: string;
+    audioLength: number;
+    duration: string;
+    pubDate: Date;
+    image: string;
+    episodeNumber: string;
+    seasonNumber: string;
+    episodeType: string;
+    explicit: boolean;
+    spotifyUrl: string;
+    applePodcastsUrl: string;
 }
 
-export async function generateMetadata({ params }: PodcastPageProps): Promise<Metadata> {
-    const { locale } = await params;
-    const t = await getTranslations({ locale, namespace: 'podcast' });
-
-    return {
-        title: `${t('title')} - Stichting Boerengroep`,
-        description: t('description'),
-    };
+interface PodcastData {
+    title: string;
+    description: string;
+    image: string;
+    author: string;
+    link: string;
+    language: string;
+    totalEpisodes: number;
+    hasMore: boolean;
+    episodes: Episode[];
 }
 
-async function fetchPodcastData(limit = 6, offset = 0) {
+async function fetchPodcastData(limit = 6, offset = 0): Promise<PodcastData> {
     try {
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
         const url = new URL('/api/podcast', baseUrl);
@@ -26,16 +44,19 @@ async function fetchPodcastData(limit = 6, offset = 0) {
         url.searchParams.set('offset', offset.toString());
 
         const response = await fetch(url.toString(), {
-            next: { revalidate: 3600 } // Cache for 1 hour
+            next: { revalidate: 3600 }, // Cache for 1 hour
+            cache: 'no-store' // Don't cache during build
         });
 
         if (!response.ok) {
-            throw new Error('Failed to fetch podcast data');
+            throw new Error(`Failed to fetch podcast data: ${response.status}`);
         }
 
-        return response.json();
+        const data = await response.json();
+        return data as PodcastData;
     } catch (error) {
         console.error('Error fetching podcast data:', error);
+        // Return fallback data during build time
         return {
             title: 'Podcast',
             description: 'Welcome to our podcast',
@@ -50,25 +71,13 @@ async function fetchPodcastData(limit = 6, offset = 0) {
     }
 }
 
-export default async function PodcastPage({ params }: PodcastPageProps) {
-    const { locale } = await params;
+export default async function PodcastPage() {
     const podcast = await fetchPodcastData(6);
 
-    // Mock layout data for the Layout component
-    const mockLayoutData = {
-        data: {
-            global: null // This will be fetched by the Layout component itself
-        }
-    };
-
     return (
-        <Layout rawPageData={mockLayoutData}>
-            <Section>
-                <PodcastClientPage
-                    podcast={podcast}
-                    locale={locale}
-                />
-            </Section>
-        </Layout>
+        <PodcastClientPage
+            podcast={podcast}
+            locale="en"
+        />
     );
 }

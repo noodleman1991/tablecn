@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -45,7 +44,6 @@ export function EpisodeList({
   onEpisodeSelectAction,
   locale = 'en'
 }: EpisodeListProps) {
-  const t = useTranslations('podcast');
   const [episodes, setEpisodes] = useState(initialEpisodes);
   const [loading, setLoading] = useState(false);
   const [canLoadMore, setCanLoadMore] = useState(hasMore);
@@ -56,7 +54,7 @@ export function EpisodeList({
       const response = await fetch(`/api/podcast?limit=6&offset=${episodes.length}`);
       if (!response.ok) throw new Error('Failed to fetch more episodes');
 
-      const data = await response.json();
+      const data = await response.json() as { episodes: Episode[]; hasMore: boolean };
 
       setEpisodes(prev => [...prev, ...data.episodes]);
       setCanLoadMore(data.hasMore);
@@ -71,9 +69,9 @@ export function EpisodeList({
     <div className="space-y-6">
       {/* Header with Episode Count */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-semibold">{t('title')}</h2>
+        <h2 className="text-2xl font-semibold">Episodes</h2>
         <Badge variant="secondary" className="text-sm">
-          {t('episodeCount', { count: episodes.length, total: totalEpisodes })}
+          {episodes.length} of {totalEpisodes} episodes
         </Badge>
       </div>
 
@@ -102,10 +100,10 @@ export function EpisodeList({
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                {t('loading')}
+                Loading...
               </>
             ) : (
-              t('loadMore')
+              'Load More Episodes'
             )}
           </Button>
         </div>
@@ -122,8 +120,6 @@ interface EpisodeCardProps {
 }
 
 function EpisodeCard({ episode, episodeNumber, onPlay, locale }: EpisodeCardProps) {
-  const t = useTranslations('podcast');
-
   return (
     <Card className="hover:shadow-md transition-all duration-200 hover:border-primary/20">
       <CardHeader className="pb-3">
@@ -150,7 +146,7 @@ function EpisodeCard({ episode, episodeNumber, onPlay, locale }: EpisodeCardProp
               )}
               {episode.explicit && (
                 <Badge variant="destructive" className="text-xs">
-                  {t('explicit')}
+                  Explicit
                 </Badge>
               )}
             </div>
@@ -192,7 +188,7 @@ function EpisodeCard({ episode, episodeNumber, onPlay, locale }: EpisodeCardProp
                 className="min-w-[120px]"
               >
                 <Play className="w-4 h-4 mr-2" />
-                {t('playEpisode')}
+                Play Episode
               </Button>
 
               <Button variant="outline" size="sm" asChild>
@@ -203,7 +199,7 @@ function EpisodeCard({ episode, episodeNumber, onPlay, locale }: EpisodeCardProp
                   className="min-w-[100px]"
                 >
                   <ExternalLink className="w-4 h-4 mr-2" />
-                  {t('openInSpotify')}
+                  Spotify
                 </a>
               </Button>
 
@@ -215,7 +211,7 @@ function EpisodeCard({ episode, episodeNumber, onPlay, locale }: EpisodeCardProp
                   className="min-w-[100px]"
                 >
                   <ExternalLink className="w-4 h-4 mr-2" />
-                  {t('openInApple')}
+                  Apple Podcasts
                 </a>
               </Button>
             </div>

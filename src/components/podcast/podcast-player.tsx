@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
-import { useTranslations } from 'next-intl';
 import AudioPlayer from 'react-h5-audio-player';
 import 'react-h5-audio-player/lib/styles.css';
 import { Card, CardContent } from '@/components/ui/card';
@@ -45,20 +44,23 @@ export function PodcastPlayer({
   currentIndex = -1,
   onEpisodeSelect
 }: PodcastPlayerProps) {
-  const t = useTranslations('podcast');
   const playerRef = useRef<any>(null);
 
   const handleClickPrevious = useCallback(() => {
     if (currentIndex > 0 && onEpisodeSelect) {
       const prevEpisode = episodes[currentIndex - 1];
-      onEpisodeSelect(prevEpisode, currentIndex - 1);
+      if (prevEpisode) {
+        onEpisodeSelect(prevEpisode, currentIndex - 1);
+      }
     }
   }, [currentIndex, episodes, onEpisodeSelect]);
 
   const handleClickNext = useCallback(() => {
     if (currentIndex < episodes.length - 1 && onEpisodeSelect) {
       const nextEpisode = episodes[currentIndex + 1];
-      onEpisodeSelect(nextEpisode, currentIndex + 1);
+      if (nextEpisode) {
+        onEpisodeSelect(nextEpisode, currentIndex + 1);
+      }
     }
   }, [currentIndex, episodes, onEpisodeSelect]);
 
@@ -66,31 +68,20 @@ export function PodcastPlayer({
     console.error('Audio play error:', error);
   }, []);
 
-  // MSE configuration for future streaming capabilities
-  const mseConfig = currentEpisode?.audioLength ? {
-    srcDuration: currentEpisode.audioLength / 1000,
-    onSeek: (event: any) => {
-      console.log('Seek event:', event);
-    },
-    onEncrypted: (event: any) => {
-      console.log('Encrypted media detected:', event);
-    }
-  } : undefined;
-
-  // i18n aria labels
+  // Aria labels for accessibility
   const i18nAriaLabels = {
-    play: t('player.play'),
-    pause: t('player.pause'),
-    rewind: t('player.rewind'),
-    forward: t('player.forward'),
-    previous: t('player.previous'),
-    next: t('player.next'),
-    volumeMute: t('player.mute'),
-    volumeUnmute: t('player.unmute'),
-    volume: t('player.volume'),
-    currentTime: t('player.currentTime'),
-    duration: t('player.duration'),
-    progressBar: t('player.progressBar')
+    play: 'Play',
+    pause: 'Pause',
+    rewind: 'Rewind 10 seconds',
+    forward: 'Forward 30 seconds',
+    previous: 'Previous episode',
+    next: 'Next episode',
+    volumeMute: 'Mute',
+    volumeUnmute: 'Unmute',
+    volume: 'Volume',
+    currentTime: 'Current time',
+    duration: 'Duration',
+    progressBar: 'Progress bar'
   };
 
   return (
@@ -125,7 +116,7 @@ export function PodcastPlayer({
                   </span>
                   {currentEpisode.explicit && (
                     <Badge variant="destructive" className="text-xs">
-                      {t('explicit')}
+                      Explicit
                     </Badge>
                   )}
                 </div>
@@ -159,7 +150,7 @@ export function PodcastPlayer({
           </div>
         ) : (
           <div className="text-center py-8">
-            <p className="text-muted-foreground">{t('selectEpisode')}</p>
+            <p className="text-muted-foreground">Select an episode to start playing</p>
           </div>
         )}
       </CardContent>

@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { attendees, events, members } from "@/db/schema";
-import { eq, desc, gte, lt, isNull, and } from "drizzle-orm";
+import { eq, desc, gte, lt, isNull, and, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { syncAttendeesForEvent } from "@/lib/sync-attendees";
 import { getCacheAge } from "@/lib/cache-utils";
@@ -168,6 +168,10 @@ async function matchOrCreateMember(data: {
       totalEventsAttended: 0,
     })
     .returning();
+
+  if (!newMember) {
+    throw new Error("Failed to create new member");
+  }
 
   return { memberId: newMember.id };
 }

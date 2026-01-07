@@ -98,7 +98,7 @@ function extractTicketAttendees(order, lineItem) {
  */
 function getExtendedDateWindow(eventDate) {
   const after = new Date(eventDate);
-  after.setMonth(after.getMonth() - 6);
+  after.setDate(after.getDate() - 180); // 6 months = 180 days (safer than setMonth)
 
   const before = new Date(eventDate);
   before.setDate(before.getDate() + 7);
@@ -150,12 +150,12 @@ async function getOrdersForProduct(productId, dateWindow) {
 
     const orders = response.data;
 
-    // Filter orders that contain this product or its variations
+    // Filter orders that contain this product
+    // Note: For variable products, line items have product_id = parent product ID
+    // Variations are included automatically via product_id match
     const matchingOrders = orders.filter((order) => {
       return order.line_items?.some((item) => {
-        const productMatches = item.product_id?.toString() === productId;
-        const variationMatches = isVariable && variations.includes(item.variation_id);
-        return productMatches || variationMatches;
+        return item.product_id?.toString() === productId;
       });
     });
 
@@ -213,6 +213,18 @@ async function syncEventAttendees(client, event, eventIndex, totalEvents) {
         totalTickets++;
 
         try {
+          // Check if ticket already exists (duplicate detection)
+          const existingTicket = await client.query(
+            `SELECT id FROM tablecn_attendees
+             WHERE ticket_id = $1 AND event_id = $2`,
+            [ticket.ticketId, event.id]
+          );
+
+          if (existingTicket.rows.length > 0) {
+            console.log(`   ⏭️  Skipping duplicate ticket ${ticket.ticketId}`);
+            continue;
+          }
+
           // Insert attendee
           await client.query(
             `INSERT INTO tablecn_attendees (

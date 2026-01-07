@@ -1,6 +1,5 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,11 +17,9 @@ interface PodcastData {
 
 interface PodcastHeaderProps {
   podcast: PodcastData;
-  locale: string;
 }
 
-export function PodcastHeader({ podcast, locale }: PodcastHeaderProps) {
-  const t = useTranslations('podcast');
+export function PodcastHeader({ podcast }: PodcastHeaderProps) {
 
   return (
     <Card className="mb-8">
@@ -45,7 +42,7 @@ export function PodcastHeader({ podcast, locale }: PodcastHeaderProps) {
               <h1 className="text-3xl font-bold mb-2">{podcast.title}</h1>
               {podcast.author && (
                 <p className="text-lg text-muted-foreground">
-                  {t('hostedBy')} {podcast.author}
+                  Hosted by {podcast.author}
                 </p>
               )}
             </div>
@@ -57,10 +54,10 @@ export function PodcastHeader({ podcast, locale }: PodcastHeaderProps) {
             {/* Podcast Stats */}
             <div className="flex flex-wrap gap-2">
               <Badge variant="secondary">
-                {t('episodeCount', { count: podcast.totalEpisodes, total: podcast.totalEpisodes })}
+                {podcast.totalEpisodes} episodes
               </Badge>
               <Badge variant="outline">
-                {podcast.language?.toUpperCase() || locale.toUpperCase()}
+                {podcast.language?.toUpperCase() || 'EN'}
               </Badge>
             </div>
 
@@ -74,7 +71,7 @@ export function PodcastHeader({ podcast, locale }: PodcastHeaderProps) {
                     rel="noopener noreferrer"
                   >
                     <ExternalLink className="w-4 h-4 mr-2" />
-                    {t('visitWebsite')}
+                    Visit Website
                   </a>
                 </Button>
               )}
@@ -86,7 +83,7 @@ export function PodcastHeader({ podcast, locale }: PodcastHeaderProps) {
                   rel="noopener noreferrer"
                 >
                   <Rss className="w-4 h-4 mr-2" />
-                  {t('rssFeed')}
+                  RSS Feed
                 </a>
               </Button>
 
@@ -97,7 +94,7 @@ export function PodcastHeader({ podcast, locale }: PodcastHeaderProps) {
                   rel="noopener noreferrer"
                 >
                   <ExternalLink className="w-4 h-4 mr-2" />
-                  {t('onSpotify')}
+                  Spotify
                 </a>
               </Button>
 
@@ -108,7 +105,7 @@ export function PodcastHeader({ podcast, locale }: PodcastHeaderProps) {
                   rel="noopener noreferrer"
                 >
                   <ExternalLink className="w-4 h-4 mr-2" />
-                  {t('onApple')}
+                  Apple Podcasts
                 </a>
               </Button>
             </div>
