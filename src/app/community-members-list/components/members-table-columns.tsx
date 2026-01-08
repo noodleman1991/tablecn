@@ -169,7 +169,7 @@ export function getMembersTableColumns(
       enableHiding: true,
       meta: {
         label: "Events Attended",
-        className: "hidden",
+        className: "hidden md:table-cell",
       } as any,
     },
     {
@@ -185,7 +185,7 @@ export function getMembersTableColumns(
       enableHiding: true,
       meta: {
         label: "Last Event",
-        className: "hidden",
+        className: "hidden lg:table-cell",
       } as any,
     },
     {
@@ -201,7 +201,7 @@ export function getMembersTableColumns(
       enableHiding: true,
       meta: {
         label: "Membership Expires",
-        className: "hidden",
+        className: "hidden lg:table-cell",
       } as any,
     },
     {

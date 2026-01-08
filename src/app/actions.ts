@@ -6,6 +6,7 @@ import { eq, desc, gte, lt, isNull, and, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { syncAttendeesForEvent } from "@/lib/sync-attendees";
 import { getCacheAge } from "@/lib/cache-utils";
+import { syncMemberToLoops, removeMemberFromLoops } from "@/lib/loops-sync";
 
 /**
  * Get all events sorted by date (most recent first)
@@ -345,6 +346,11 @@ export async function createManualMember(data: {
     })
     .returning();
 
+  // Sync to Loops.so since manually created members are always active
+  if (newMember[0]) {
+    await syncMemberToLoops(newMember[0]);
+  }
+
   revalidatePath("/community-members-list");
 
   return {
@@ -389,10 +395,16 @@ export async function updateMemberDetails(data: {
   if (updates.notes !== undefined) updateData.notes = updates.notes?.trim() || null;
   if (updates.manualExpiresAt !== undefined) updateData.manualExpiresAt = updates.manualExpiresAt;
 
-  await db
+  const [updatedMember] = await db
     .update(members)
     .set(updateData)
-    .where(eq(members.id, memberId));
+    .where(eq(members.id, memberId))
+    .returning();
+
+  // Sync to Loops.so if member is active
+  if (updatedMember?.isActiveMember) {
+    await syncMemberToLoops(updatedMember);
+  }
 
   revalidatePath("/community-members-list");
 
@@ -437,10 +449,20 @@ export async function toggleMemberStatusOverride(data: {
     }
   }
 
-  await db
+  const [updatedMember] = await db
     .update(members)
     .set(updateData)
-    .where(eq(members.id, memberId));
+    .where(eq(members.id, memberId))
+    .returning();
+
+  // Sync to Loops.so based on new status
+  if (updatedMember) {
+    if (updatedMember.isActiveMember) {
+      await syncMemberToLoops(updatedMember);
+    } else {
+      await removeMemberFromLoops(updatedMember.email, updatedMember.id);
+    }
+  }
 
   revalidatePath("/community-members-list");
 
@@ -452,6 +474,18 @@ export async function toggleMemberStatusOverride(data: {
  */
 export async function deleteMember(memberId: string) {
   "use server";
+
+  // Get member email before deletion for Loops sync
+  const [member] = await db
+    .select()
+    .from(members)
+    .where(eq(members.id, memberId))
+    .limit(1);
+
+  if (member) {
+    // Remove from Loops.so before deletion
+    await removeMemberFromLoops(member.email, member.id);
+  }
 
   await db.delete(members).where(eq(members.id, memberId));
 

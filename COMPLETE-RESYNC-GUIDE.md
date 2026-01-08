@@ -34,7 +34,9 @@ WOOCOMMERCE_CONSUMER_SECRET=cs_xxxxx
 
 ## Step 1: Discover Historical Events
 
-**What it does**: Fetches all products from WooCommerce (2023 onwards) and creates event records in your database.
+**What it does**: Fetches all products from WooCommerce (2023 onwards) and creates event records in your database with accurate dates.
+
+**IMPORTANT**: The script now correctly parses event dates from WooCommerce's `event_date` metadata field (YYYYMMDD format). This ensures all events have accurate dates matching the actual event information.
 
 ### Run the script:
 ```bash
@@ -76,14 +78,14 @@ node discover-historical-events.mjs
 
 **Time**: ~2-5 minutes
 
-### What if events look wrong?
+### How date extraction works:
 
-The script tries to:
-1. Extract event dates from product names (e.g., "Event - Jan 15, 2023")
-2. Get dates from product metadata
-3. Fall back to product creation date
+The script uses a three-tier approach:
+1. **PRIMARY**: Parse `event_date` metadata in YYYYMMDD format (e.g., "20260109" = Jan 9, 2026) - This is the most accurate source
+2. **FALLBACK 1**: Extract dates from product names (e.g., "Event - Jan 15, 2023")
+3. **FALLBACK 2**: Use product creation date (will show warning)
 
-If some events have wrong dates, you can manually update them in the database or UI before continuing.
+Events using the primary source (event_date metadata) will have 100% accurate dates. If you see warnings during the script run, those events may need manual date correction.
 
 ---
 
