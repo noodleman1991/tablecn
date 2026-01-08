@@ -29,6 +29,13 @@
       "when": 1767739242378,
       "tag": "0003_greedy_lyja",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1767809566469,
+      "tag": "0004_wild_beyonder",
+      "breakpoints": true
     }
   ]
 }

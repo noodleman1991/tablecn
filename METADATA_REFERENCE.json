@@ -1,0 +1,178 @@
+{
+  "investigation": "WooCommerce Event Date Storage Analysis",
+  "date": "2026-01-07",
+  "source_products": [
+    {
+      "id": 18210,
+      "name": "Friday Night Music with Kareem Samara",
+      "type": "variable",
+      "categories": ["Music", "Social", "Tickets"],
+      "event_date_metadata": {
+        "key": "event_date",
+        "value": "20260109",
+        "format": "YYYYMMDD",
+        "parsed": {
+          "year": 2026,
+          "month": 1,
+          "day": 9,
+          "date_string": "2026-01-09",
+          "human_readable": "Friday, January 9, 2026"
+        }
+      },
+      "description_excerpt": "Friday January 9th, 6.30pm for 7.45pm",
+      "verification": "CORRECT"
+    },
+    {
+      "id": 18317,
+      "name": "Open Projects Night",
+      "type": "variable",
+      "categories": ["Discussion", "Tickets", "Workshop"],
+      "event_date_metadata": {
+        "key": "event_date",
+        "value": "20260303",
+        "format": "YYYYMMDD",
+        "parsed": {
+          "year": 2026,
+          "month": 3,
+          "day": 3,
+          "date_string": "2026-03-03",
+          "human_readable": "Tuesday, March 3, 2026"
+        }
+      },
+      "description_excerpt": "Tuesday March 3rd, 6.30 for 7pm",
+      "verification": "CORRECT"
+    },
+    {
+      "id": 18258,
+      "name": "UBI: From Distant Ideal to Transformative Policy with Kate Pickett",
+      "type": "variable",
+      "categories": ["Discussion", "Talk", "Tickets"],
+      "event_date_metadata": {
+        "key": "event_date",
+        "value": "20260219",
+        "format": "YYYYMMDD",
+        "parsed": {
+          "year": 2026,
+          "month": 2,
+          "day": 19,
+          "date_string": "2026-02-19",
+          "human_readable": "Thursday, February 19, 2026"
+        }
+      },
+      "description_excerpt": "Thursday February 19th, 6.30 for 7pm",
+      "verification": "CORRECT"
+    }
+  ],
+  "metadata_fields_examined": {
+    "event_date": {
+      "description": "Primary event date field",
+      "format": "YYYYMMDD (8-digit string)",
+      "presence": "Present in all examined products",
+      "reliability": "VERY HIGH - All verified as accurate",
+      "parsing_requirement": "Explicit extraction of year, month, day"
+    },
+    "_event_date": {
+      "description": "ACF field reference",
+      "value_example": "field_678ebc5a346eb",
+      "reliability": "NOT USEFUL - References field ID, not actual date",
+      "use": "Skip this field"
+    },
+    "date": {
+      "description": "Generic date field",
+      "presence": "Not found in examined products",
+      "reliability": "UNKNOWN"
+    },
+    "_ticket": {
+      "description": "Indicates ticketed product",
+      "value": "yes",
+      "use": "Identify event products"
+    },
+    "_ticket_fields": {
+      "description": "Ticket form field configuration",
+      "type": "JSON object"
+    },
+    "product_name": {
+      "description": "Product name field",
+      "contains_date": false,
+      "note": "Does not contain date information"
+    },
+    "short_description": {
+      "description": "Product short description",
+      "contains_date": true,
+      "format": "Human-readable (e.g., 'Friday January 9th')",
+      "reliability": "MEDIUM - Accurate but requires complex parsing"
+    },
+    "date_created": {
+      "description": "Product creation timestamp",
+      "relates_to_event": false,
+      "current_issue": "Script currently uses this as fallback, causing wrong dates"
+    }
+  },
+  "parsing_algorithm": {
+    "input": "event_date metadata value (e.g., '20260109')",
+    "steps": [
+      {
+        "step": 1,
+        "description": "Validate format",
+        "check": "/^\\d{8}$/",
+        "example": "'20260109' matches"
+      },
+      {
+        "step": 2,
+        "description": "Extract year",
+        "code": "dateStr.substring(0, 4)",
+        "example": "'2026'"
+      },
+      {
+        "step": 3,
+        "description": "Extract month",
+        "code": "dateStr.substring(4, 6)",
+        "example": "'01'"
+      },
+      {
+        "step": 4,
+        "description": "Extract day",
+        "code": "dateStr.substring(6, 8)",
+        "example": "'09'"
+      },
+      {
+        "step": 5,
+        "description": "Create date",
+        "code": "new Date(year, month - 1, day)",
+        "note": "JavaScript months are 0-indexed"
+      }
+    ],
+    "output": "Valid JavaScript Date object"
+  },
+  "edge_cases": [
+    {
+      "case": "Date value as number instead of string",
+      "example": 20260109,
+      "handling": "Convert to string with toString() before parsing"
+    },
+    {
+      "case": "Date value with leading/trailing whitespace",
+      "example": " 20260109 ",
+      "handling": "Use trim() before validation"
+    },
+    {
+      "case": "Invalid date like month 13 or day 32",
+      "example": "20261301 or 20260132",
+      "handling": "Check NaN after Date creation"
+    }
+  ],
+  "recommendations": {
+    "primary_strategy": "Use event_date metadata field with explicit YYYYMMDD parsing",
+    "fallback_1": "Try other metadata fields (_event_date, date) with flexible parsing",
+    "fallback_2": "Use product.date_created as last resort",
+    "add_validation": "Ensure parsed dates are reasonable (not in future by more than X months, not before 2023)",
+    "logging": "Log when fallback is used to identify products needing attention"
+  },
+  "summary": {
+    "reliable_field": "product.meta_data[].event_date",
+    "format": "YYYYMMDD (string, 8 digits)",
+    "accuracy": "100% verified across test products",
+    "implementation_complexity": "Low - straightforward string parsing",
+    "breaking_changes": "None - only improves accuracy"
+  }
+}

@@ -30,10 +30,37 @@ const woocommerce = new WooCommerceRestApi({
 
 /**
  * Extract event date from product name or metadata
- * Common formats: "Event Name - Jan 15, 2023" or metadata
+ * Primary source: event_date metadata in YYYYMMDD format (e.g., "20260109")
  */
 function extractEventDate(product) {
-  // Try to find date in product name (e.g., "Event - Jan 15, 2023")
+  // PRIMARY: Get from event_date metadata (YYYYMMDD format)
+  const dateMeta = product.meta_data?.find(m =>
+    ['event_date', '_event_date'].includes(m.key)
+  );
+
+  if (dateMeta?.value) {
+    const dateStr = dateMeta.value.toString();
+
+    // Parse YYYYMMDD format (e.g., "20260109" = Jan 9, 2026)
+    if (/^\d{8}$/.test(dateStr)) {
+      const year = parseInt(dateStr.substring(0, 4), 10);
+      const month = parseInt(dateStr.substring(4, 6), 10) - 1; // JS months are 0-indexed
+      const day = parseInt(dateStr.substring(6, 8), 10);
+
+      const date = new Date(year, month, day);
+      if (!isNaN(date.getTime())) {
+        return date;
+      }
+    }
+
+    // Try parsing as ISO date string (fallback)
+    const date = new Date(dateMeta.value);
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+  }
+
+  // FALLBACK 1: Try to find date in product name (e.g., "Event - Jan 15, 2023")
   const nameMatch = product.name.match(/(\w+)\s+(\d{1,2}),?\s+(\d{4})/);
   if (nameMatch) {
     const [, month, day, year] = nameMatch;
@@ -43,19 +70,8 @@ function extractEventDate(product) {
     }
   }
 
-  // Try to get from product metadata
-  const dateMeta = product.meta_data?.find(m =>
-    ['event_date', '_event_date', 'date'].includes(m.key)
-  );
-
-  if (dateMeta?.value) {
-    const date = new Date(dateMeta.value);
-    if (!isNaN(date.getTime())) {
-      return date;
-    }
-  }
-
-  // Fallback: use product created date as approximation
+  // FALLBACK 2: Use product created date as last resort
+  console.warn(`   ⚠️  No event_date found for "${product.name}", using creation date`);
   return new Date(product.date_created);
 }
 
@@ -174,20 +190,15 @@ async function discoverHistoricalEvents() {
       );
 
       if (existingEvent.rows.length > 0) {
-        // Update existing event name if changed
+        // Always update to keep in sync with WooCommerce
         const existing = existingEvent.rows[0];
-        if (existing.name !== product.name) {
-          await client.query(
-            `UPDATE tablecn_events
-             SET name = $1, event_date = $2, updated_at = CURRENT_TIMESTAMP
-             WHERE id = $3`,
-            [product.name, eventDate, existing.id]
-          );
-          updatedCount++;
-          console.log(`   ✓ Updated: ${product.name} (${eventDate.toISOString().split('T')[0]})`);
-        } else {
-          skippedCount++;
-        }
+        await client.query(
+          `UPDATE tablecn_events
+           SET name = $1, event_date = $2, updated_at = CURRENT_TIMESTAMP
+           WHERE id = $3`,
+          [product.name, eventDate, existing.id]
+        );
+        updatedCount++;
         continue;
       }
 
@@ -212,7 +223,6 @@ async function discoverHistoricalEvents() {
     console.log('\n✅ Event discovery complete!');
     console.log(`   Events created: ${createdCount}`);
     console.log(`   Events updated: ${updatedCount}`);
-    console.log(`   Events skipped (already exist): ${skippedCount}`);
     console.log(`   Total processed: ${eventProducts.length}`);
     console.log('\n📋 Next steps:');
     console.log('   1. Review events in your database');

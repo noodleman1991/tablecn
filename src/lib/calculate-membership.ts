@@ -3,6 +3,7 @@ import "server-only";
 import { db } from "@/db";
 import { attendees, events, members } from "@/db/schema";
 import { eq, and, gte, lte, sql } from "drizzle-orm";
+import { syncMemberToLoops, removeMemberFromLoops } from "@/lib/loops-sync";
 
 /**
  * Recalculate membership status for a specific member
@@ -109,8 +110,11 @@ export async function recalculateMembershipForMember(memberId: string) {
     membershipExpiresAt = eventBasedExpiresAt;
   }
 
+  // Track if status changed for Loops sync
+  const statusChanged = memberData.isActiveMember !== isActiveMember;
+
   // Update member record
-  await db
+  const [updatedMember] = await db
     .update(members)
     .set({
       isActiveMember,
@@ -118,11 +122,23 @@ export async function recalculateMembershipForMember(memberId: string) {
       membershipExpiresAt,
       lastEventDate,
     })
-    .where(eq(members.id, memberId));
+    .where(eq(members.id, memberId))
+    .returning();
 
   console.log(
     `[calculate-membership] Updated ${memberData.email}: ${totalEventsAttended} total events (${recentEventsAttended} recent), active: ${isActiveMember}`,
   );
+
+  // Sync to Loops.so if status changed
+  if (updatedMember && statusChanged) {
+    if (updatedMember.isActiveMember) {
+      await syncMemberToLoops(updatedMember);
+      console.log(`[calculate-membership] Synced ${updatedMember.email} to Loops (became active)`);
+    } else {
+      await removeMemberFromLoops(updatedMember.email, updatedMember.id);
+      console.log(`[calculate-membership] Removed ${updatedMember.email} from Loops (became inactive)`);
+    }
+  }
 
   return {
     email: memberData.email,

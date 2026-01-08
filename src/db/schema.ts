@@ -41,6 +41,7 @@ export const attendees = pgTable("attendees", {
   lastName: varchar("last_name", { length: 128 }),
   ticketId: varchar("ticket_id", { length: 128 }), // NEW: Individual WooCommerce ticket ID
   woocommerceOrderId: varchar("woocommerce_order_id", { length: 128 }), // Now stores actual order ID
+  woocommerceOrderDate: timestamp("woocommerce_order_date"), // Date when order was placed in WooCommerce
   bookerFirstName: varchar("booker_first_name", { length: 128 }),  // Order purchaser's first name
   bookerLastName: varchar("booker_last_name", { length: 128 }),   // Order purchaser's last name
   bookerEmail: varchar("booker_email", { length: 255 }),           // Order purchaser's email
@@ -119,3 +120,24 @@ export const woocommerceCache = pgTable("woocommerce_cache", {
 
 export type WooCommerceCache = typeof woocommerceCache.$inferSelect;
 export type NewWooCommerceCache = typeof woocommerceCache.$inferInsert;
+
+// Loops.so sync log table
+export const loopsSyncLog = pgTable("loops_sync_log", {
+  id: varchar("id", { length: 30 })
+    .$defaultFn(() => generateId())
+    .primaryKey(),
+  memberId: varchar("member_id", { length: 30 }),
+  email: varchar("email", { length: 255 }).notNull(),
+  operation: varchar("operation", {
+    length: 20,
+  }).notNull(),
+  status: varchar("status", {
+    length: 20,
+  }).notNull(),
+  errorMessage: varchar("error_message", { length: 1000 }),
+  loopsContactId: varchar("loops_contact_id", { length: 128 }),
+  syncedAt: timestamp("synced_at").defaultNow().notNull(),
+});
+
+export type LoopsSyncLog = typeof loopsSyncLog.$inferSelect;
+export type NewLoopsSyncLog = typeof loopsSyncLog.$inferInsert;
