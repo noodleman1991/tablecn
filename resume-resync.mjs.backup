@@ -1,4 +1,7 @@
-// Comprehensive resync script for all events (including past)
+// Resume Resync Script
+// Continues syncing from a specific event number
+// Usage: node resume-resync.mjs [start_event_number]
+
 import { createRequire } from 'module';
 import pg from 'pg';
 import { customAlphabet } from 'nanoid';
@@ -9,7 +12,7 @@ dotenv.config();
 
 const { Client } = pg;
 
-// ID generator (matching src/lib/id.ts)
+// ID generator
 const generateId = customAlphabet(
   '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz',
   12
@@ -54,31 +57,20 @@ async function retryWithBackoff(fn, maxRetries = 3, initialDelay = 1000) {
   }
 }
 
-/**
- * Extract individual tickets from WooCommerce order
- */
 function extractTicketAttendees(order, lineItem) {
   const attendees = [];
-
-  // Find _ticket_data in meta_data
   const ticketDataMeta = lineItem.meta_data?.find((m) => m.key === '_ticket_data');
 
   if (!ticketDataMeta || !Array.isArray(ticketDataMeta.value)) {
-    console.log(`   ⚠️  No _ticket_data for order ${order.id}`);
     return attendees;
   }
 
   const ticketDataArray = ticketDataMeta.value;
 
   for (const ticketData of ticketDataArray) {
-    const { uid, index, fields } = ticketData;
+    const { uid, fields } = ticketData;
+    if (!uid || !fields) continue;
 
-    if (!uid || !fields) {
-      console.warn(`   ⚠️  Missing uid or fields in ticket data for order ${order.id}`);
-      continue;
-    }
-
-    // Extract field values (field keys are hashed)
     let email = null;
     let firstName = null;
     let lastName = null;
@@ -87,27 +79,21 @@ function extractTicketAttendees(order, lineItem) {
       const fieldValue = value?.toString().trim();
       if (!fieldValue) continue;
 
-      // Email field contains @ symbol
       if (fieldValue.includes('@')) {
         email = fieldValue.toLowerCase();
-      }
-      // First name field (usually first non-email field)
-      else if (!firstName) {
+      } else if (!firstName) {
         firstName = fieldValue;
-      }
-      // Last name field (second non-email field)
-      else if (!lastName) {
+      } else if (!lastName) {
         lastName = fieldValue;
       }
     }
 
     if (email) {
       attendees.push({
-        ticketId: uid, // WooCommerce ticket UID
+        ticketId: uid,
         email,
         firstName: firstName || order.billing.first_name || '',
         lastName: lastName || order.billing.last_name || '',
-        // Booker information (person who placed the order)
         bookerFirstName: order.billing.first_name || '',
         bookerLastName: order.billing.last_name || '',
         bookerEmail: order.billing.email || '',
@@ -118,79 +104,78 @@ function extractTicketAttendees(order, lineItem) {
   return attendees;
 }
 
-/**
- * Fetch all orders for a product (with pagination)
- */
-async function getOrdersForProduct(productId, eventDate) {
-  console.log(`   Fetching orders for product ${productId}...`);
-
+function getExtendedDateWindow(eventDate) {
   // For historical resync: NO DATE FILTERING
   // Fetch ALL orders for the product regardless of purchase date
   // This ensures early bird tickets (purchased 6+ months ahead) are included
   //
-  // Previously used 60-day window which excluded early bird purchases
-  // Example: "Village of Lovers" (Nov 21, 2023) only fetched orders from Sep 22 onwards
+  // Previously used 180-day window which excluded early bird purchases
+  // Example: "Village of Lovers" (Nov 21, 2023) only fetched orders from May 25 onwards
   // Missing 14 of 23 tickets (61% data loss!)
-  let dateParams = {};  // No date filtering
+  return null;  // null = no date filter
+}
 
-  // Check if product is variable (has variations)
+function shouldMarkAsCheckedIn(eventDate) {
+  // Use today's date at 23:59:59 UTC (dynamic cutoff)
+  const cutoff = new Date();
+  cutoff.setUTCHours(23, 59, 59, 999);
+  return new Date(eventDate) < cutoff;
+}
+
+async function getOrdersForProduct(productId, dateWindow) {
   const product = await woocommerce.get(`products/${productId}`);
   const isVariable = product.data.type === 'variable';
-  const variations = isVariable ? product.data.variations || [] : [];
 
-  console.log(`   Product is ${isVariable ? 'variable' : 'simple'}`);
-  if (isVariable) {
-    console.log(`   Found ${variations.length} variations`);
-  }
-
-  // Fetch orders with pagination
   let allOrders = [];
   let page = 1;
   let hasMore = true;
 
   while (hasMore && page <= 50) {
-    const response = await woocommerce.get('orders', {
+    const params = {
       per_page: 100,
       page,
       status: 'completed,processing,on-hold',
-      ...dateParams,
-    });
+    };
+
+    // Only add date filter if dateWindow is provided (not null)
+    // For historical resync, dateWindow is null = fetch ALL orders
+    if (dateWindow) {
+      params.after = dateWindow.after;
+      params.before = dateWindow.before;
+    }
+
+    const response = await woocommerce.get('orders', params);
 
     const orders = response.data;
-
-    // Filter orders that contain this product or its variations
     const matchingOrders = orders.filter((order) => {
       return order.line_items?.some((item) => {
-        const productMatches = item.product_id?.toString() === productId;
-        const variationMatches = isVariable && variations.includes(item.variation_id);
-        return productMatches || variationMatches;
+        return item.product_id?.toString() === productId;
       });
     });
 
     allOrders = allOrders.concat(matchingOrders);
-
     hasMore = orders.length === 100;
     page++;
   }
 
-  console.log(`   Found ${allOrders.length} orders`);
   return allOrders;
 }
 
-/**
- * Sync attendees for a single event
- */
-async function syncEventAttendees(client, event) {
+async function syncEventAttendees(client, event, eventIndex, totalEvents) {
   console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-  console.log(`📅 ${event.name}`);
+  console.log(`📅 [${eventIndex}/${totalEvents}] ${event.name}`);
   console.log(`   Date: ${event.event_date}`);
   console.log(`   Product ID: ${event.woocommerce_product_id}`);
 
-  // Fetch orders from WooCommerce with retry logic
+  const dateWindow = getExtendedDateWindow(event.event_date);
+  const shouldCheckIn = shouldMarkAsCheckedIn(event.event_date);
+
+  console.log(`   Auto check-in: ${shouldCheckIn ? 'YES (past event)' : 'NO (future event)'}`);
+
   let orders;
   try {
     orders = await retryWithBackoff(
-      () => getOrdersForProduct(event.woocommerce_product_id, event.event_date),
+      () => getOrdersForProduct(event.woocommerce_product_id, dateWindow),
       3,     // 3 retries
       2000   // Start with 2 second delay
     );
@@ -204,27 +189,28 @@ async function syncEventAttendees(client, event) {
   let createdCount = 0;
 
   for (const order of orders) {
-    // Filter line items for this product
     const lineItems = order.line_items?.filter((item) =>
       item.product_id?.toString() === event.woocommerce_product_id
     ) || [];
 
     for (const lineItem of lineItems) {
-      // Extract ticket attendees
       const tickets = extractTicketAttendees(order, lineItem);
 
       for (const ticket of tickets) {
         totalTickets++;
 
-        // Check if ticket already exists
-        // IMPORTANT: Check both ticket_id AND event_id to match UNIQUE constraint
-        const existing = await client.query(
-          'SELECT id FROM tablecn_attendees WHERE ticket_id = $1 AND event_id = $2',
-          [ticket.ticketId, event.id]
-        );
+        try {
+          // Check if ticket already exists
+          const existingTicket = await client.query(
+            `SELECT id FROM tablecn_attendees
+             WHERE ticket_id = $1 AND event_id = $2`,
+            [ticket.ticketId, event.id]
+          );
 
-        if (existing.rows.length === 0) {
-          // Create new attendee
+          if (existingTicket.rows.length > 0) {
+            continue;
+          }
+
           await client.query(
             `INSERT INTO tablecn_attendees (
               id, event_id, email, first_name, last_name,
@@ -234,7 +220,7 @@ async function syncEventAttendees(client, event) {
               manually_added, locally_modified
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
             [
-              generateId(), // Generate unique ID
+              generateId(),
               event.id,
               ticket.email,
               ticket.firstName,
@@ -242,33 +228,18 @@ async function syncEventAttendees(client, event) {
               ticket.ticketId,
               order.id.toString(),
               new Date(order.date_created),  // WooCommerce order date
-              ticket.bookerFirstName, // Booker first name
-              ticket.bookerLastName,  // Booker last name
-              ticket.bookerEmail,     // Booker email
-              false, // Not checked in
-              null,
-              false, // Not manually added
-              false, // Not locally modified
-            ]
-          );
-          createdCount++;
-        } else {
-          // Update existing attendee with booker information
-          // Only update booker fields if they are currently NULL
-          const existingId = existing.rows[0].id;
-          await client.query(
-            `UPDATE tablecn_attendees
-             SET booker_first_name = COALESCE(booker_first_name, $1),
-                 booker_last_name = COALESCE(booker_last_name, $2),
-                 booker_email = COALESCE(booker_email, $3)
-             WHERE id = $4`,
-            [
               ticket.bookerFirstName,
               ticket.bookerLastName,
               ticket.bookerEmail,
-              existingId
+              shouldCheckIn,
+              shouldCheckIn ? new Date(event.event_date) : null,
+              false,
+              false,
             ]
           );
+          createdCount++;
+        } catch (error) {
+          console.error(`   ✗ Error inserting ticket ${ticket.ticketId}:`, error.message);
         }
       }
     }
@@ -278,56 +249,90 @@ async function syncEventAttendees(client, event) {
   return { total: totalTickets, created: createdCount };
 }
 
-/**
- * Main resync function
- */
-async function resyncAllEvents() {
+async function resumeResync() {
+  // Get start event number from command line argument
+  const startFrom = parseInt(process.argv[2]) || 1;
+
   const client = new Client({
     connectionString: process.env.DATABASE_URL,
+    // Neon pooler connection settings to prevent timeouts
+    connectionTimeoutMillis: 10000,
+    query_timeout: 30000,
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10000,
   });
 
   await client.connect();
   console.log('🔌 Connected to database\n');
 
   try {
-    // Get all events with WooCommerce product IDs
+    console.log(`⏩ Resuming from event ${startFrom}\n`);
+
+    // Get ALL events
     const eventsResult = await client.query(
       `SELECT id, name, event_date, woocommerce_product_id
        FROM tablecn_events
        WHERE woocommerce_product_id IS NOT NULL
-       ORDER BY event_date DESC
-       LIMIT 10`
+       ORDER BY event_date ASC`
     );
 
     const events = eventsResult.rows;
-    console.log(`Found ${events.length} events to sync (last 10)\n`);
+    console.log(`Found ${events.length} total events`);
+    console.log(`Starting from event ${startFrom} (${events.length - startFrom + 1} remaining)\n`);
 
     let totalEventsProcessed = 0;
     let totalTicketsCreated = 0;
     let totalTicketsProcessed = 0;
+    let totalErrors = 0;
 
-    for (const event of events) {
+    // Start from specified event
+    for (let i = startFrom - 1; i < events.length; i++) {
+      const event = events[i];
+
       try {
-        const result = await syncEventAttendees(client, event);
+        const result = await syncEventAttendees(client, event, i + 1, events.length);
         totalEventsProcessed++;
         totalTicketsProcessed += result.total;
         totalTicketsCreated += result.created;
+
+        if (result.error) {
+          totalErrors++;
+        }
+
+        // Save progress every 10 events
+        if ((i + 1) % 10 === 0) {
+          console.log(`\n💾 Progress checkpoint: Event ${i + 1}/${events.length}`);
+          console.log(`   To resume from here if interrupted: node resume-resync.mjs ${i + 2}\n`);
+        }
       } catch (error) {
         console.error(`   ✗ Error syncing event:`, error.message);
+        totalErrors++;
+      }
+
+      // Rate limiting: 500ms delay between events
+      if (i < events.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
     }
 
     console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
     console.log(`\n✅ Resync complete!`);
-    console.log(`   Events processed: ${totalEventsProcessed}`);
+    console.log(`   Events processed: ${totalEventsProcessed}/${events.length - startFrom + 1}`);
     console.log(`   Tickets processed: ${totalTicketsProcessed}`);
     console.log(`   Tickets created: ${totalTicketsCreated}`);
+    console.log(`   Errors: ${totalErrors}`);
+    console.log(`\n📋 Next steps:`);
+    console.log(`   1. Run: node rebuild-members.mjs`);
+    console.log(`   2. Run: node verify-resync.mjs`);
 
   } catch (error) {
     console.error('Fatal error:', error);
+    console.error('\n💡 To resume from where you left off, run:');
+    console.error(`   node resume-resync.mjs ${startFrom}`);
   } finally {
     await client.end();
   }
 }
 
-resyncAllEvents();
+// Run the resync
+resumeResync();

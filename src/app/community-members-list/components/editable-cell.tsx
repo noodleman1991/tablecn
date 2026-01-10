@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 interface EditableCellProps {
   value: string | null;
@@ -24,14 +25,17 @@ export function EditableCell({
   const [isEditing, setIsEditing] = React.useState(false);
   const [editValue, setEditValue] = React.useState(value || "");
   const [isSaving, setIsSaving] = React.useState(false);
+  // Optimistic display value - shows new value immediately while saving
+  const [optimisticValue, setOptimisticValue] = React.useState<string | null>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   // Reset edit value when value prop changes
   React.useEffect(() => {
-    if (!isEditing) {
+    if (!isEditing && !isSaving) {
       setEditValue(value || "");
+      setOptimisticValue(null);
     }
-  }, [value, isEditing]);
+  }, [value, isEditing, isSaving]);
 
   // Auto-focus when entering edit mode
   React.useEffect(() => {
@@ -76,17 +80,21 @@ export function EditableCell({
       return;
     }
 
+    // OPTIMISTIC UPDATE: Close edit mode immediately and show new value
+    setOptimisticValue(trimmedValue);
+    setIsEditing(false);
     setIsSaving(true);
 
     try {
       await onSave(memberId, field, trimmedValue);
-      toast.success(`${field} updated successfully`);
-      setIsEditing(false);
+      // Success - optimistic value will be replaced by actual value on revalidation
+      toast.success(`${field} updated`);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : `Failed to update ${field}`
       );
-      // Rollback to original value
+      // Rollback: clear optimistic value so original value shows
+      setOptimisticValue(null);
       setEditValue(value || "");
     } finally {
       setIsSaving(false);
@@ -110,6 +118,9 @@ export function EditableCell({
     }
   };
 
+  // Display value: use optimistic value if saving, otherwise actual value
+  const displayValue = optimisticValue ?? value;
+
   if (isEditing) {
     return (
       <Input
@@ -130,9 +141,10 @@ export function EditableCell({
     <button
       onClick={handleClick}
       disabled={isSaving}
-      className="text-left hover:underline cursor-pointer min-h-[44px] md:min-h-0 flex items-center w-full"
+      className="text-left hover:underline cursor-pointer min-h-[44px] md:min-h-0 flex items-center w-full gap-1"
     >
-      <span className="truncate">{value || placeholder || "-"}</span>
+      <span className="truncate">{displayValue || placeholder || "-"}</span>
+      {isSaving && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
     </button>
   );
 }

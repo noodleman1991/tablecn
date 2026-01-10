@@ -1,0 +1,140 @@
+═══════════════════════════════════════════════
+  COMPREHENSIVE DATA QUALITY AUDIT REPORT
+═══════════════════════════════════════════════
+
+Generated: 2026-01-09T13:32:27.095Z
+
+📊 SUMMARY STATISTICS
+─────────────────────────────────────────────
+Total Events:              428
+Events with Products:      282
+Events with Tickets:       235
+Events with 0 Tickets:     47
+Total Tickets:             4849
+
+❌ CRITICAL ISSUES
+─────────────────────────────────────────────
+Empty Events:              47
+  Events that should have tickets but show 0
+
+⚠️  WARNINGS
+─────────────────────────────────────────────
+Duplicate Tickets (Same Event):    0
+Duplicate Tickets (Cross-Event):   0
+Suspicious Events (1 ticket):      15
+
+🔍 INFORMATIONAL
+─────────────────────────────────────────────
+Purchases After Event:     159
+Very Early Purchases:      0
+
+
+📋 EMPTY EVENTS (First 10)
+─────────────────────────────────────────────
+Open Projects Night
+  Event Date: Tue Mar 03 2026 00:00:00 GMT+0100 (Central European Standard Time)
+  Product ID: 18317
+  Event ID: jsG2wnWko6Vi
+
+Book Club: "The Ultimate Hidden Truth of the World
+  Event Date: Wed Feb 25 2026 00:00:00 GMT+0100 (Central European Standard Time)
+  Product ID: 18355
+  Event ID: NLLSbFg1coZc
+
+UBI: From Distant Ideal to Transformative Policy w
+  Event Date: Thu Feb 19 2026 00:00:00 GMT+0100 (Central European Standard Time)
+  Product ID: 18258
+  Event ID: BGz7kjEhNcQG
+
+Book Club: "Birnam Wood" by Eleanor Catton
+  Event Date: Wed Jan 28 2026 00:00:00 GMT+0100 (Central European Standard Time)
+  Product ID: 18341
+  Event ID: SjckxV27MBgJ
+
+In Case of Emergency: Post Performance Supper
+  Event Date: Fri Jan 09 2026 00:00:00 GMT+0100 (Central European Standard Time)
+  Product ID: 18366
+  Event ID: o13bNsGrzmF4
+
+Kairos at How the Light Gets In with Roger Hallam
+  Event Date: Sat Sep 20 2025 00:00:00 GMT+0200 (Central European Summer Time)
+  Product ID: 15910
+  Event ID: JDbaIIbT0aFM
+
+Friday Drinks - Friday, September 19, 2025
+  Event Date: Fri Sep 19 2025 00:00:00 GMT+0200 (Central European Summer Time)
+  Product ID: 15950
+  Event ID: PQDY189bdzp4
+
+Kairos at the Stroud Festival of Commoning: Revivi
+  Event Date: Sat Sep 13 2025 00:00:00 GMT+0200 (Central European Summer Time)
+  Product ID: 15606
+  Event ID: btUzgu5lwcqf
+
+Sunday Reading Room
+  Event Date: Sun Jul 20 2025 00:00:00 GMT+0200 (Central European Summer Time)
+  Product ID: 14921
+  Event ID: CDOhhlmNkAjD
+
+Sunday Reading Room
+  Event Date: Sun Jul 06 2025 00:00:00 GMT+0200 (Central European Summer Time)
+  Product ID: 14875
+  Event ID: yaaYRCcolVCY
+
+
+📋 PURCHASES AFTER EVENT (First 10)
+─────────────────────────────────────────────
+The Cost of Resistance with Chris Hedges
+  Event Date: Tue Aug 13 2024 11:49:29 GMT+0200 (Central European Summer Time)
+  First Purchase: Wed Aug 21 2024 09:54:28 GMT+0200 (Central European Summer Time)
+  Tickets After Event: 120/120
+
+Winter Solstice Celebration
+  Event Date: Mon Nov 11 2024 17:32:15 GMT+0100 (Central European Standard Time)
+  First Purchase: Tue Nov 19 2024 09:51:54 GMT+0100 (Central European Standard Time)
+  Tickets After Event: 76/76
+
+Reviving the Commons: A Unifying Vision for Our Co
+  Event Date: Tue Dec 10 2024 10:31:47 GMT+0100 (Central European Standard Time)
+  First Purchase: Tue Dec 17 2024 10:05:11 GMT+0100 (Central European Standard Time)
+  Tickets After Event: 66/66
+
+The Meaning of Revolution in the 21st Century with
+  Event Date: Thu Nov 23 2023 09:35:29 GMT+0100 (Central European Standard Time)
+  First Purchase: Fri Dec 01 2023 13:42:49 GMT+0100 (Central European Standard Time)
+  Tickets After Event: 52/52
+
+We Are the Ones We've Been Waiting For with Adam G
+  Event Date: Tue Jan 21 2025 13:14:52 GMT+0100 (Central European Standard Time)
+  First Purchase: Tue Jan 28 2025 16:39:11 GMT+0100 (Central European Standard Time)
+  Tickets After Event: 51/51
+
+History for Tomorrow with Roman Krznaric
+  Event Date: Sat Apr 27 2024 11:27:57 GMT+0200 (Central European Summer Time)
+  First Purchase: Wed May 08 2024 20:28:24 GMT+0200 (Central European Summer Time)
+  Tickets After Event: 48/48
+
+What Can We Learn from the Radical Imagination? wi
+  Event Date: Mon Jul 29 2024 10:12:26 GMT+0200 (Central European Summer Time)
+  First Purchase: Mon Aug 05 2024 15:13:20 GMT+0200 (Central European Summer Time)
+  Tickets After Event: 45/45
+
+What Can Religion Teach Us About Living in Apocaly
+  Event Date: Tue Aug 27 2024 13:48:03 GMT+0200 (Central European Summer Time)
+  First Purchase: Tue Sep 03 2024 15:11:23 GMT+0200 (Central European Summer Time)
+  Tickets After Event: 44/44
+
+Cognitive Dissonance: Living in a World of Contrad
+  Event Date: Mon Jun 10 2024 17:30:32 GMT+0200 (Central European Summer Time)
+  First Purchase: Tue Jun 18 2024 20:04:52 GMT+0200 (Central European Summer Time)
+  Tickets After Event: 42/42
+
+Worlds Worth Living For with Dougald Hine
+  Event Date: Tue Aug 13 2024 09:38:53 GMT+0200 (Central European Summer Time)
+  First Purchase: Wed Aug 21 2024 14:36:14 GMT+0200 (Central European Summer Time)
+  Tickets After Event: 42/42
+
+
+═══════════════════════════════════════════════
+END OF REPORT
+═══════════════════════════════════════════════

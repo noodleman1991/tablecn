@@ -1,0 +1,2389 @@
+[dotenv@17.2.3] injecting env (15) from .env -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
+🔌 Connected to database pool
+
+⏩ Resuming from event 1
+
+Found 282 total events
+Starting from event 1 (282 remaining)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [1/282] Doughnut Economics Workshop
+   Date: Tue Feb 21 2023 08:28:07 GMT+0100 (Central European Standard Time)
+   Product ID: 1411
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: read ETIMEDOUT
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [2/282] Box of Darkness: The Transformative Power of Grief with Liz Jensen
+   Date: Tue Feb 21 2023 09:33:55 GMT+0100 (Central European Standard Time)
+   Product ID: 1420
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [3/282] The Rights of Nature with César Rodríguez-Garavito
+   Date: Tue Feb 21 2023 09:38:40 GMT+0100 (Central European Standard Time)
+   Product ID: 1425
+   Auto check-in: YES (past event)
+   ✓ Processed 15 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [4/282] Warm Data Lab at Kairos
+   Date: Sun Mar 05 2023 13:48:06 GMT+0100 (Central European Standard Time)
+   Product ID: 1649
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [5/282] Protest Rights: A Benchmark For Political Freedom with Raj Chada
+   Date: Tue Mar 07 2023 16:17:48 GMT+0100 (Central European Standard Time)
+   Product ID: 1817
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [6/282] Revolution: Inevitable, Justified and Effective with Roger Hallam
+   Date: Sun Mar 19 2023 13:35:19 GMT+0100 (Central European Standard Time)
+   Product ID: 1886
+   Auto check-in: YES (past event)
+   ✓ Processed 6 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [7/282] Screening of “How To Blow Up A Pipeline” with Rowan Tilly
+   Date: Sun Mar 19 2023 13:50:57 GMT+0100 (Central European Standard Time)
+   Product ID: 1894
+   Auto check-in: YES (past event)
+   ✓ Processed 10 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [8/282] The New Lucas Plan: A Workers-Led Transition
+   Date: Sun Mar 19 2023 13:57:34 GMT+0100 (Central European Standard Time)
+   Product ID: 1900
+   Auto check-in: YES (past event)
+   ✓ Processed 4 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [9/282] Climate, Technology, Justice & Rights: Can We Get The Whole World To Agree On Any Of Them? with AC Grayling
+   Date: Sun Mar 19 2023 14:05:51 GMT+0100 (Central European Standard Time)
+   Product ID: 1905
+   Auto check-in: YES (past event)
+   ✓ Processed 21 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [10/282] Sunday Sci-Fi: “Children Of Men” by Alfonso Cuarón
+   Date: Mon Mar 27 2023 12:24:56 GMT+0200 (Central European Summer Time)
+   Product ID: 1944
+   Auto check-in: YES (past event)
+   ✓ Processed 1 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [11/282] Screening of “Accidental Anarchist” with Güney Yildiz & Carne Ross in conversation
+   Date: Mon Mar 27 2023 12:31:17 GMT+0200 (Central European Summer Time)
+   Product ID: 1950
+   Auto check-in: YES (past event)
+   ✓ Processed 7 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [12/282] Screening Of “Cow” with Anat Pick
+   Date: Mon Mar 27 2023 12:40:35 GMT+0200 (Central European Summer Time)
+   Product ID: 1962
+   Auto check-in: YES (past event)
+   ✓ Processed 2 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [13/282] Kinship with All Life: A New Paradigm for Leadership with Justine Huxley
+   Date: Tue Apr 25 2023 09:35:44 GMT+0200 (Central European Summer Time)
+   Product ID: 2297
+   Auto check-in: YES (past event)
+   ✓ Processed 16 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [14/282] Forging a Commons Charter…. & Acting On It with Guy Standing
+   Date: Sun May 07 2023 15:42:06 GMT+0200 (Central European Summer Time)
+   Product ID: 2514
+   Auto check-in: YES (past event)
+   ✓ Processed 18 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [15/282] Artful Activism & the Backbone Theory of Change with Bill Moyer
+   Date: Sat May 13 2023 09:22:03 GMT+0200 (Central European Summer Time)
+   Product ID: 2555
+   Auto check-in: YES (past event)
+   ✓ Processed 26 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [16/282] Screening of Iain McGilchrist Documentary “The Divided Brain”
+   Date: Sun May 14 2023 18:22:48 GMT+0200 (Central European Summer Time)
+   Product ID: 2576
+   Auto check-in: YES (past event)
+   ✓ Processed 19 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [17/282] Time Beyond Cronos with Charlotte Du Cann
+   Date: Sun May 14 2023 19:29:52 GMT+0200 (Central European Summer Time)
+   Product ID: 2586
+   Auto check-in: YES (past event)
+   ✓ Processed 16 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [18/282] Wittgenstein, Co-freedom & The Politics of Ecology with Rupert Read
+   Date: Wed May 17 2023 11:22:27 GMT+0200 (Central European Summer Time)
+   Product ID: 2648
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [19/282] Wilderness and Belonging with Sicelo Mbatha
+   Date: Mon May 29 2023 09:22:16 GMT+0200 (Central European Summer Time)
+   Product ID: 2769
+   Auto check-in: YES (past event)
+   ✓ Processed 7 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [20/282] Leaders & Intellectuals: From 'Legislators' to Catalysts of Democracy with Sophie Scott-Brown
+   Date: Wed May 31 2023 19:20:47 GMT+0200 (Central European Summer Time)
+   Product ID: 2789
+   Auto check-in: YES (past event)
+   ✓ Processed 9 tickets (0 created, all exist)
+
+━━━ Checkpoint: 20/282 events queued ━━━
+   Successful: 20, Failed: 0
+   Tickets created: 0
+   To resume from here: node resume-resync.mjs 21
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [21/282] Cocktail Night with Veteran Prankster Andrew Boyd
+   Date: Wed May 31 2023 21:26:29 GMT+0200 (Central European Summer Time)
+   Product ID: 2808
+   Auto check-in: YES (past event)
+   ✓ Processed 8 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [22/282] The Climate Crisis: Why Aren't We Angrier? with Josh Cohen
+   Date: Thu Jun 08 2023 15:55:16 GMT+0200 (Central European Summer Time)
+   Product ID: 2906
+   Auto check-in: YES (past event)
+   ✓ Processed 18 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [23/282] Defashion: Dismantling the Fashion Industry with Sandra Niessen
+   Date: Tue Jun 13 2023 12:47:07 GMT+0200 (Central European Summer Time)
+   Product ID: 2943
+   Auto check-in: YES (past event)
+   ✓ Processed 19 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [24/282] The Family: Is There a Better Way to Live Together? with Sarah Stein Lubrano
+   Date: Wed Jun 14 2023 13:06:25 GMT+0200 (Central European Summer Time)
+   Product ID: 2970
+   Auto check-in: YES (past event)
+   ✓ Processed 8 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [25/282] Navigating Collapse, Reclaiming Freedom with Jem Bendell
+   Date: Sun Jul 02 2023 20:31:59 GMT+0200 (Central European Summer Time)
+   Product ID: 3122
+   Auto check-in: YES (past event)
+   ✓ Processed 19 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [26/282] Essex St Leaving Party
+   Date: Mon Jul 03 2023 08:21:17 GMT+0200 (Central European Summer Time)
+   Product ID: 3135
+   Auto check-in: YES (past event)
+   ✓ Processed 14 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [27/282] Kairos at Green Gathering
+   Date: Mon Jul 17 2023 12:29:37 GMT+0200 (Central European Summer Time)
+   Product ID: 3252
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [28/282] New Season Launch: Before the Light Fades with Natasha Walter
+   Date: Thu Sep 14 2023 11:20:09 GMT+0200 (Central European Summer Time)
+   Product ID: 3405
+   Auto check-in: YES (past event)
+   ✓ Processed 23 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [29/282] Screening of "Spaceship Earth" with Michael Hrebeniak & Gessie Houghton
+   Date: Sun Sep 17 2023 21:00:37 GMT+0200 (Central European Summer Time)
+   Product ID: 3417
+   Auto check-in: YES (past event)
+   ✓ Processed 10 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [30/282] Screening of "Carnage" by Simon Amstell
+   Date: Mon Sep 18 2023 14:53:41 GMT+0200 (Central European Summer Time)
+   Product ID: 3425
+   Auto check-in: YES (past event)
+   ✓ Processed 6 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [31/282] What Next for the Climate Movements? with Gail Bradbrook
+   Date: Mon Sep 18 2023 14:53:51 GMT+0200 (Central European Summer Time)
+   Product ID: 3428
+   Auto check-in: YES (past event)
+   ✓ Processed 29 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [32/282] David Graeber and the Pirate Enlightenment with Chris Haughton and Nika Dubrovsky
+   Date: Thu Sep 21 2023 14:41:13 GMT+0200 (Central European Summer Time)
+   Product ID: 3441
+   Auto check-in: YES (past event)
+   ✓ Processed 20 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [33/282] Screening of "To Hell With Culture": The Life & Work of Sir Herbert Read
+   Date: Thu Sep 21 2023 15:42:35 GMT+0200 (Central European Summer Time)
+   Product ID: 3449
+   Auto check-in: YES (past event)
+   ✓ Processed 11 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [34/282] The Meat Paradox with Rob Percival
+   Date: Thu Sep 21 2023 15:56:28 GMT+0200 (Central European Summer Time)
+   Product ID: 3454
+   Auto check-in: YES (past event)
+   ✓ Processed 8 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [35/282] Sewing Club: Moth Hole Repairs & Visible Mends
+   Date: Sun Sep 24 2023 20:41:39 GMT+0200 (Central European Summer Time)
+   Product ID: 3465
+   Auto check-in: YES (past event)
+   ✓ Processed 13 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [36/282] member test event
+   Date: Sat Oct 07 2023 17:25:20 GMT+0200 (Central European Summer Time)
+   Product ID: 3675
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [37/282] non member test event
+   Date: Sat Oct 07 2023 17:50:41 GMT+0200 (Central European Summer Time)
+   Product ID: 3676
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [38/282] The Meaning of Revolution in the 21st Century with Roger Hallam
+   Date: Mon Oct 09 2023 07:31:39 GMT+0200 (Central European Summer Time)
+   Product ID: 3697
+   Auto check-in: YES (past event)
+   ✓ Processed 33 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [39/282] Finding Words to Describe this Moment We're In & Why it Matters with Jonathan Rowson
+   Date: Mon Oct 09 2023 08:07:47 GMT+0200 (Central European Summer Time)
+   Product ID: 3700
+   Auto check-in: YES (past event)
+   ✓ Processed 23 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [40/282] Workshop: Imagination Activism for Systemic Shifts with Phoebe Tickell
+   Date: Mon Oct 09 2023 09:28:12 GMT+0200 (Central European Summer Time)
+   Product ID: 3708
+   Auto check-in: YES (past event)
+   ✓ Processed 25 tickets (0 created, all exist)
+
+━━━ Checkpoint: 40/282 events queued ━━━
+   Successful: 40, Failed: 0
+   Tickets created: 0
+   To resume from here: node resume-resync.mjs 41
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [41/282] Members' Night
+   Date: Mon Oct 09 2023 10:11:59 GMT+0200 (Central European Summer Time)
+   Product ID: 3714
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [42/282] Lessons from Ecuador, World Leader in Rights of Nature with Paul Powlesland
+   Date: Mon Oct 09 2023 10:45:12 GMT+0200 (Central European Summer Time)
+   Product ID: 3723
+   Auto check-in: YES (past event)
+   ✓ Processed 20 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [43/282] Sewing Club: Alterations
+   Date: Wed Oct 25 2023 13:07:09 GMT+0200 (Central European Summer Time)
+   Product ID: 4047
+   Auto check-in: YES (past event)
+   ✓ Processed 3 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [44/282] Kairos with the Frontline Club: The Assault on Protest Rights in the Courts
+   Date: Wed Nov 01 2023 21:33:37 GMT+0100 (Central European Standard Time)
+   Product ID: 4130
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [45/282] Club Night: HSBC9 Celebration, Fundraiser & Games
+   Date: Tue Nov 07 2023 11:03:28 GMT+0100 (Central European Standard Time)
+   Product ID: 4194
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [46/282] Lunchtime Video: Guy Standing on a new Commons Charter
+   Date: Tue Nov 07 2023 11:13:54 GMT+0100 (Central European Standard Time)
+   Product ID: 4198
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [47/282] Winter Solstice Celebration
+   Date: Mon Nov 13 2023 18:55:42 GMT+0100 (Central European Standard Time)
+   Product ID: 4297
+   Auto check-in: YES (past event)
+   ✓ Processed 29 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [48/282] A Small Farm Future with Chris Smaje
+   Date: Tue Nov 14 2023 12:32:35 GMT+0100 (Central European Standard Time)
+   Product ID: 4311
+   Auto check-in: YES (past event)
+   ✓ Processed 19 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [49/282] Screening of “The Village of Lovers”
+   Date: Tue Nov 21 2023 11:21:32 GMT+0100 (Central European Standard Time)
+   Product ID: 4382
+   Auto check-in: YES (past event)
+   ✓ Processed 23 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [50/282] Sewing Club: Machine Skills
+   Date: Tue Nov 21 2023 12:59:11 GMT+0100 (Central European Standard Time)
+   Product ID: 4392
+   Auto check-in: YES (past event)
+   ✓ Processed 2 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [51/282] The Meaning of Revolution in the 21st Century with Roger Hallam
+   Date: Thu Nov 23 2023 09:35:29 GMT+0100 (Central European Standard Time)
+   Product ID: 4431
+   Auto check-in: YES (past event)
+   ✓ Processed 57 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [52/282] Alternative Communities of Care with Lynne Segal
+   Date: Mon Nov 27 2023 17:59:42 GMT+0100 (Central European Standard Time)
+   Product ID: 4490
+   Auto check-in: YES (past event)
+   ✓ Processed 15 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [53/282] The Liberal "Guardrails" Against Radical Climate Action with Chris Shaw
+   Date: Mon Nov 27 2023 21:29:42 GMT+0100 (Central European Standard Time)
+   Product ID: 4509
+   Auto check-in: YES (past event)
+   ✓ Processed 16 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [54/282] Rethinking "Survival of the Fittest": From Competition to Cooperation with Buzz Baum
+   Date: Thu Dec 28 2023 11:17:17 GMT+0100 (Central European Standard Time)
+   Product ID: 4789
+   Auto check-in: YES (past event)
+   ✓ Processed 31 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [55/282] Club Drinks
+   Date: Thu Dec 28 2023 16:06:02 GMT+0100 (Central European Standard Time)
+   Product ID: 4803
+   Auto check-in: YES (past event)
+   ✓ Processed 19 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [56/282] Screening of “The Seeds of Vandana Shiva"
+   Date: Fri Dec 29 2023 14:03:49 GMT+0100 (Central European Standard Time)
+   Product ID: 4818
+   Auto check-in: YES (past event)
+   ✓ Processed 13 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [57/282] Screening of “The Troublemaker"
+   Date: Tue Jan 02 2024 16:23:47 GMT+0100 (Central European Standard Time)
+   Product ID: 4840
+   Auto check-in: YES (past event)
+   ✓ Processed 9 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [58/282] Anarchism and its Lessons for Now with Ruth Kinna
+   Date: Wed Jan 03 2024 10:15:02 GMT+0100 (Central European Standard Time)
+   Product ID: 4863
+   Auto check-in: YES (past event)
+   ✓ Processed 36 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [59/282] Lunchtime Video: Jenny Odell on A Life Beyond the Clock and Amitav Ghosh on The Nutmeg's Curse - Tuesday, January 9, 2024
+   Date: Tue Jan 09 2024 15:01:35 GMT+0100 (Central European Standard Time)
+   Product ID: 4966
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [60/282] Ending the Jobs Fetish: Work, Commoning and Leisure with Guy Standing
+   Date: Tue Jan 09 2024 16:35:24 GMT+0100 (Central European Standard Time)
+   Product ID: 4971
+   Auto check-in: YES (past event)
+   ✓ Processed 35 tickets (0 created, all exist)
+
+━━━ Checkpoint: 60/282 events queued ━━━
+   Successful: 60, Failed: 0
+   Tickets created: 0
+   To resume from here: node resume-resync.mjs 61
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [61/282] Club Drinks
+   Date: Tue Jan 09 2024 20:07:38 GMT+0100 (Central European Standard Time)
+   Product ID: 4984
+   Auto check-in: YES (past event)
+   ✓ Processed 13 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [62/282] Lunchtime Video: James Bridle on Planetary Intelligence
+   Date: Thu Jan 11 2024 12:09:39 GMT+0100 (Central European Standard Time)
+   Product ID: 5034
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [63/282] Roger Hallam on the Meaning of Revolution in the 21st Century
+   Date: Mon Jan 15 2024 14:23:00 GMT+0100 (Central European Standard Time)
+   Product ID: 5077
+   Auto check-in: YES (past event)
+   ✓ Processed 6 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [64/282] Screening of “Night Moves"
+   Date: Sun Jan 21 2024 12:48:23 GMT+0100 (Central European Standard Time)
+   Product ID: 5175
+   Auto check-in: YES (past event)
+   ✓ Processed 11 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [65/282] Effective Resistance & the Role of Sabotage with Simon Bramwell
+   Date: Sun Jan 21 2024 14:51:36 GMT+0100 (Central European Standard Time)
+   Product ID: 5179
+   Auto check-in: YES (past event)
+   ✓ Processed 31 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [66/282] Lunchtime Video: Jack Halberstam on An Aesthetics of Collapse
+   Date: Mon Jan 29 2024 21:14:09 GMT+0100 (Central European Standard Time)
+   Product ID: 5317
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [67/282] Sewing Club: Machine Skills
+   Date: Tue Jan 30 2024 10:19:54 GMT+0100 (Central European Standard Time)
+   Product ID: 5344
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: read ETIMEDOUT
+   ✓ Processed 3 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [68/282] Facing the Climate Emergency: Discussion & Grief Circle with Margaret Klein Salamon
+   Date: Mon Feb 05 2024 18:24:58 GMT+0100 (Central European Standard Time)
+   Product ID: 5450
+   Auto check-in: YES (past event)
+   ✓ Processed 32 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [69/282] Club Drinks
+   Date: Mon Feb 05 2024 20:42:44 GMT+0100 (Central European Standard Time)
+   Product ID: 5460
+   Auto check-in: YES (past event)
+   ✓ Processed 15 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [70/282] Leap Year Storytelling with Toby Litt
+   Date: Tue Feb 06 2024 11:09:13 GMT+0100 (Central European Standard Time)
+   Product ID: 5473
+   Auto check-in: YES (past event)
+   ✓ Processed 16 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [71/282] A Sustainable Revolution with Sophie Scott-Brown
+   Date: Wed Feb 21 2024 12:27:32 GMT+0100 (Central European Standard Time)
+   Product ID: 5670
+   Auto check-in: YES (past event)
+   ✓ Processed 16 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [72/282] Preparing for Crisis: Why Communities Must Take Control
+   Date: Wed Feb 21 2024 14:56:22 GMT+0100 (Central European Standard Time)
+   Product ID: 5673
+   Auto check-in: YES (past event)
+   ✓ Processed 28 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [73/282] Rethinking Fairness: Navigating Climate Breakdown Across Generations with Kennedy Mbeva
+   Date: Thu Feb 22 2024 17:35:52 GMT+0100 (Central European Standard Time)
+   Product ID: 5690
+   Auto check-in: YES (past event)
+   ✓ Processed 17 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [74/282] A Life-Ennobling Economy & How to Get There with Indy Johar
+   Date: Mon Mar 04 2024 16:53:05 GMT+0100 (Central European Standard Time)
+   Product ID: 5821
+   Auto check-in: YES (past event)
+   ✓ Processed 22 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [75/282] The Law as a Tool for Radical Change with Jolyon Maugham
+   Date: Mon Mar 04 2024 16:55:28 GMT+0100 (Central European Standard Time)
+   Product ID: 5825
+   Auto check-in: YES (past event)
+   ✓ Processed 36 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [76/282] A New Media System To Heal Our Collective Trauma with Matthew Green
+   Date: Tue Mar 12 2024 14:46:37 GMT+0100 (Central European Standard Time)
+   Product ID: 5927
+   Auto check-in: YES (past event)
+   ✓ Processed 26 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [77/282] Drop-In Hours Pilot
+   Date: Wed Mar 13 2024 17:13:20 GMT+0100 (Central European Standard Time)
+   Product ID: 5953
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [78/282] Club Drinks: Weekly Throughout April
+   Date: Thu Mar 14 2024 10:53:41 GMT+0100 (Central European Standard Time)
+   Product ID: 5972
+   Auto check-in: YES (past event)
+   ✓ Processed 12 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [79/282] Open Projects Night
+   Date: Tue Mar 19 2024 11:14:21 GMT+0100 (Central European Standard Time)
+   Product ID: 6028
+   Auto check-in: YES (past event)
+   ✗ Error fetching orders after 3 retries: Request failed with status code 503
+
+✗ Event 79 failed: Open Projects Night
+   Error: Request failed with status code 503
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [80/282] What About China? with Songqiao Yao & Faye Lu
+   Date: Wed Mar 20 2024 14:57:53 GMT+0100 (Central European Standard Time)
+   Product ID: 6058
+   Auto check-in: YES (past event)
+   ✓ Processed 22 tickets (0 created, all exist)
+
+━━━ Checkpoint: 80/282 events queued ━━━
+   Successful: 79, Failed: 1
+   Tickets created: 0
+   To resume from here: node resume-resync.mjs 81
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [81/282] Dummy event for email tests
+   Date: Mon Mar 25 2024 18:04:55 GMT+0100 (Central European Standard Time)
+   Product ID: 6123
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [82/282] Education for Culture Change with Artemis Bear
+   Date: Tue Mar 26 2024 13:04:05 GMT+0100 (Central European Standard Time)
+   Product ID: 6131
+   Auto check-in: YES (past event)
+   ✓ Processed 21 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [83/282] The Joys (& Tribulations) of Being Animal with Melanie Challenger
+   Date: Wed Mar 27 2024 10:25:24 GMT+0100 (Central European Standard Time)
+   Product ID: 6144
+   Auto check-in: YES (past event)
+   ✓ Processed 12 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [84/282] Finding Existential Hope in Humanity with SJ Beard
+   Date: Thu Mar 28 2024 12:15:03 GMT+0100 (Central European Standard Time)
+   Product ID: 6160
+   Auto check-in: YES (past event)
+   ✓ Processed 19 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [85/282] Wednesday Drop-In Hours
+   Date: Thu Mar 28 2024 13:58:44 GMT+0100 (Central European Standard Time)
+   Product ID: 6183
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [86/282] Both/And: The Climate Majority Project & the Radical Flank
+   Date: Wed Apr 10 2024 13:21:43 GMT+0200 (Central European Summer Time)
+   Product ID: 6371
+   Auto check-in: YES (past event)
+   ✓ Processed 37 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [87/282] Rewild the Rich! How to Take Back our Countryside with Joel Scott-Halkes
+   Date: Sun Apr 14 2024 20:22:44 GMT+0200 (Central European Summer Time)
+   Product ID: 6415
+   Auto check-in: YES (past event)
+   ✓ Processed 14 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [88/282] Day Walk across Knepp Wildland
+   Date: Mon Apr 15 2024 10:16:05 GMT+0200 (Central European Summer Time)
+   Product ID: 6426
+   Auto check-in: YES (past event)
+   ✓ Processed 21 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [89/282] Workshop: Everyday Democracy with Dr Sophie Scott-Brown & Pippa Evans
+   Date: Mon Apr 22 2024 15:23:04 GMT+0200 (Central European Summer Time)
+   Product ID: 6543
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [90/282] Women and the Climate Emergency with Natasha Walter & Trudi Warner
+   Date: Wed Apr 24 2024 14:05:11 GMT+0200 (Central European Summer Time)
+   Product ID: 6570
+   Auto check-in: YES (past event)
+   ✓ Processed 22 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [91/282] Diary Dates
+   Date: Wed Apr 24 2024 15:01:43 GMT+0200 (Central European Summer Time)
+   Product ID: 6580
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [92/282] History for Tomorrow with Roman Krznaric
+   Date: Sat Apr 27 2024 11:27:57 GMT+0200 (Central European Summer Time)
+   Product ID: 6700
+   Auto check-in: YES (past event)
+   ✓ Processed 48 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [93/282] What Happens Next? with George Marshall
+   Date: Mon Apr 29 2024 10:20:42 GMT+0200 (Central European Summer Time)
+   Product ID: 6733
+   Auto check-in: YES (past event)
+   ✓ Processed 38 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [94/282] Imagining Futures with Sandra Newman
+   Date: Mon Apr 29 2024 16:09:25 GMT+0200 (Central European Summer Time)
+   Product ID: 6747
+   Auto check-in: YES (past event)
+   ✓ Processed 10 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [95/282] The Hole Story, a Workshop with Toby Litt
+   Date: Mon Apr 29 2024 17:43:20 GMT+0200 (Central European Summer Time)
+   Product ID: 6752
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [96/282] A State-Driven Energy Transition with Brett Christophers
+   Date: Mon Apr 29 2024 18:49:51 GMT+0200 (Central European Summer Time)
+   Product ID: 6757
+   Auto check-in: YES (past event)
+   ✓ Processed 29 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [97/282] Rewild the Rich! How to Take Back our Countryside with Joel Scott-Halkes
+   Date: Tue May 07 2024 08:28:21 GMT+0200 (Central European Summer Time)
+   Product ID: 6855
+   Auto check-in: YES (past event)
+   ✓ Processed 22 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [98/282] Voluntary Human Extinction is Not the Answer with Ben Ware
+   Date: Tue May 07 2024 18:08:02 GMT+0200 (Central European Summer Time)
+   Product ID: 6888
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: socket hang up
+   ✓ Processed 15 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [99/282] Open Projects Night
+   Date: Tue May 07 2024 18:48:20 GMT+0200 (Central European Summer Time)
+   Product ID: 6896
+   Auto check-in: YES (past event)
+   ✓ Processed 16 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [100/282] Facing the Unthinkable with Stephen Markley
+   Date: Wed May 08 2024 13:08:04 GMT+0200 (Central European Summer Time)
+   Product ID: 6932
+   Auto check-in: YES (past event)
+   ✓ Processed 25 tickets (0 created, all exist)
+
+━━━ Checkpoint: 100/282 events queued ━━━
+   Successful: 99, Failed: 1
+   Tickets created: 0
+   To resume from here: node resume-resync.mjs 101
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [101/282] Knepp Transport Payment Link
+   Date: Thu May 09 2024 08:08:55 GMT+0200 (Central European Summer Time)
+   Product ID: 6972
+   Auto check-in: YES (past event)
+   ✓ Processed 9 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [102/282] The Fossil States of the Earth with Mohamed Amer Meziane
+   Date: Wed May 15 2024 19:41:35 GMT+0200 (Central European Summer Time)
+   Product ID: 7114
+   Auto check-in: YES (past event)
+   ✓ Processed 17 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [103/282] Planetarity: Some Tools for Thinking About the Earth with Tim Waterman
+   Date: Sun Jun 02 2024 21:14:29 GMT+0200 (Central European Summer Time)
+   Product ID: 7351
+   Auto check-in: YES (past event)
+   ✓ Processed 27 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [104/282] Midsummer Club Drinks
+   Date: Sun Jun 02 2024 21:39:53 GMT+0200 (Central European Summer Time)
+   Product ID: 7361
+   Auto check-in: YES (past event)
+   ✓ Processed 15 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [105/282] Cultural Atlas of Solidarity with Vali Mahlouji
+   Date: Mon Jun 10 2024 15:25:43 GMT+0200 (Central European Summer Time)
+   Product ID: 7482
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: socket hang up
+   ✓ Processed 9 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [106/282] Cognitive Dissonance: Living in a World of Contradictions with Sarah Stein Lubrano
+   Date: Mon Jun 10 2024 17:30:32 GMT+0200 (Central European Summer Time)
+   Product ID: 7490
+   Auto check-in: YES (past event)
+   ✓ Processed 43 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [107/282] Kairos at the Idler Festival
+   Date: Mon Jun 17 2024 10:56:54 GMT+0200 (Central European Summer Time)
+   Product ID: 7574
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [108/282] Screening of "The Grab"
+   Date: Mon Jun 24 2024 11:24:35 GMT+0200 (Central European Summer Time)
+   Product ID: 7651
+   Auto check-in: YES (past event)
+   ✓ Processed 21 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [109/282] August Movie Nights: "This Is Not a Film" by Jafar Panahi
+   Date: Tue Jul 09 2024 21:41:42 GMT+0200 (Central European Summer Time)
+   Product ID: 7809
+   Auto check-in: YES (past event)
+   ✓ Processed 15 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [110/282] Kairos Sewing Club: Day-Long Drop-In
+   Date: Wed Jul 10 2024 11:37:18 GMT+0200 (Central European Summer Time)
+   Product ID: 7838
+   Auto check-in: YES (past event)
+   ✓ Processed 3 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [111/282] Changing Hearts & Minds with Sense and Solidarity
+   Date: Mon Jul 22 2024 12:07:20 GMT+0200 (Central European Summer Time)
+   Product ID: 8004
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [112/282] What Can We Learn from the Radical Imagination? with Max Haiven
+   Date: Mon Jul 29 2024 10:12:26 GMT+0200 (Central European Summer Time)
+   Product ID: 8056
+   Auto check-in: YES (past event)
+   ✓ Processed 45 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [113/282] Changing Hearts & Minds - Payment Link
+   Date: Mon Jul 29 2024 10:42:41 GMT+0200 (Central European Summer Time)
+   Product ID: 8061
+   Auto check-in: YES (past event)
+   ✓ Processed 12 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [114/282] August Movie Nights: "Neptune Frost"
+   Date: Mon Jul 29 2024 15:01:45 GMT+0200 (Central European Summer Time)
+   Product ID: 8082
+   Auto check-in: YES (past event)
+   ✓ Processed 8 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [115/282] Podcast Recording of “What Do We Want?: The Pleasures of Activism"
+   Date: Mon Jul 29 2024 20:39:19 GMT+0200 (Central European Summer Time)
+   Product ID: 8092
+   Auto check-in: YES (past event)
+   ✓ Processed 29 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [116/282] August Movie Nights: "Jonah Who Will be 25 in the Year 2000"
+   Date: Mon Aug 05 2024 09:55:50 GMT+0200 (Central European Summer Time)
+   Product ID: 8150
+   Auto check-in: YES (past event)
+   ✓ Processed 15 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [117/282] Walking the London Martyr’s Way, a Pilgrimage with Guy Hayward
+   Date: Mon Aug 05 2024 12:28:01 GMT+0200 (Central European Summer Time)
+   Product ID: 8159
+   Auto check-in: YES (past event)
+   ✓ Processed 7 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [118/282] Worlds Worth Living For with Dougald Hine
+   Date: Tue Aug 13 2024 09:38:53 GMT+0200 (Central European Summer Time)
+   Product ID: 8213
+   Auto check-in: YES (past event)
+   ✓ Processed 42 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [119/282] The Cost of Resistance with Chris Hedges
+   Date: Tue Aug 13 2024 11:49:29 GMT+0200 (Central European Summer Time)
+   Product ID: 8221
+   Auto check-in: YES (past event)
+   ✓ Processed 131 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [120/282] Screening of "Join or Die" with Sarah Stein Lubrano
+   Date: Tue Aug 13 2024 14:31:53 GMT+0200 (Central European Summer Time)
+   Product ID: 8230
+   Auto check-in: YES (past event)
+   ✓ Processed 25 tickets (0 created, all exist)
+
+━━━ Checkpoint: 120/282 events queued ━━━
+   Successful: 119, Failed: 1
+   Tickets created: 0
+   To resume from here: node resume-resync.mjs 121
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [121/282] August Movie Nights: "Embrace of the Serpent"
+   Date: Tue Aug 13 2024 16:02:49 GMT+0200 (Central European Summer Time)
+   Product ID: 8247
+   Auto check-in: YES (past event)
+   ✓ Processed 13 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [122/282] What Can Religion Teach Us About Living in Apocalyptic Times? with Elizabeth Oldfield
+   Date: Tue Aug 27 2024 13:48:03 GMT+0200 (Central European Summer Time)
+   Product ID: 8453
+   Auto check-in: YES (past event)
+   ✓ Processed 44 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [123/282] A Warm Data Lab with Emily Stewart
+   Date: Tue Aug 27 2024 13:48:12 GMT+0200 (Central European Summer Time)
+   Product ID: 8458
+   Auto check-in: YES (past event)
+   ✓ Processed 36 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [124/282] Open Projects Night
+   Date: Tue Sep 03 2024 09:57:17 GMT+0200 (Central European Summer Time)
+   Product ID: 8571
+   Auto check-in: YES (past event)
+   ✓ Processed 11 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [125/282] A Peasant Revolt & A Vision for the Commons with Peter Sahlins
+   Date: Fri Sep 20 2024 16:08:38 GMT+0200 (Central European Summer Time)
+   Product ID: 8820
+   Auto check-in: YES (past event)
+   ✓ Processed 18 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [126/282] Navigating Uncertainty: Radical Rethinking for a Turbulent World with Ian Scoones
+   Date: Sat Sep 21 2024 08:02:24 GMT+0200 (Central European Summer Time)
+   Product ID: 8833
+   Auto check-in: YES (past event)
+   ✓ Processed 20 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [127/282] Screening of "The Square" with Nihal El Aasar
+   Date: Wed Sep 25 2024 15:31:20 GMT+0200 (Central European Summer Time)
+   Product ID: 8856
+   Auto check-in: YES (past event)
+   ✓ Processed 13 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [128/282] Kent Day Walk & Visit to DARES
+   Date: Wed Sep 25 2024 15:56:53 GMT+0200 (Central European Summer Time)
+   Product ID: 8864
+   Auto check-in: YES (past event)
+   ✓ Processed 14 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [129/282] Open Projects Night
+   Date: Wed Oct 02 2024 11:12:13 GMT+0200 (Central European Summer Time)
+   Product ID: 8948
+   Auto check-in: YES (past event)
+   ✓ Processed 11 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [130/282] Strategic Adaptation For Emergency Resilience ("SAFER") with Rupert Read
+   Date: Mon Oct 14 2024 12:54:22 GMT+0200 (Central European Summer Time)
+   Product ID: 9018
+   Auto check-in: YES (past event)
+   ✓ Processed 40 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [131/282] A New Cosmology: Feeling Our Way into the Imaginal with Ellie Robins
+   Date: Mon Oct 14 2024 16:49:20 GMT+0200 (Central European Summer Time)
+   Product ID: 9033
+   Auto check-in: YES (past event)
+   ✓ Processed 49 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [132/282] Word-Making Salon with the Bureau of Linguistical Reality
+   Date: Tue Oct 15 2024 08:36:23 GMT+0200 (Central European Summer Time)
+   Product ID: 9053
+   Auto check-in: YES (past event)
+   ✓ Processed 8 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [133/282] Kairos Club Drinks & Mixer
+   Date: Thu Oct 17 2024 10:51:45 GMT+0200 (Central European Summer Time)
+   Product ID: 9126
+   Auto check-in: YES (past event)
+   ✓ Processed 16 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [134/282] Screening of "Naila and the Uprising" with Nadia Yahlom
+   Date: Mon Oct 21 2024 19:24:11 GMT+0200 (Central European Summer Time)
+   Product ID: 9274
+   Auto check-in: YES (past event)
+   ✓ Processed 35 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [135/282] Special Library Opening Hours
+   Date: Mon Oct 21 2024 21:03:40 GMT+0200 (Central European Summer Time)
+   Product ID: 9291
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [136/282] Library Celebration with Drinks & Readings
+   Date: Mon Oct 21 2024 21:59:07 GMT+0200 (Central European Summer Time)
+   Product ID: 9301
+   Auto check-in: YES (past event)
+   ✓ Processed 21 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [137/282] Dougald Hine Waiting List - Payment Link
+   Date: Wed Oct 23 2024 12:16:24 GMT+0200 (Central European Summer Time)
+   Product ID: 9349
+   Auto check-in: YES (past event)
+   ✓ Processed 3 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [138/282] "The Nightingale's Song" & "Puffling" with Sam Lee & Jessica Bishopp
+   Date: Mon Oct 28 2024 17:48:46 GMT+0100 (Central European Standard Time)
+   Product ID: 9463
+   Auto check-in: YES (past event)
+   ✓ Processed 28 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [139/282] Hit ‘Em Where it Hurts: How to Create an Alternative to Capitalism with Rob Callender
+   Date: Mon Nov 11 2024 15:49:49 GMT+0100 (Central European Standard Time)
+   Product ID: 9845
+   Auto check-in: YES (past event)
+   ✓ Processed 33 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [140/282] Winter Solstice Celebration
+   Date: Mon Nov 11 2024 17:32:15 GMT+0100 (Central European Standard Time)
+   Product ID: 9874
+   Auto check-in: YES (past event)
+   ✓ Processed 79 tickets (0 created, all exist)
+
+━━━ Checkpoint: 140/282 events queued ━━━
+   Successful: 139, Failed: 1
+   Tickets created: 0
+   To resume from here: node resume-resync.mjs 141
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [141/282] Keeping the World Intact with Hugh Brody
+   Date: Mon Nov 11 2024 18:12:06 GMT+0100 (Central European Standard Time)
+   Product ID: 9879
+   Auto check-in: YES (past event)
+   ✓ Processed 47 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [142/282] Sewing Circle
+   Date: Mon Nov 11 2024 20:33:24 GMT+0100 (Central European Standard Time)
+   Product ID: 9910
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [143/282] Max Haiven Waiting List - Payment Link
+   Date: Thu Nov 14 2024 12:21:33 GMT+0100 (Central European Standard Time)
+   Product ID: 10042
+   Auto check-in: YES (past event)
+   ✓ Processed 4 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [144/282] Sunday Reading Room
+   Date: Mon Nov 18 2024 11:06:23 GMT+0100 (Central European Standard Time)
+   Product ID: 10122
+   Auto check-in: YES (past event)
+   ✓ Processed 4 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [145/282] Kairos at the Idler Festival
+   Date: Mon Nov 18 2024 14:47:36 GMT+0100 (Central European Standard Time)
+   Product ID: 10136
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [146/282] Games Design Workshop with Matteo Menapace & Max Haiven
+   Date: Wed Nov 20 2024 13:12:33 GMT+0100 (Central European Standard Time)
+   Product ID: 10165
+   Auto check-in: YES (past event)
+   ✓ Processed 30 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [147/282] Strategic Adaptation For Emergency Resilience (“SAFER”) with Rupert Read - Waiting List Payment Link
+   Date: Mon Nov 25 2024 12:03:16 GMT+0100 (Central European Standard Time)
+   Product ID: 10231
+   Auto check-in: YES (past event)
+   ✓ Processed 3 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [148/282] A New Cosmology: Feeling Our Way into the Imaginal with Ellie Robins - Waiting List Payment Link
+   Date: Mon Nov 25 2024 12:07:34 GMT+0100 (Central European Standard Time)
+   Product ID: 10237
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [149/282] Kairos Club Drinks: New Years Special
+   Date: Mon Dec 09 2024 13:15:39 GMT+0100 (Central European Standard Time)
+   Product ID: 10445
+   Auto check-in: YES (past event)
+   ✓ Processed 13 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [150/282] Reviving the Commons: A Unifying Vision for Our Common Wealth with Guy Standing
+   Date: Tue Dec 10 2024 10:31:47 GMT+0100 (Central European Standard Time)
+   Product ID: 10513
+   Auto check-in: YES (past event)
+   ✓ Processed 69 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [151/282] Board Games Social
+   Date: Thu Dec 12 2024 14:11:00 GMT+0100 (Central European Standard Time)
+   Product ID: 10580
+   Auto check-in: YES (past event)
+   ✓ Processed 4 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [152/282] Sunday Reading Room
+   Date: Thu Dec 12 2024 15:24:56 GMT+0100 (Central European Standard Time)
+   Product ID: 10587
+   Auto check-in: YES (past event)
+   ✓ Processed 3 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [153/282] What Does it Mean to Live a Good Life? Kairos Deep Conversations with Georgie Nightingall
+   Date: Thu Jan 02 2025 18:54:53 GMT+0100 (Central European Standard Time)
+   Product ID: 10810
+   Auto check-in: YES (past event)
+   ✓ Processed 33 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [154/282] Kairos Club Drinks
+   Date: Tue Jan 07 2025 10:37:46 GMT+0100 (Central European Standard Time)
+   Product ID: 10886
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: read ETIMEDOUT
+   ⚠️  Network error (attempt 2/3), retrying in 4000ms...
+      Error: read ETIMEDOUT
+   ✗ Error fetching orders after 3 retries: read ETIMEDOUT
+
+✗ Event 154 failed: Kairos Club Drinks
+   Error: read ETIMEDOUT
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [155/282] Open Projects Night
+   Date: Tue Jan 07 2025 10:55:49 GMT+0100 (Central European Standard Time)
+   Product ID: 10892
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: read ETIMEDOUT
+   ⚠️  Network error (attempt 2/3), retrying in 4000ms...
+      Error: read ETIMEDOUT
+   ✗ Error fetching orders after 3 retries: read ETIMEDOUT
+
+✗ Event 155 failed: Open Projects Night
+   Error: read ETIMEDOUT
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [156/282] Kairos Club Drinks - Thursday, January 9, 2025
+   Date: Thu Jan 09 2025 17:00:44 GMT+0100 (Central European Standard Time)
+   Product ID: 10936
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: read ETIMEDOUT
+   ⚠️  Network error (attempt 2/3), retrying in 4000ms...
+      Error: read ETIMEDOUT
+   ✗ Error fetching orders after 3 retries: read ETIMEDOUT
+
+✗ Event 156 failed: Kairos Club Drinks - Thursday, January 9, 2025
+   Error: read ETIMEDOUT
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [157/282] Sunday Reading Room
+   Date: Thu Jan 09 2025 17:26:38 GMT+0100 (Central European Standard Time)
+   Product ID: 10944
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [158/282] Sunday Reading Room
+   Date: Fri Jan 17 2025 13:53:36 GMT+0100 (Central European Standard Time)
+   Product ID: 11087
+   Auto check-in: YES (past event)
+   ✓ Processed 1 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [159/282] Screening of "All That Breathes"
+   Date: Fri Jan 17 2025 14:50:22 GMT+0100 (Central European Standard Time)
+   Product ID: 11098
+   Auto check-in: YES (past event)
+   ✓ Processed 15 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [160/282] Kairos Club Drinks
+   Date: Sat Jan 18 2025 15:10:54 GMT+0100 (Central European Standard Time)
+   Product ID: 11115
+   Auto check-in: YES (past event)
+   ✓ Processed 4 tickets (0 created, all exist)
+
+━━━ Checkpoint: 160/282 events queued ━━━
+   Successful: 156, Failed: 4
+   Tickets created: 0
+   To resume from here: node resume-resync.mjs 161
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [161/282] Bioregions & the Commons: Becoming Citizens of Place in a Changing World with Isabel Carlisle
+   Date: Sat Jan 18 2025 15:55:33 GMT+0100 (Central European Standard Time)
+   Product ID: 11121
+   Auto check-in: YES (past event)
+   ✓ Processed 48 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [162/282] We Are the Ones We've Been Waiting For with Adam Greenfield
+   Date: Tue Jan 21 2025 13:14:52 GMT+0100 (Central European Standard Time)
+   Product ID: 11223
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: socket hang up
+   ✓ Processed 52 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [163/282] Sunday Reading Room
+   Date: Wed Jan 22 2025 13:07:18 GMT+0100 (Central European Standard Time)
+   Product ID: 11262
+   Auto check-in: YES (past event)
+   ✓ Processed 3 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [164/282] Learning From Conservative Media: How To Counter Anti-Climate Messages With Geoff Dembicki
+   Date: Mon Jan 27 2025 19:30:18 GMT+0100 (Central European Standard Time)
+   Product ID: 11343
+   Auto check-in: YES (past event)
+   ✓ Processed 40 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [165/282] Kairos Club Drinks - Monday, January 27, 2025
+   Date: Mon Jan 27 2025 19:51:43 GMT+0100 (Central European Standard Time)
+   Product ID: 11352
+   Auto check-in: YES (past event)
+   ✓ Processed 4 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [166/282] Sunday Reading Room
+   Date: Wed Jan 29 2025 15:24:55 GMT+0100 (Central European Standard Time)
+   Product ID: 11416
+   Auto check-in: YES (past event)
+   ✓ Processed 1 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [167/282] Sunday Reading Room
+   Date: Tue Feb 04 2025 10:57:58 GMT+0100 (Central European Standard Time)
+   Product ID: 11465
+   Auto check-in: YES (past event)
+   ✓ Processed 1 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [168/282] Britain's Common Land: Past, Present and Future with Helen Baczkowska
+   Date: Tue Feb 04 2025 11:26:38 GMT+0100 (Central European Standard Time)
+   Product ID: 11471
+   Auto check-in: YES (past event)
+   ✓ Processed 21 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [169/282] Revisiting Radical Ideas Past: An Evening of Shared Readings
+   Date: Tue Feb 04 2025 13:55:53 GMT+0100 (Central European Standard Time)
+   Product ID: 11480
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: socket hang up
+   ✓ Processed 12 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [170/282] Sunday Reading Room
+   Date: Mon Feb 10 2025 10:32:47 GMT+0100 (Central European Standard Time)
+   Product ID: 11573
+   Auto check-in: YES (past event)
+   ✓ Processed 1 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [171/282] Save the Date
+   Date: Wed Feb 12 2025 15:10:27 GMT+0100 (Central European Standard Time)
+   Product ID: 11625
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [172/282] Regular Fixtures
+   Date: Thu Feb 13 2025 15:52:13 GMT+0100 (Central European Standard Time)
+   Product ID: 11648
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [173/282] test - Tuesday, February 18, 2025
+   Date: Tue Feb 18 2025 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 11157
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [174/282] Kairos Club Drinks
+   Date: Fri Feb 21 2025 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 11694
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: read ETIMEDOUT
+   ⚠️  Network error (attempt 2/3), retrying in 4000ms...
+      Error: read ETIMEDOUT
+   ✗ Error fetching orders after 3 retries: getaddrinfo ENOTFOUND kairos.london
+
+✗ Event 174 failed: Kairos Club Drinks
+   Error: getaddrinfo ENOTFOUND kairos.london
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [175/282] Sunday Reading Room
+   Date: Sun Feb 23 2025 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 11826
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ⚠️  Network error (attempt 2/3), retrying in 4000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ✗ Error fetching orders after 3 retries: getaddrinfo ENOTFOUND kairos.london
+
+✗ Event 175 failed: Sunday Reading Room
+   Error: getaddrinfo ENOTFOUND kairos.london
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [176/282] Friday Drinks: Games Night Special
+   Date: Fri Feb 28 2025 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 11990
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ⚠️  Network error (attempt 2/3), retrying in 4000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ✗ Error fetching orders after 3 retries: getaddrinfo ENOTFOUND kairos.london
+
+✗ Event 176 failed: Friday Drinks: Games Night Special
+   Error: getaddrinfo ENOTFOUND kairos.london
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [177/282] Friday Drinks - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, February...
+   Date: Fri Feb 28 2025 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 11870
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ⚠️  Network error (attempt 2/3), retrying in 4000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ✗ Error fetching orders after 3 retries: getaddrinfo ENOTFOUND kairos.london
+
+✗ Event 177 failed: Friday Drinks - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, February...
+   Error: getaddrinfo ENOTFOUND kairos.london
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [178/282] Sunday Reading Room
+   Date: Sun Mar 02 2025 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 11891
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ⚠️  Network error (attempt 2/3), retrying in 4000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ✗ Error fetching orders after 3 retries: getaddrinfo ENOTFOUND kairos.london
+
+✗ Event 178 failed: Sunday Reading Room
+   Error: getaddrinfo ENOTFOUND kairos.london
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [179/282] Sunday Reading Room - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, Ma...
+   Date: Sun Mar 09 2025 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 12028
+   Auto check-in: YES (past event)
+
+✗ Event 179 failed: Sunday Reading Room - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, Ma...
+   Error: Connection terminated due to connection timeout
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [180/282] Screening of "My Octopus Teacher"
+   Date: Tue Mar 11 2025 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 11997
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ⚠️  Network error (attempt 2/3), retrying in 4000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ✗ Error fetching orders after 3 retries: getaddrinfo ENOTFOUND kairos.london
+
+✗ Event 180 failed: Screening of "My Octopus Teacher"
+   Error: getaddrinfo ENOTFOUND kairos.london
+
+━━━ Checkpoint: 180/282 events queued ━━━
+   Successful: 169, Failed: 11
+   Tickets created: 0
+   To resume from here: node resume-resync.mjs 181
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [181/282] Reviving the Blue Commons: A Plan to Repair our Ocean
+   Date: Tue Mar 18 2025 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 11579
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ⚠️  Network error (attempt 2/3), retrying in 4000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ✗ Error fetching orders after 3 retries: getaddrinfo ENOTFOUND kairos.london
+
+✗ Event 181 failed: Reviving the Blue Commons: A Plan to Repair our Ocean
+   Error: getaddrinfo ENOTFOUND kairos.london
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [182/282] Friday Drinks
+   Date: Fri Mar 21 2025 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 12129
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ⚠️  Network error (attempt 2/3), retrying in 4000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ✗ Error fetching orders after 3 retries: getaddrinfo ENOTFOUND kairos.london
+
+✗ Event 182 failed: Friday Drinks
+   Error: getaddrinfo ENOTFOUND kairos.london
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [183/282] Sunday Reading Room
+   Date: Sun Mar 23 2025 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 12331
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ⚠️  Network error (attempt 2/3), retrying in 4000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ✗ Error fetching orders after 3 retries: getaddrinfo ENOTFOUND kairos.london
+
+✗ Event 183 failed: Sunday Reading Room
+   Error: getaddrinfo ENOTFOUND kairos.london
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [184/282] This Is an Act of Care with Tim Jackson
+   Date: Tue Mar 25 2025 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 11834
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ⚠️  Network error (attempt 2/3), retrying in 4000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ✗ Error fetching orders after 3 retries: getaddrinfo ENOTFOUND kairos.london
+
+✗ Event 184 failed: This Is an Act of Care with Tim Jackson
+   Error: getaddrinfo ENOTFOUND kairos.london
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [185/282] Ecological Medicine: Healing the People, Healing the Planet with Jenny Goodman
+   Date: Thu Mar 27 2025 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 11657
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ⚠️  Network error (attempt 2/3), retrying in 4000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ✗ Error fetching orders after 3 retries: getaddrinfo ENOTFOUND kairos.london
+
+✗ Event 185 failed: Ecological Medicine: Healing the People, Healing the Planet with Jenny Goodman
+   Error: getaddrinfo ENOTFOUND kairos.london
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [186/282] Friday Drinks
+   Date: Fri Mar 28 2025 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 12312
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ⚠️  Network error (attempt 2/3), retrying in 4000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ✗ Error fetching orders after 3 retries: getaddrinfo ENOTFOUND kairos.london
+
+✗ Event 186 failed: Friday Drinks
+   Error: getaddrinfo ENOTFOUND kairos.london
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [187/282] Sunday Reading Room
+   Date: Sun Mar 30 2025 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 12453
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ⚠️  Network error (attempt 2/3), retrying in 4000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ✗ Error fetching orders after 3 retries: getaddrinfo ENOTFOUND kairos.london
+
+✗ Event 187 failed: Sunday Reading Room
+   Error: getaddrinfo ENOTFOUND kairos.london
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [188/282] Open Projects Night
+   Date: Tue Apr 01 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 11679
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ⚠️  Network error (attempt 2/3), retrying in 4000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ✗ Error fetching orders after 3 retries: getaddrinfo ENOTFOUND kairos.london
+
+✗ Event 188 failed: Open Projects Night
+   Error: getaddrinfo ENOTFOUND kairos.london
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [189/282] How We Live and How We Might Live with Ken Worpole
+   Date: Thu Apr 03 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 11233
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ⚠️  Network error (attempt 2/3), retrying in 4000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ✗ Error fetching orders after 3 retries: getaddrinfo ENOTFOUND kairos.london
+
+✗ Event 189 failed: How We Live and How We Might Live with Ken Worpole
+   Error: getaddrinfo ENOTFOUND kairos.london
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [190/282] Friday Drinks
+   Date: Fri Apr 04 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 12502
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ⚠️  Network error (attempt 2/3), retrying in 4000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ✗ Error fetching orders after 3 retries: getaddrinfo ENOTFOUND kairos.london
+
+✗ Event 190 failed: Friday Drinks
+   Error: getaddrinfo ENOTFOUND kairos.london
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [191/282] Concerts Don't Cost the Earth with Gibbon and Goldfinch
+   Date: Sat Apr 05 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 11897
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ⚠️  Network error (attempt 2/3), retrying in 4000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ✗ Error fetching orders after 3 retries: getaddrinfo ENOTFOUND kairos.london
+
+✗ Event 191 failed: Concerts Don't Cost the Earth with Gibbon and Goldfinch
+   Error: getaddrinfo ENOTFOUND kairos.london
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [192/282] Sunday Reading Room
+   Date: Sun Apr 06 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 12670
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ⚠️  Network error (attempt 2/3), retrying in 4000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ✗ Error fetching orders after 3 retries: getaddrinfo ENOTFOUND kairos.london
+
+✗ Event 192 failed: Sunday Reading Room
+   Error: getaddrinfo ENOTFOUND kairos.london
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [193/282] Deep Conversations: What Does it Mean To Step Up? - Tuesday, April 8, 2025
+   Date: Tue Apr 08 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 11671
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ⚠️  Network error (attempt 2/3), retrying in 4000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ✗ Error fetching orders after 3 retries: getaddrinfo ENOTFOUND kairos.london
+
+✗ Event 193 failed: Deep Conversations: What Does it Mean To Step Up? - Tuesday, April 8, 2025
+   Error: getaddrinfo ENOTFOUND kairos.london
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [194/282] Book Club: "Hospicing Modernity" by Vanessa Andreotti - Wednesday, April 9, 2025
+   Date: Wed Apr 09 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 12335
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ⚠️  Network error (attempt 2/3), retrying in 4000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ✗ Error fetching orders after 3 retries: connect EHOSTUNREACH 107.6.151.38:443 - Local (172.18.93.195:63560)
+
+✗ Event 194 failed: Book Club: "Hospicing Modernity" by Vanessa Andreotti - Wednesday, April 9, 2025
+   Error: connect EHOSTUNREACH 107.6.151.38:443 - Local (172.18.93.195:63560)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [195/282] Friday Drinks
+   Date: Fri Apr 11 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 12686
+   Auto check-in: YES (past event)
+   ✗ Error fetching orders after 3 retries: connect EHOSTUNREACH 107.6.151.38:443 - Local (172.18.93.195:63561)
+
+✗ Event 195 failed: Friday Drinks
+   Error: connect EHOSTUNREACH 107.6.151.38:443 - Local (172.18.93.195:63561)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [196/282] Sunday Reading Room
+   Date: Sun Apr 13 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 12676
+   Auto check-in: YES (past event)
+   ✗ Error fetching orders after 3 retries: connect EHOSTUNREACH 107.6.151.38:443 - Local (172.18.93.195:63562)
+
+✗ Event 196 failed: Sunday Reading Room
+   Error: connect EHOSTUNREACH 107.6.151.38:443 - Local (172.18.93.195:63562)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [197/282] Rooted Innovation: The Future of Technology with Joycelyn Longdon
+   Date: Tue Apr 15 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 11590
+   Auto check-in: YES (past event)
+   ✗ Error fetching orders after 3 retries: connect EHOSTUNREACH 107.6.151.38:443 - Local (172.18.93.195:63563)
+
+✗ Event 197 failed: Rooted Innovation: The Future of Technology with Joycelyn Longdon
+   Error: connect EHOSTUNREACH 107.6.151.38:443 - Local (172.18.93.195:63563)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [198/282] Friday Drinks
+   Date: Fri Apr 18 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 12690
+   Auto check-in: YES (past event)
+   ✗ Error fetching orders after 3 retries: connect EHOSTUNREACH 107.6.151.38:443 - Local (172.18.93.195:63564)
+
+✗ Event 198 failed: Friday Drinks
+   Error: connect EHOSTUNREACH 107.6.151.38:443 - Local (172.18.93.195:63564)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [199/282] Kill the Corporation Before it Kills Us with David Whyte
+   Date: Wed Apr 23 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 12133
+   Auto check-in: YES (past event)
+   ✗ Error fetching orders after 3 retries: connect EHOSTUNREACH 107.6.151.38:443 - Local (172.18.93.195:63565)
+
+✗ Event 199 failed: Kill the Corporation Before it Kills Us with David Whyte
+   Error: connect EHOSTUNREACH 107.6.151.38:443 - Local (172.18.93.195:63565)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [200/282] Friday Drinks
+   Date: Fri Apr 25 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 13210
+   Auto check-in: YES (past event)
+   ✗ Error fetching orders after 3 retries: connect EHOSTUNREACH 107.6.151.38:443 - Local (172.18.93.195:63566)
+
+✗ Event 200 failed: Friday Drinks
+   Error: connect EHOSTUNREACH 107.6.151.38:443 - Local (172.18.93.195:63566)
+
+━━━ Checkpoint: 200/282 events queued ━━━
+   Successful: 169, Failed: 31
+   Tickets created: 0
+   To resume from here: node resume-resync.mjs 201
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [201/282] The Good Apocalypse Guide with Alex Evans
+   Date: Tue Apr 29 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 12005
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: getaddrinfo ENOTFOUND kairos.london
+   ✓ Processed 36 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [202/282] Friday Drinks
+   Date: Fri May 02 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 13214
+   Auto check-in: YES (past event)
+   ✓ Processed 10 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [203/282] Sunday Reading Room
+   Date: Sun May 04 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 13482
+   Auto check-in: YES (past event)
+   ✓ Processed 4 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [204/282] Friday Drinks
+   Date: Fri May 09 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 13500
+   Auto check-in: YES (past event)
+   ✓ Processed 10 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [205/282] The Fashion Commons: Reclaiming our Clothing Culture
+   Date: Wed May 14 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 13042
+   Auto check-in: YES (past event)
+   ✓ Processed 45 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [206/282] Transcending the Alt Reich in an Age of Collapse and Renewal with Nafeez Ahmed
+   Date: Thu May 15 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 12512
+   Auto check-in: YES (past event)
+   ✓ Processed 23 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [207/282] What Narratives Are Needed in These Turbulent Times? with Marshall Ganz
+   Date: Fri May 16 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 13135
+   Auto check-in: YES (past event)
+   ✓ Processed 84 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [208/282] Friday Drinks
+   Date: Fri May 16 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 13543
+   Auto check-in: YES (past event)
+   ✓ Processed 4 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [209/282] Sunday Reading Room
+   Date: Sun May 18 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 13767
+   Auto check-in: YES (past event)
+   ✓ Processed 1 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [210/282] Reviving the Commons: Our Land
+   Date: Tue May 20 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 13065
+   Auto check-in: YES (past event)
+   ✓ Processed 29 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [211/282] The Breakdown of the Global Economic Order and What Comes Next with Ann Pettifor
+   Date: Wed May 21 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 13226
+   Auto check-in: YES (past event)
+   ✓ Processed 36 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [212/282] Friday Drinks Special with Tree Oh!
+   Date: Fri May 23 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 13259
+   Auto check-in: YES (past event)
+   ✓ Processed 33 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [213/282] Sunday Reading Room
+   Date: Sun May 25 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 13953
+   Auto check-in: YES (past event)
+   ✓ Processed 1 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [214/282] Book Club: "The Rivers North of the Future - The Testament of Ivan Illich" as told to David Cayley and David Cayley - Wednesday, May 28, 2025
+   Date: Wed May 28 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 13220
+   Auto check-in: YES (past event)
+   ✓ Processed 2 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [215/282] Building the Commonsverse with David Bollier
+   Date: Thu May 29 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 12696
+   Auto check-in: YES (past event)
+   ✓ Processed 51 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [216/282] Friday Drinks
+   Date: Fri May 30 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 14109
+   Auto check-in: YES (past event)
+   ✓ Processed 2 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [217/282] Sunday Reading Room
+   Date: Sun Jun 01 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 14105
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [218/282] Open Projects Night
+   Date: Tue Jun 03 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 13102
+   Auto check-in: YES (past event)
+   ✓ Processed 8 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [219/282] The Radical Recentralisation of the World with Eliane Brum & Jonathan Watts
+   Date: Wed Jun 04 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 14042
+   Auto check-in: YES (past event)
+   ✓ Processed 23 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [220/282] Cooperation Hull & the New Culture of Self-Organising with Gully Bujak
+   Date: Thu Jun 05 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 12561
+   Auto check-in: YES (past event)
+   ✓ Processed 35 tickets (0 created, all exist)
+
+━━━ Checkpoint: 220/282 events queued ━━━
+   Successful: 189, Failed: 31
+   Tickets created: 0
+   To resume from here: node resume-resync.mjs 221
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [221/282] Friday Drinks with Beto Marubo
+   Date: Fri Jun 06 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 14331
+   Auto check-in: YES (past event)
+   ✓ Processed 7 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [222/282] Sunday Reading Room
+   Date: Sun Jun 08 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 14335
+   Auto check-in: YES (past event)
+   ✓ Processed 1 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [223/282] In the Belly of the Beast: Soil, Soul & Society with Alastair McIntosh
+   Date: Thu Jun 12 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 13012
+   Auto check-in: YES (past event)
+   ✓ Processed 42 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [224/282] Friday Drinks
+   Date: Fri Jun 13 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 14416
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [225/282] Book Club: "Eco-Miserabilism and Radical Hope" by Mathias Thaler - Wednesday, June 18, 2025
+   Date: Wed Jun 18 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 14241
+   Auto check-in: YES (past event)
+   ✓ Processed 7 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [226/282] How Animals Heal Us with Jay Griffiths
+   Date: Thu Jun 19 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 14171
+   Auto check-in: YES (past event)
+   ✓ Processed 21 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [227/282] Friday Drinks
+   Date: Fri Jun 20 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 14594
+   Auto check-in: YES (past event)
+   ✓ Processed 5 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [228/282] Sunday Reading Room
+   Date: Sun Jun 22 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 14598
+   Auto check-in: YES (past event)
+   ✓ Processed 3 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [229/282] Movie Nights: "The End We Start From"
+   Date: Tue Jun 24 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 14256
+   Auto check-in: YES (past event)
+   ✓ Processed 13 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [230/282] Friday Drinks
+   Date: Fri Jun 27 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 14772
+   Auto check-in: YES (past event)
+   ✓ Processed 3 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [231/282] Sunday Reading Room
+   Date: Sun Jun 29 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 14809
+   Auto check-in: YES (past event)
+   ✓ Processed 4 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [232/282] Kairos Deep Conversations: How Can We Find the Power to Act?
+   Date: Tue Jul 01 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 14626
+   Auto check-in: YES (past event)
+   ✓ Processed 13 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [233/282] Is an Ecological Civilisation Possible? with David Tyfield (Copy) and (Copy) - Thursday, - Thursday, - Thursday, - Thursday, - Thursday, - Thursday, - Thursday, - Thursday, - Thursday, - Thursday, - Thursday, - Thursday, - Thursday, - Thursday, July 3,...
+   Date: Thu Jul 03 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 14588
+   Auto check-in: YES (past event)
+   ✓ Processed 24 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [234/282] Friday Drinks
+   Date: Fri Jul 04 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 14853
+   Auto check-in: YES (past event)
+   ✓ Processed 4 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [235/282] Sunday Reading Room
+   Date: Sun Jul 06 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 14875
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [236/282] Book Club: "Is a River Alive" by Robert Macfarlane - Wednesday, July 9, 2025
+   Date: Wed Jul 09 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 14248
+   Auto check-in: YES (past event)
+   ✓ Processed 8 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [237/282] Another World is Here But Struggling to Survive (Copy) - Thursday, - Thursday, - Thursday, - Thursday, - Thursday, - Thursday, - Thursday, - Thursday, - Thursday, - Thursday, - Thursday, - Thursday, - Thursday, - Thursday, - Thursday, - Thursday, July ...
+   Date: Thu Jul 10 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 14182
+   Auto check-in: YES (past event)
+   ✓ Processed 2 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [238/282] Friday Drinks
+   Date: Fri Jul 11 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 14923
+   Auto check-in: YES (past event)
+   ✓ Processed 3 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [239/282] Summer Party
+   Date: Sat Jul 12 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 13722
+   Auto check-in: YES (past event)
+   ✓ Processed 65 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [240/282] Sunday Reading Room
+   Date: Sun Jul 13 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 15054
+   Auto check-in: YES (past event)
+   ✓ Processed 1 tickets (0 created, all exist)
+
+━━━ Checkpoint: 240/282 events queued ━━━
+   Successful: 209, Failed: 31
+   Tickets created: 0
+   To resume from here: node resume-resync.mjs 241
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [241/282] Sunday Reading Room
+   Date: Sun Jul 20 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 14921
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [242/282] Friday Drinks
+   Date: Fri Sep 05 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 15288
+   Auto check-in: YES (past event)
+   ✓ Processed 7 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [243/282] "On Being, In Prison" with Roger Hallam
+   Date: Sun Sep 07 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 15263
+   Auto check-in: YES (past event)
+   ✓ Processed 87 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [244/282] Book Club: "All Art is Ecological" by Timothy Morton - Wednesday, September 10, 2025
+   Date: Wed Sep 10 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 15281
+   Auto check-in: YES (past event)
+   ✓ Processed 3 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [245/282] Friday Drinks
+   Date: Fri Sep 12 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 15881
+   Auto check-in: YES (past event)
+   ✓ Processed 4 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [246/282] Kairos at the Stroud Festival of Commoning: Reviving the Money Commons
+   Date: Sat Sep 13 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 15606
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [247/282] Slowing Collapse With a Money Commons with Jem Bendell & Matthew Slater
+   Date: Sun Sep 14 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 14423
+   Auto check-in: YES (past event)
+   ✓ Processed 40 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [248/282] When Are We? with Vanessa Andreotti & Alnoor Ladha - booking link - Tuesday, - Tuesday, - Tuesday, - Tuesday, - Tuesday, - Tuesday, - Tuesday, - Tuesday, - Tuesday, - Tuesday, - Tuesday, - Tuesday, - Tuesday, - Tuesday, - Tuesday, - Tuesday, September ...
+   Date: Tue Sep 16 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 15890
+   Auto check-in: YES (past event)
+   ✓ Processed 49 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [249/282] Open Projects Night
+   Date: Tue Sep 16 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 15295
+   Auto check-in: YES (past event)
+   ✓ Processed 6 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [250/282] Friday Drinks - Friday, September 19, 2025
+   Date: Fri Sep 19 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 15950
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [251/282] Kairos at How the Light Gets In with Roger Hallam
+   Date: Sat Sep 20 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 15910
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [252/282] How Do We Live a Life in an Era of Collapse with Sarah Wilson - booking link - Tuesday, - Tuesday, - Tuesday, - Tuesday, - Tuesday, - Tuesday, - Tuesday, - Tuesday, - Tuesday, - Tuesday, - Tuesday, - Tuesday, - Tuesday, - Tuesday, - Tuesday, September ...
+   Date: Tue Sep 23 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 15310
+   Auto check-in: YES (past event)
+   ✓ Processed 52 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [253/282] Recovering the Middle Voice (or How to Act in a World that Surpasses Us) with Valentin Gerlier
+   Date: Thu Sep 25 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 15826
+   Auto check-in: YES (past event)
+   ✓ Processed 31 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [254/282] Book Club: "Anarchy in Action" by Colin Ward - Wednesday, October 15, 2025
+   Date: Wed Oct 15 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 16278
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: socket hang up
+   ✓ Processed 4 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [255/282] Colin Ward Festival Launch & Mixer
+   Date: Fri Oct 17 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 16199
+   Auto check-in: YES (past event)
+   ✓ Processed 11 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [256/282] Colin Ward Festival of Anarchic Ideas, Tactics & Action
+   Date: Sat Oct 18 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 15936
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: socket hang up
+   ✓ Processed 99 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [257/282] Co-Creating the Future with Jean Boulton
+   Date: Thu Oct 23 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 16261
+   Auto check-in: YES (past event)
+   ⚠️  Network error (attempt 1/3), retrying in 2000ms...
+      Error: read ETIMEDOUT
+   ✓ Processed 49 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [258/282] Town Anywhere: Rehearsing a Future of Multi-Species Flourishing
+   Date: Sat Oct 25 2025 00:00:00 GMT+0200 (Central European Summer Time)
+   Product ID: 11542
+   Auto check-in: YES (past event)
+   ✓ Processed 68 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [259/282] Could Radical Democracy Avert Collapse? with Luke Kemp
+   Date: Tue Oct 28 2025 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 15919
+   Auto check-in: YES (past event)
+   ✓ Processed 50 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [260/282] Friday Drinks featuring "Fools Leap" with Orlando Seale & Friends
+   Date: Fri Oct 31 2025 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 16523
+   Auto check-in: YES (past event)
+   ✓ Processed 37 tickets (0 created, all exist)
+
+━━━ Checkpoint: 260/282 events queued ━━━
+   Successful: 229, Failed: 31
+   Tickets created: 0
+   To resume from here: node resume-resync.mjs 261
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [261/282] Open Projects Night
+   Date: Tue Nov 04 2025 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 16443
+   Auto check-in: YES (past event)
+   ✓ Processed 11 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [262/282] Future Visions: An Evening of Shared Readings
+   Date: Thu Nov 06 2025 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 16877
+   Auto check-in: YES (past event)
+   ✓ Processed 12 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [263/282] Reviving the Commons: The Civil Commons
+   Date: Tue Nov 11 2025 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 16457
+   Auto check-in: YES (past event)
+   ✓ Processed 51 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [264/282] Launch of Artivism Futures: Drinks & Screenings
+   Date: Fri Nov 14 2025 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 17231
+   Auto check-in: YES (past event)
+   ✓ Processed 22 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [265/282] Artivism Futures: Draft with Additional Text and Reimagining Human Rights Activism and Draft with Additional Text - Saturday, and Draft with Additional Text - Saturday, and Draft with Additional Text - Saturday, - Saturday, - Saturday, - Saturday, Nove...
+   Date: Sat Nov 15 2025 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 16494
+   Auto check-in: YES (past event)
+   ✓ Processed 40 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [266/282] Book Club: "The Word for the World is Forest" by Ursula Le Guin - Wednesday, and "Birnam Wood" by Eleanor Catton - Wednesday, November 19, 2025
+   Date: Wed Nov 19 2025 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 16982
+   Auto check-in: YES (past event)
+   ✓ Processed 10 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [267/282] What Does the World Look Like with Care in Charge? with Sally Weintrobe - Community Member booking link - Thursday, - Thursday, - Thursday, - Thursday, - Thursday, - Thursday, - Thursday, - Thursday, - Thursday, - Thursday, - Thursday, - Thursday, Nove...
+   Date: Thu Nov 20 2025 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 16971
+   Auto check-in: YES (past event)
+   ✓ Processed 39 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [268/282] Screening of "Bank Job"
+   Date: Tue Dec 02 2025 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 17465
+   Auto check-in: YES (past event)
+   ✓ Processed 15 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [269/282] Screening of "Power Station" with Dan Edelstyn & Howard Johns
+   Date: Thu Dec 04 2025 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 17445
+   Auto check-in: YES (past event)
+   ✗ Error fetching orders after 3 retries: Request failed with status code 503
+
+✗ Event 269 failed: Screening of "Power Station" with Dan Edelstyn & Howard Johns
+   Error: Request failed with status code 503
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [270/282] Why Look at Animals? with Jo-Anne McArthur and Zed Nelson
+   Date: Thu Dec 11 2025 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 17545
+   Auto check-in: YES (past event)
+   ✓ Processed 46 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [271/282] Winter Solstice Celebration
+   Date: Sat Dec 20 2025 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 16868
+   Auto check-in: YES (past event)
+   ✓ Processed 87 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [272/282] Open Projects Night
+   Date: Tue Jan 06 2026 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 17438
+   Auto check-in: YES (past event)
+   ✓ Processed 30 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [273/282] In Case of Emergency: Post Performance Supper
+   Date: Fri Jan 09 2026 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 18366
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [274/282] Friday Night Music with Kareem Samara
+   Date: Fri Jan 09 2026 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 18210
+   Auto check-in: YES (past event)
+   ✓ Processed 31 tickets (31 created)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [275/282] Real Philosophy: Overcoming the Divide Between Thought & Action with Christoph Schuringa
+   Date: Tue Jan 13 2026 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 17925
+   Auto check-in: NO (future event)
+   ✓ Processed 12 tickets (1 created)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [276/282] New Possibilities in Science with Rupert Sheldrake
+   Date: Thu Jan 22 2026 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 17589
+   Auto check-in: NO (future event)
+   ✓ Processed 42 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [277/282] Book Club: "Birnam Wood" by Eleanor Catton
+   Date: Wed Jan 28 2026 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 18341
+   Auto check-in: NO (future event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [278/282] UBI: From Distant Ideal to Transformative Policy with Kate Pickett
+   Date: Thu Feb 19 2026 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 18258
+   Auto check-in: NO (future event)
+   ✓ Processed 1 tickets (1 created)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [279/282] Screening of "The Trial of the Chicago Seven" with Awol Allo
+   Date: Tue Feb 24 2026 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 18024
+   Auto check-in: NO (future event)
+   ✓ Processed 4 tickets (2 created)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [280/282] Book Club: "The Ultimate Hidden Truth of the World..." by David Graeber
+   Date: Wed Feb 25 2026 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 18355
+   Auto check-in: NO (future event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━ Checkpoint: 280/282 events queued ━━━
+   Successful: 248, Failed: 32
+   Tickets created: 35
+   To resume from here: node resume-resync.mjs 281
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [281/282] Open Projects Night
+   Date: Tue Mar 03 2026 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 18317
+   Auto check-in: NO (future event)
+   ✓ Processed 0 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [282/282] Reviving the Ancient Memory Arts: An Act of Resistance with Eleanor Robins
+   Date: Thu Mar 12 2026 00:00:00 GMT+0100 (Central European Standard Time)
+   Product ID: 17882
+   Auto check-in: NO (future event)
+   ✓ Processed 5 tickets (0 created, all exist)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ Resync complete!
+   Events processed: 282/282
+   Successful: 250
+   Failed: 32
+   Tickets processed: 4542
+   Tickets created: 35
+
+⚠️  Failed Events (retry these manually):
+   - Event 79: Open Projects Night
+     ID: BhBpzaLwytkd, Product: 6028
+     Error: Request failed with status code 503
+   - Event 154: Kairos Club Drinks
+     ID: NBqTH9p16hSv, Product: 10886
+     Error: read ETIMEDOUT
+   - Event 155: Open Projects Night
+     ID: aFEEtgWNmwAM, Product: 10892
+     Error: read ETIMEDOUT
+   - Event 156: Kairos Club Drinks - Thursday, January 9, 2025
+     ID: pb62fz9cUcMs, Product: 10936
+     Error: read ETIMEDOUT
+   - Event 174: Kairos Club Drinks
+     ID: 4t5ZYPDdDWvf, Product: 11694
+     Error: getaddrinfo ENOTFOUND kairos.london
+   - Event 175: Sunday Reading Room
+     ID: lipP9Vg2HudX, Product: 11826
+     Error: getaddrinfo ENOTFOUND kairos.london
+   - Event 176: Friday Drinks: Games Night Special
+     ID: mb0CDws652Y8, Product: 11990
+     Error: getaddrinfo ENOTFOUND kairos.london
+   - Event 177: Friday Drinks - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, February...
+     ID: 0P9jlr51v95m, Product: 11870
+     Error: getaddrinfo ENOTFOUND kairos.london
+   - Event 178: Sunday Reading Room
+     ID: RiynBhNYuEqm, Product: 11891
+     Error: getaddrinfo ENOTFOUND kairos.london
+   - Event 179: Sunday Reading Room - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, Ma...
+     ID: HWNBQjxCYaB6, Product: 12028
+     Error: Connection terminated due to connection timeout
+   - Event 180: Screening of "My Octopus Teacher"
+     ID: LgL0cOyOF5Nv, Product: 11997
+     Error: getaddrinfo ENOTFOUND kairos.london
+   - Event 181: Reviving the Blue Commons: A Plan to Repair our Ocean
+     ID: DsZfyFqZqOia, Product: 11579
+     Error: getaddrinfo ENOTFOUND kairos.london
+   - Event 182: Friday Drinks
+     ID: gh6ks5C83kpa, Product: 12129
+     Error: getaddrinfo ENOTFOUND kairos.london
+   - Event 183: Sunday Reading Room
+     ID: YVJWgJGd1nxv, Product: 12331
+     Error: getaddrinfo ENOTFOUND kairos.london
+   - Event 184: This Is an Act of Care with Tim Jackson
+     ID: eQQvPCbQ0tWB, Product: 11834
+     Error: getaddrinfo ENOTFOUND kairos.london
+   - Event 185: Ecological Medicine: Healing the People, Healing the Planet with Jenny Goodman
+     ID: 2eafjZMSeDpW, Product: 11657
+     Error: getaddrinfo ENOTFOUND kairos.london
+   - Event 186: Friday Drinks
+     ID: YCXXDUw5dPqf, Product: 12312
+     Error: getaddrinfo ENOTFOUND kairos.london
+   - Event 187: Sunday Reading Room
+     ID: O1FLFEgbyAwy, Product: 12453
+     Error: getaddrinfo ENOTFOUND kairos.london
+   - Event 188: Open Projects Night
+     ID: 8PbEPsgnTRGI, Product: 11679
+     Error: getaddrinfo ENOTFOUND kairos.london
+   - Event 189: How We Live and How We Might Live with Ken Worpole
+     ID: CDgYUdKg0K0O, Product: 11233
+     Error: getaddrinfo ENOTFOUND kairos.london
+   - Event 190: Friday Drinks
+     ID: FNfo2XMqqryY, Product: 12502
+     Error: getaddrinfo ENOTFOUND kairos.london
+   - Event 191: Concerts Don't Cost the Earth with Gibbon and Goldfinch
+     ID: DSHm7H4kbJ1m, Product: 11897
+     Error: getaddrinfo ENOTFOUND kairos.london
+   - Event 192: Sunday Reading Room
+     ID: RCvnRB4fgJkM, Product: 12670
+     Error: getaddrinfo ENOTFOUND kairos.london
+   - Event 193: Deep Conversations: What Does it Mean To Step Up? - Tuesday, April 8, 2025
+     ID: i1rqqk8YXA0K, Product: 11671
+     Error: getaddrinfo ENOTFOUND kairos.london
+   - Event 194: Book Club: "Hospicing Modernity" by Vanessa Andreotti - Wednesday, April 9, 2025
+     ID: 4MFh9szH0sJ1, Product: 12335
+     Error: connect EHOSTUNREACH 107.6.151.38:443 - Local (172.18.93.195:63560)
+   - Event 195: Friday Drinks
+     ID: VE2pqRnOyyfs, Product: 12686
+     Error: connect EHOSTUNREACH 107.6.151.38:443 - Local (172.18.93.195:63561)
+   - Event 196: Sunday Reading Room
+     ID: BnCmnhOJIctU, Product: 12676
+     Error: connect EHOSTUNREACH 107.6.151.38:443 - Local (172.18.93.195:63562)
+   - Event 197: Rooted Innovation: The Future of Technology with Joycelyn Longdon
+     ID: IpTRkJdN5Hyn, Product: 11590
+     Error: connect EHOSTUNREACH 107.6.151.38:443 - Local (172.18.93.195:63563)
+   - Event 198: Friday Drinks
+     ID: CcHaJedhRROS, Product: 12690
+     Error: connect EHOSTUNREACH 107.6.151.38:443 - Local (172.18.93.195:63564)
+   - Event 199: Kill the Corporation Before it Kills Us with David Whyte
+     ID: lqYE2gPyF1Mn, Product: 12133
+     Error: connect EHOSTUNREACH 107.6.151.38:443 - Local (172.18.93.195:63565)
+   - Event 200: Friday Drinks
+     ID: nk6LiXAfm2qJ, Product: 13210
+     Error: connect EHOSTUNREACH 107.6.151.38:443 - Local (172.18.93.195:63566)
+   - Event 269: Screening of "Power Station" with Dan Edelstyn & Howard Johns
+     ID: 7qXGWTWyN5m4, Product: 17445
+     Error: Request failed with status code 503
+
+💡 To retry first failed event, run:
+   node resume-resync.mjs 79
+
+📋 Next steps:
+   1. Run: node rebuild-members.mjs
+   2. Verify ticket counts in database
+
+🔌 Database pool closed

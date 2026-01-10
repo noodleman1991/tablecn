@@ -497,6 +497,7 @@ export async function deleteMember(memberId: string) {
 /**
  * Merge two member records
  * Keeps the primary member and transfers all attendee records from secondary
+ * Also removes duplicate attendees for the same event after merge
  */
 export async function mergeMemberRecords(data: {
   primaryMemberId: string;
@@ -526,11 +527,51 @@ export async function mergeMemberRecords(data: {
     throw new Error("One or both members not found");
   }
 
-  // Transfer all attendee records from secondary to primary email
-  await db
-    .update(attendees)
-    .set({ email: primary.email })
+  // Get all attendee records from secondary member
+  const secondaryAttendees = await db
+    .select()
+    .from(attendees)
     .where(eq(attendees.email, secondary.email));
+
+  // Get all attendee records from primary member
+  const primaryAttendees = await db
+    .select()
+    .from(attendees)
+    .where(eq(attendees.email, primary.email));
+
+  // Create a set of event IDs the primary already has
+  const primaryEventIds = new Set(primaryAttendees.map(a => a.eventId));
+
+  // For each secondary attendee, either transfer or merge into existing
+  for (const secondaryAttendee of secondaryAttendees) {
+    if (primaryEventIds.has(secondaryAttendee.eventId)) {
+      // Primary already has an attendee for this event - check if we need to preserve check-in
+      const primaryAttendee = primaryAttendees.find(a => a.eventId === secondaryAttendee.eventId);
+
+      if (primaryAttendee && secondaryAttendee.checkedIn && !primaryAttendee.checkedIn) {
+        // Secondary was checked in but primary wasn't - update primary's check-in status
+        await db
+          .update(attendees)
+          .set({
+            checkedIn: true,
+            checkedInAt: secondaryAttendee.checkedInAt,
+          })
+          .where(eq(attendees.id, primaryAttendee.id));
+      }
+
+      // Delete the duplicate secondary attendee
+      await db.delete(attendees).where(eq(attendees.id, secondaryAttendee.id));
+    } else {
+      // No duplicate - just transfer the email
+      await db
+        .update(attendees)
+        .set({ email: primary.email })
+        .where(eq(attendees.id, secondaryAttendee.id));
+    }
+  }
+
+  // Remove from Loops before deletion
+  await removeMemberFromLoops(secondary.email, secondary.id);
 
   // Delete secondary member
   await db.delete(members).where(eq(members.id, secondaryMemberId));

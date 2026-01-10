@@ -58,16 +58,26 @@ function extractTicketAttendees(
     const fieldValues = Object.values(fields);
     const fieldEntries = Object.entries(fields);
 
-    // Find email field (contains @ symbol)
+    // Find email field (contains @ symbol) and normalize to lowercase
     const emailEntry = fieldEntries.find(([_, value]) =>
       typeof value === 'string' && value.includes('@')
     );
-    const email = emailEntry ? emailEntry[1] : '';
+    const email = emailEntry ? emailEntry[1].toLowerCase() : '';
 
     // Find first and last name (non-email, non-empty fields)
-    const nameFields = fieldValues.filter((v: string) =>
-      v && typeof v === 'string' && !v.includes('@') && v.length < 50
-    );
+    // Also filter out corrupted literal values like "first name" or "family name"
+    const nameFields = fieldValues.filter((v: string) => {
+      if (!v || typeof v !== 'string') return false;
+      if (v.includes('@')) return false;
+      if (v.length >= 50) return false;
+      const lower = v.toLowerCase().trim();
+      // Skip corrupted placeholder values
+      if (lower === 'first name' || lower === 'last name' || lower === 'family name') {
+        console.warn(`[sync-attendees] Skipping corrupted field value: "${v}"`);
+        return false;
+      }
+      return true;
+    });
 
     const firstName = nameFields[0] || '';
     const lastName = nameFields[1] || '';
@@ -87,7 +97,7 @@ function extractTicketAttendees(
       // Booker information (person who placed the order)
       bookerFirstName: order.billing?.first_name || '',
       bookerLastName: order.billing?.last_name || '',
-      bookerEmail: order.billing?.email || '',
+      bookerEmail: order.billing?.email?.toLowerCase() || '',
     });
   }
 
@@ -100,13 +110,13 @@ function extractTicketAttendees(
       attendees.push({
         firstName: order.billing?.first_name || '',
         lastName: order.billing?.last_name || '',
-        email: order.billing?.email || '',
+        email: order.billing?.email?.toLowerCase() || '',
         ticketId: `${lineItem.id}-fallback-${i}`,
         uid: `fallback-${lineItem.id}-${i}`,
         // In fallback, booker and ticket holder are the same
         bookerFirstName: order.billing?.first_name || '',
         bookerLastName: order.billing?.last_name || '',
-        bookerEmail: order.billing?.email || '',
+        bookerEmail: order.billing?.email?.toLowerCase() || '',
       });
     }
   }
@@ -281,12 +291,18 @@ export async function syncAttendeesForEvent(
 
         let existingAttendee = null;
 
-        // Only check by ticketId (the unique identifier)
+        // Only check by ticketId AND eventId (matches UNIQUE constraint)
+        // IMPORTANT: Must check both to prevent false positives across events
         if (ticket.ticketId && !ticket.ticketId.includes('fallback')) {
           const byTicketId = await db
             .select()
             .from(attendees)
-            .where(eq(attendees.ticketId, ticket.ticketId)) // FIX: Use ticketId field
+            .where(
+              and(
+                eq(attendees.ticketId, ticket.ticketId),
+                eq(attendees.eventId, eventId)
+              )
+            )
             .limit(1);
           existingAttendee = byTicketId[0];
         }

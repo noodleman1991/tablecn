@@ -17,7 +17,8 @@ import { eq } from "drizzle-orm";
 import { env } from "@/env";
 import { syncMemberToLoops, removeMemberFromLoops } from "@/lib/loops-sync";
 
-export const runtime = "nodejs";
+// Note: runtime = "nodejs" removed for Next.js 16 compatibility with cacheComponents
+// nodejs is the default runtime, so explicit declaration is unnecessary
 export const maxDuration = 300; // 5 minutes max execution time
 
 /**

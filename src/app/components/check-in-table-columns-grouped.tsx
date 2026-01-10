@@ -207,6 +207,7 @@ export type { CheckInTableHandlers };
 
 /**
  * Editable field component for individual ticket fields
+ * Uses optimistic updates for instant feedback
  */
 function EditableTicketField({
   ticket,
@@ -221,21 +222,44 @@ function EditableTicketField({
 }) {
   const [isEditing, setIsEditing] = React.useState(false);
   const [editValue, setEditValue] = React.useState(value || "");
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [optimisticValue, setOptimisticValue] = React.useState<string | null>(null);
+
+  // Reset when value prop changes
+  React.useEffect(() => {
+    if (!isEditing && !isSaving) {
+      setEditValue(value || "");
+      setOptimisticValue(null);
+    }
+  }, [value, isEditing, isSaving]);
 
   const handleSave = async () => {
-    if (editValue === value) {
+    const trimmedValue = editValue.trim();
+
+    if (trimmedValue === (value || "")) {
       setIsEditing(false);
       return;
     }
 
+    // OPTIMISTIC UPDATE: Close immediately and show new value
+    setOptimisticValue(trimmedValue);
+    setIsEditing(false);
+    setIsSaving(true);
+
     try {
-      await updateAttendeeDetails(ticket.id, field, editValue);
+      await updateAttendeeDetails(ticket.id, field, trimmedValue);
       toast.success(`Updated ${field}`);
     } catch (error) {
       toast.error("Failed to update");
+      // Rollback
+      setOptimisticValue(null);
+      setEditValue(value || "");
+    } finally {
+      setIsSaving(false);
     }
-    setIsEditing(false);
   };
+
+  const displayValue = optimisticValue ?? value;
 
   return isEditing ? (
     <input
@@ -257,10 +281,11 @@ function EditableTicketField({
     />
   ) : (
     <div
-      onClick={() => setIsEditing(true)}
-      className="cursor-pointer rounded px-2 py-1 hover:bg-muted/50"
+      onClick={() => !isSaving && setIsEditing(true)}
+      className="cursor-pointer rounded px-2 py-1 hover:bg-muted/50 flex items-center gap-1"
     >
-      {value || <span className="text-muted-foreground">{placeholder}</span>}
+      {displayValue || <span className="text-muted-foreground">{placeholder}</span>}
+      {isSaving && <span className="text-muted-foreground text-xs">(saving...)</span>}
     </div>
   );
 }
@@ -526,7 +551,7 @@ export function getCheckInTableColumns(
       cell: ({ row }) => {
         const count = row.getValue("ticketCount") as number;
         return (
-          <div className="font-medium">
+          <div className="font-medium text-center">
             {count}
           </div>
         );
@@ -535,7 +560,7 @@ export function getCheckInTableColumns(
       enableHiding: true,
       meta: {
         label: "Tickets",
-        className: "hidden",
+        className: "w-[70px] hidden md:table-cell",
       } as any,
     },
     {
@@ -564,7 +589,7 @@ export function getCheckInTableColumns(
       enableHiding: true,
       meta: {
         label: "Source",
-        className: "hidden",
+        className: "hidden lg:table-cell",
       } as any,
     },
     {
@@ -631,7 +656,7 @@ export function getCheckInTableColumns(
       enableHiding: true,
       meta: {
         label: "Order ID",
-        className: "hidden",
+        className: "hidden xl:table-cell",
       } as any,
     },
     {

@@ -68,7 +68,7 @@ export function CheckInTable({ attendees }: CheckInTableProps) {
       pagination: { pageIndex: 0, pageSize: 20 },
       sorting: [{ id: "bookerLastName", desc: false }], // Sort by booker last name
       columnVisibility: {
-        source: false,
+        // Show source column by default, can be toggled in View menu
       },
     },
     enableAdvancedFilter: false,
@@ -182,7 +182,8 @@ export function CheckInTable({ attendees }: CheckInTableProps) {
                       key={header.id}
                       className={cn(
                         "h-12 px-4 text-left align-middle font-medium text-muted-foreground",
-                        header.column.columnDef.meta?.className,
+                        // Only apply responsive hiding when scroll is OFF
+                        !horizontalScrollEnabled && header.column.columnDef.meta?.className,
                       )}
                     >
                       {header.isPlaceholder
@@ -206,7 +207,8 @@ export function CheckInTable({ attendees }: CheckInTableProps) {
                           key={cell.id}
                           className={cn(
                             "p-4 align-middle",
-                            cell.column.columnDef.meta?.className,
+                            // Only apply responsive hiding when scroll is OFF
+                            !horizontalScrollEnabled && cell.column.columnDef.meta?.className,
                           )}
                         >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}

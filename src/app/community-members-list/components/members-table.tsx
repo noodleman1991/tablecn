@@ -137,7 +137,10 @@ export function MembersTable({ members }: MembersTableProps) {
           </div>
         </div>
       )}
-      <DataTable table={table} className={horizontalScrollEnabled ? "overflow-x-auto" : ""}>
+      <DataTable
+        table={table}
+        horizontalScrollEnabled={horizontalScrollEnabled}
+      >
         <DataTableToolbar table={table}>
           <DataTableScrollToggle
             enabled={horizontalScrollEnabled}
