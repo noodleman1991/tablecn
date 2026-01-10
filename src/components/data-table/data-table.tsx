@@ -17,23 +17,28 @@ interface DataTableProps<TData> extends React.ComponentProps<"div"> {
   table: TanstackTable<TData>;
   actionBar?: React.ReactNode;
   hideRowSelection?: boolean;
+  horizontalScrollEnabled?: boolean; // Controls whether scroll mode is active
 }
 
 export function DataTable<TData>({
   table,
   actionBar,
   hideRowSelection,
+  horizontalScrollEnabled = false,
   children,
   className,
   ...props
 }: DataTableProps<TData>) {
   return (
     <div
-      className={cn("flex w-full flex-col gap-2.5 overflow-auto", className)}
+      className={cn("flex w-full flex-col gap-2.5", className)}
       {...props}
     >
       {children}
-      <div className="overflow-hidden rounded-md border">
+      <div className={cn(
+        "rounded-md border",
+        horizontalScrollEnabled ? "overflow-x-auto" : "overflow-hidden"
+      )}>
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -46,7 +51,8 @@ export function DataTable<TData>({
                       ...getCommonPinningStyles({ column: header.column }),
                     }}
                     className={cn(
-                      header.column.columnDef.meta?.className,
+                      // Only apply responsive hiding when scroll is OFF
+                      !horizontalScrollEnabled && header.column.columnDef.meta?.className,
                     )}
                   >
                     {header.isPlaceholder
@@ -74,7 +80,8 @@ export function DataTable<TData>({
                         ...getCommonPinningStyles({ column: cell.column }),
                       }}
                       className={cn(
-                        cell.column.columnDef.meta?.className,
+                        // Only apply responsive hiding when scroll is OFF
+                        !horizontalScrollEnabled && cell.column.columnDef.meta?.className,
                       )}
                     >
                       {flexRender(

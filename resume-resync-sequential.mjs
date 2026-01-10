@@ -1,23 +1,23 @@
-// Resume Resync Script - OPTIMIZED
+// Resume Resync Script - SEQUENTIAL with PAUSE capability
 // Continues syncing from a specific event number
-// Usage: node resume-resync.mjs [start_event_number]
+// Usage: node resume-resync-sequential.mjs [start_event_number]
 //
-// OPTIMIZATIONS:
+// FEATURES:
 // - Connection pooling (prevents timeouts)
 // - Transaction batching (fewer queries per event)
-// - Parallel processing (5 events concurrently)
+// - SEQUENTIAL processing (one event at a time, no parallelization)
+// - GRACEFUL PAUSE: Press Ctrl+C to save progress and exit cleanly
 // - Better error recovery (failures don't stop sync)
 
 import { createRequire } from 'module';
 import pg from 'pg';
 import { customAlphabet } from 'nanoid';
-import pLimit from 'p-limit';
 
 const require = createRequire(import.meta.url);
 const dotenv = require('dotenv');
 dotenv.config();
 
-const { Pool } = pg;  // OPTIMIZATION: Use Pool instead of Client
+const { Pool } = pg;
 
 // ID generator
 const generateId = customAlphabet(
@@ -34,6 +34,10 @@ const woocommerce = new WooCommerceRestApi({
   consumerSecret: process.env.WOOCOMMERCE_CONSUMER_SECRET,
   version: 'wc/v3',
 });
+
+// Global pause flag for graceful shutdown
+let shouldPause = false;
+let lastProcessedEvent = 0;
 
 /**
  * Retry function with exponential backoff
@@ -53,7 +57,7 @@ async function retryWithBackoff(fn, maxRetries = 3, initialDelay = 1000) {
         error.message?.includes('socket hang up');
 
       if (!isRetryable || isLastAttempt) {
-        throw error;  // Non-retryable or exhausted retries
+        throw error;
       }
 
       const delay = initialDelay * Math.pow(2, attempt - 1);
@@ -103,7 +107,7 @@ function extractTicketAttendees(order, lineItem) {
         lastName: lastName || order.billing.last_name || '',
         bookerFirstName: order.billing.first_name || '',
         bookerLastName: order.billing.last_name || '',
-        bookerEmail: order.billing.email || '',
+        bookerEmail: order.billing.email?.toLowerCase() || '',
       });
     }
   }
@@ -118,22 +122,12 @@ function getExtendedDateWindow(eventDate) {
   return null;  // null = no date filter
 }
 
-function shouldMarkAsCheckedIn(eventDate) {
-  // Use today's date at 23:59:59 UTC (dynamic cutoff)
-  const cutoff = new Date();
-  cutoff.setUTCHours(23, 59, 59, 999);
-  return new Date(eventDate) < cutoff;
-}
-
 async function getOrdersForProduct(productId, dateWindow) {
-  const product = await woocommerce.get(`products/${productId}`);
-  const isVariable = product.data.type === 'variable';
-
-  let allOrders = [];
+  const allOrders = [];
   let page = 1;
   let hasMore = true;
 
-  while (hasMore && page <= 50) {
+  while (hasMore) {
     const params = {
       per_page: 100,
       page,
@@ -146,17 +140,21 @@ async function getOrdersForProduct(productId, dateWindow) {
     }
 
     const response = await woocommerce.get('orders', params);
-
     const orders = response.data;
-    const matchingOrders = orders.filter((order) => {
-      return order.line_items?.some((item) => {
-        return item.product_id?.toString() === productId;
-      });
-    });
 
-    allOrders = allOrders.concat(matchingOrders);
-    hasMore = orders.length === 100;
-    page++;
+    const filteredOrders = orders.filter(order =>
+      order.line_items?.some(item => item.product_id?.toString() === productId)
+    );
+
+    allOrders.push(...filteredOrders);
+
+    if (orders.length < 100) {
+      hasMore = false;
+    } else {
+      page++;
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 100));
   }
 
   return allOrders;
@@ -169,13 +167,13 @@ async function getOrdersForProduct(productId, dateWindow) {
  * After: 1 + N queries (1 SELECT for all + N INSERTs in transaction)
  */
 async function syncEventAttendees(pool, event, eventIndex, totalEvents) {
-  console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+  console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
   console.log(`📅 [${eventIndex}/${totalEvents}] ${event.name}`);
   console.log(`   Date: ${event.event_date}`);
-  console.log(`   Product ID: ${event.woocommerce_product_id}`);
+  console.log(`   Product: ${event.woocommerce_product_id}`);
 
   const dateWindow = getExtendedDateWindow(event.event_date);
-  const shouldCheckIn = shouldMarkAsCheckedIn(event.event_date);
+  const shouldCheckIn = new Date(event.event_date) < new Date();
 
   console.log(`   Auto check-in: ${shouldCheckIn ? 'YES (past event)' : 'NO (future event)'}`);
 
@@ -189,7 +187,7 @@ async function syncEventAttendees(pool, event, eventIndex, totalEvents) {
     );
   } catch (error) {
     console.error(`   ✗ Error fetching orders after 3 retries:`, error.message);
-    throw error;  // Let caller handle
+    throw error;
   }
 
   // OPTIMIZATION: Collect all tickets for this event first
@@ -266,9 +264,9 @@ async function syncEventAttendees(pool, event, eventIndex, totalEvents) {
   } catch (error) {
     await client.query('ROLLBACK');
     console.error(`   ✗ Transaction failed:`, error.message);
-    throw error;  // Let caller handle
+    throw error;
   } finally {
-    client.release(); // Return connection to pool
+    client.release();
   }
 
   return { total: allTicketsForEvent.length, created: createdCount };
@@ -277,18 +275,25 @@ async function syncEventAttendees(pool, event, eventIndex, totalEvents) {
 async function resumeResync() {
   const startFrom = parseInt(process.argv[2]) || 1;
 
-  // OPTIMIZATION: Use connection pool instead of single client
+  // Set up graceful shutdown handler
+  process.on('SIGINT', () => {
+    console.log('\n\n⏸️  Pause requested (Ctrl+C detected)...');
+    console.log('   Finishing current event before stopping...');
+    shouldPause = true;
+  });
+
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    max: 3,  // Max 3 concurrent connections (1 event + 2 headroom)
+    max: 3,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000,
   });
 
   console.log('🔌 Connected to database pool\n');
+  console.log('💡 Press Ctrl+C at any time to pause gracefully\n');
 
   try {
-    console.log(`⏩ Resuming from event ${startFrom}\n`);
+    console.log(`⏩ Starting from event ${startFrom}\n`);
 
     // Get ALL events
     const eventsResult = await pool.query(
@@ -300,95 +305,106 @@ async function resumeResync() {
 
     const events = eventsResult.rows;
     console.log(`Found ${events.length} total events`);
-    console.log(`Starting from event ${startFrom} (${events.length - startFrom + 1} remaining)\n`);
+    console.log(`Processing ${events.length - startFrom + 1} events (starting from #${startFrom})\n`);
 
-    // OPTIMIZATION: Error tracking
     let successCount = 0;
     let failureCount = 0;
     const failedEvents = [];
     let totalTicketsCreated = 0;
     let totalTicketsProcessed = 0;
 
-    // OPTIMIZATION: Sequential processing to respect WooCommerce API rate limits
-    const limit = pLimit(1);  // Process 1 event at a time (WooCommerce requires sequential)
-    const promises = [];
-
+    // SEQUENTIAL PROCESSING: One event at a time
     for (let i = startFrom - 1; i < events.length; i++) {
+      // Check if pause was requested
+      if (shouldPause) {
+        console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+        console.log(`\n⏸️  PAUSED at event ${lastProcessedEvent}`);
+        console.log(`\n📊 Progress Summary:`);
+        console.log(`   Events processed: ${successCount + failureCount}/${i}`);
+        console.log(`   Successful: ${successCount}`);
+        console.log(`   Failed: ${failureCount}`);
+        console.log(`   Tickets created: ${totalTicketsCreated}`);
+        console.log(`   Tickets processed: ${totalTicketsProcessed}`);
+        console.log(`\n💡 To resume from next event, run:`);
+        console.log(`   node resume-resync-sequential.mjs ${lastProcessedEvent + 1}`);
+        if (failedEvents.length > 0) {
+          console.log(`\n⚠️  Failed events to retry:`);
+          failedEvents.forEach(e => {
+            console.log(`   - Event ${e.index}: node resume-resync-sequential.mjs ${e.index}`);
+          });
+        }
+        break;
+      }
+
       const event = events[i];
       const eventIndex = i + 1;
+      lastProcessedEvent = eventIndex;
 
-      // Queue event processing with concurrency limit
-      const promise = limit(async () => {
-        try {
-          const result = await syncEventAttendees(pool, event, eventIndex, events.length);
-          successCount++;
-          totalTicketsProcessed += result.total;
-          totalTicketsCreated += result.created;
-        } catch (error) {
-          failureCount++;
-          failedEvents.push({
-            index: eventIndex,
-            name: event.name,
-            id: event.id,
-            productId: event.woocommerce_product_id,
-            error: error.message,
-          });
-          console.error(`\n✗ Event ${eventIndex} failed:`, event.name);
-          console.error(`   Error:`, error.message);
+      try {
+        const result = await syncEventAttendees(pool, event, eventIndex, events.length);
+        successCount++;
+        totalTicketsProcessed += result.total;
+        totalTicketsCreated += result.created;
+
+        // Progress checkpoint every 10 events
+        if (eventIndex % 10 === 0) {
+          console.log(`\n━━━ Checkpoint: ${eventIndex}/${events.length} events processed ━━━`);
+          console.log(`   Successful: ${successCount}, Failed: ${failureCount}`);
+          console.log(`   Tickets created: ${totalTicketsCreated}`);
+          console.log(`   To resume from here: node resume-resync-sequential.mjs ${eventIndex + 1}\n`);
         }
-      });
 
-      promises.push(promise);
-
-      // Wait for batch completion every 20 events (progress checkpoints)
-      if (promises.length >= 20) {
-        await Promise.all(promises);
-        promises.length = 0; // Clear array
-        console.log(`\n━━━ Checkpoint: ${eventIndex}/${events.length} events queued ━━━`);
-        console.log(`   Successful: ${successCount}, Failed: ${failureCount}`);
-        console.log(`   Tickets created: ${totalTicketsCreated}`);
-        console.log(`   To resume from here: node resume-resync.mjs ${eventIndex + 1}\n`);
+      } catch (error) {
+        failureCount++;
+        failedEvents.push({
+          index: eventIndex,
+          name: event.name,
+          id: event.id,
+          productId: event.woocommerce_product_id,
+          error: error.message,
+        });
+        console.error(`\n✗ Event ${eventIndex} failed:`, event.name);
+        console.error(`   Error:`, error.message);
       }
+
+      // Small delay between events to be gentle on WooCommerce API
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
 
-    // Wait for remaining events
-    if (promises.length > 0) {
-      await Promise.all(promises);
+    // Only show completion if not paused
+    if (!shouldPause) {
+      console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+      console.log(`\n✅ Resync complete!`);
+      console.log(`   Events processed: ${successCount + failureCount}/${events.length - startFrom + 1}`);
+      console.log(`   Successful: ${successCount}`);
+      console.log(`   Failed: ${failureCount}`);
+      console.log(`   Tickets processed: ${totalTicketsProcessed}`);
+      console.log(`   Tickets created: ${totalTicketsCreated}`);
+
+      if (failedEvents.length > 0) {
+        console.log(`\n⚠️  Failed Events (retry these manually):`);
+        failedEvents.forEach(e => {
+          console.log(`   - Event ${e.index}: ${e.name}`);
+          console.log(`     ID: ${e.id}, Product: ${e.productId}`);
+          console.log(`     Error: ${e.error}`);
+        });
+        console.log(`\n💡 To retry first failed event, run:`);
+        console.log(`   node resume-resync-sequential.mjs ${failedEvents[0].index}`);
+      }
+
+      console.log(`\n📋 Next steps:`);
+      console.log(`   1. Run: node rebuild-members.mjs`);
+      console.log(`   2. Verify ticket counts in database`);
     }
-
-    // OPTIMIZATION: Detailed summary report
-    console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-    console.log(`\n✅ Resync complete!`);
-    console.log(`   Events processed: ${successCount + failureCount}/${events.length - startFrom + 1}`);
-    console.log(`   Successful: ${successCount}`);
-    console.log(`   Failed: ${failureCount}`);
-    console.log(`   Tickets processed: ${totalTicketsProcessed}`);
-    console.log(`   Tickets created: ${totalTicketsCreated}`);
-
-    if (failedEvents.length > 0) {
-      console.log(`\n⚠️  Failed Events (retry these manually):`);
-      failedEvents.forEach(e => {
-        console.log(`   - Event ${e.index}: ${e.name}`);
-        console.log(`     ID: ${e.id}, Product: ${e.productId}`);
-        console.log(`     Error: ${e.error}`);
-      });
-      console.log(`\n💡 To retry first failed event, run:`);
-      console.log(`   node resume-resync.mjs ${failedEvents[0].index}`);
-    }
-
-    console.log(`\n📋 Next steps:`);
-    console.log(`   1. Run: node rebuild-members.mjs`);
-    console.log(`   2. Verify ticket counts in database`);
 
   } catch (error) {
     console.error('Fatal error:', error);
     console.error('\n💡 To resume from where you left off, run:');
-    console.error(`   node resume-resync.mjs ${startFrom}`);
+    console.error(`   node resume-resync-sequential.mjs ${lastProcessedEvent || startFrom}`);
   } finally {
     await pool.end();
     console.log('\n🔌 Database pool closed');
   }
 }
 
-// Run the resync
-resumeResync();
+resumeResync().catch(console.error);

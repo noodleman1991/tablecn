@@ -1,0 +1,40 @@
+[dotenv@17.2.3] injecting env (15) from .env -- tip: ⚙️  override existing env vars with { override: true }
+🔌 Connected to database
+
+⏩ Resuming from event 1
+
+Found 279 total events
+Starting from event 1 (279 remaining)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [1/279] Doughnut Economics Workshop
+   Date: Tue Feb 21 2023 08:28:07 GMT+0100 (Central European Standard Time)
+   Product ID: 1411
+   Auto check-in: YES (past event)
+   ✓ Processed 0 tickets (0 created)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [2/279] Box of Darkness: The Transformative Power of Grief with Liz Jensen
+   Date: Tue Feb 21 2023 09:33:55 GMT+0100 (Central European Standard Time)
+   Product ID: 1420
+   Auto check-in: YES (past event)
+node:events:485
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: Connection terminated unexpectedly
+    at Connection.<anonymous> (/Users/amitlockshinski/WebstormProjects/tablecn/node_modules/.pnpm/pg@8.16.3/node_modules/pg/lib/client.js:136:73)
+    at Object.onceWrapper (node:events:621:28)
+    at Connection.emit (node:events:507:28)
+    at Socket.<anonymous> (/Users/amitlockshinski/WebstormProjects/tablecn/node_modules/.pnpm/pg@8.16.3/node_modules/pg/lib/connection.js:62:12)
+    at Socket.emit (node:events:519:35)
+    at TCP.<anonymous> (node:net:351:12)
+Emitted 'error' event on Client instance at:
+    at Client._handleErrorEvent (/Users/amitlockshinski/WebstormProjects/tablecn/node_modules/.pnpm/pg@8.16.3/node_modules/pg/lib/client.js:350:10)
+    at Connection.<anonymous> (/Users/amitlockshinski/WebstormProjects/tablecn/node_modules/.pnpm/pg@8.16.3/node_modules/pg/lib/client.js:154:16)
+    at Object.onceWrapper (node:events:621:28)
+    [... lines matching original stack trace ...]
+    at TCP.<anonymous> (node:net:351:12)
+
+Node.js v23.10.0

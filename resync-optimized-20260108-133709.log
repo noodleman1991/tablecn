@@ -1,0 +1,138 @@
+[dotenv@17.2.3] injecting env (15) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+🔌 Connected to database pool
+
+⏩ Resuming from event 1
+
+Found 279 total events
+Starting from event 1 (279 remaining)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [1/279] Doughnut Economics Workshop
+   Date: Tue Feb 21 2023 08:28:07 GMT+0100 (Central European Standard Time)
+   Product ID: 1411
+   Auto check-in: YES (past event)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [2/279] Box of Darkness: The Transformative Power of Grief with Liz Jensen
+   Date: Tue Feb 21 2023 09:33:55 GMT+0100 (Central European Standard Time)
+   Product ID: 1420
+   Auto check-in: YES (past event)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [3/279] The Rights of Nature with César Rodríguez-Garavito
+   Date: Tue Feb 21 2023 09:38:40 GMT+0100 (Central European Standard Time)
+   Product ID: 1425
+   Auto check-in: YES (past event)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [4/279] Warm Data Lab at Kairos
+   Date: Sun Mar 05 2023 13:48:06 GMT+0100 (Central European Standard Time)
+   Product ID: 1649
+   Auto check-in: YES (past event)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [5/279] Protest Rights: A Benchmark For Political Freedom with Raj Chada
+   Date: Tue Mar 07 2023 16:17:48 GMT+0100 (Central European Standard Time)
+   Product ID: 1817
+   Auto check-in: YES (past event)
+   ✗ Error fetching orders after 3 retries: Request failed with status code 503
+
+✗ Event 4 failed: Warm Data Lab at Kairos
+   Error: Request failed with status code 503
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [6/279] Revolution: Inevitable, Justified and Effective with Roger Hallam
+   Date: Sun Mar 19 2023 13:35:19 GMT+0100 (Central European Standard Time)
+   Product ID: 1886
+   Auto check-in: YES (past event)
+   ✗ Error fetching orders after 3 retries: Request failed with status code 503
+
+✗ Event 5 failed: Protest Rights: A Benchmark For Political Freedom with Raj Chada
+   Error: Request failed with status code 503
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [7/279] Screening of “How To Blow Up A Pipeline” with Rowan Tilly
+   Date: Sun Mar 19 2023 13:50:57 GMT+0100 (Central European Standard Time)
+   Product ID: 1894
+   Auto check-in: YES (past event)
+   ✗ Error fetching orders after 3 retries: Request failed with status code 503
+
+✗ Event 3 failed: The Rights of Nature with César Rodríguez-Garavito
+   Error: Request failed with status code 503
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [8/279] The New Lucas Plan: A Workers-Led Transition
+   Date: Sun Mar 19 2023 13:57:34 GMT+0100 (Central European Standard Time)
+   Product ID: 1900
+   Auto check-in: YES (past event)
+   ✗ Error fetching orders after 3 retries: Request failed with status code 503
+
+✗ Event 2 failed: Box of Darkness: The Transformative Power of Grief with Liz Jensen
+   Error: Request failed with status code 503
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [9/279] Climate, Technology, Justice & Rights: Can We Get The Whole World To Agree On Any Of Them? with AC Grayling
+   Date: Sun Mar 19 2023 14:05:51 GMT+0100 (Central European Standard Time)
+   Product ID: 1905
+   Auto check-in: YES (past event)
+   ✗ Error fetching orders after 3 retries: Request failed with status code 503
+
+✗ Event 1 failed: Doughnut Economics Workshop
+   Error: Request failed with status code 503
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [10/279] Sunday Sci-Fi: “Children Of Men” by Alfonso Cuarón
+   Date: Mon Mar 27 2023 12:24:56 GMT+0200 (Central European Summer Time)
+   Product ID: 1944
+   Auto check-in: YES (past event)
+   ✗ Error fetching orders after 3 retries: Request failed with status code 503
+
+✗ Event 6 failed: Revolution: Inevitable, Justified and Effective with Roger Hallam
+   Error: Request failed with status code 503
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [11/279] Screening of “Accidental Anarchist” with Güney Yildiz & Carne Ross in conversation
+   Date: Mon Mar 27 2023 12:31:17 GMT+0200 (Central European Summer Time)
+   Product ID: 1950
+   Auto check-in: YES (past event)
+   ✗ Error fetching orders after 3 retries: Request failed with status code 503
+
+✗ Event 9 failed: Climate, Technology, Justice & Rights: Can We Get The Whole World To Agree On Any Of Them? with AC Grayling
+   Error: Request failed with status code 503
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [12/279] Screening Of “Cow” with Anat Pick
+   Date: Mon Mar 27 2023 12:40:35 GMT+0200 (Central European Summer Time)
+   Product ID: 1962
+   Auto check-in: YES (past event)
+   ✗ Error fetching orders after 3 retries: Request failed with status code 503
+
+✗ Event 10 failed: Sunday Sci-Fi: “Children Of Men” by Alfonso Cuarón
+   Error: Request failed with status code 503
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [13/279] Kinship with All Life: A New Paradigm for Leadership with Justine Huxley
+   Date: Tue Apr 25 2023 09:35:44 GMT+0200 (Central European Summer Time)
+   Product ID: 2297
+   Auto check-in: YES (past event)
+   ✗ Error fetching orders after 3 retries: Request failed with status code 503
+
+✗ Event 7 failed: Screening of “How To Blow Up A Pipeline” with Rowan Tilly
+   Error: Request failed with status code 503
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [14/279] Forging a Commons Charter…. & Acting On It with Guy Standing
+   Date: Sun May 07 2023 15:42:06 GMT+0200 (Central European Summer Time)
+   Product ID: 2514
+   Auto check-in: YES (past event)
+   ✗ Error fetching orders after 3 retries: Request failed with status code 503
+
+✗ Event 8 failed: The New Lucas Plan: A Workers-Led Transition
+   Error: Request failed with status code 503
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 [15/279] Artful Activism & the Backbone Theory of Change with Bill Moyer
+   Date: Sat May 13 2023 09:22:03 GMT+0200 (Central European Summer Time)
+   Product ID: 2555
+   Auto check-in: YES (past event)

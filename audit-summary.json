@@ -1,0 +1,1885 @@
+{
+  "summary": {
+    "totalEvents": 428,
+    "eventsWithProducts": 282,
+    "eventsWithZeroTickets": 47,
+    "eventsWithTickets": 235,
+    "totalTickets": 4849,
+    "totalDuplicates": null,
+    "totalDateIssues": null
+  },
+  "emptyEvents": [
+    {
+      "id": "jsG2wnWko6Vi",
+      "name": "Open Projects Night",
+      "event_date": "2026-03-02T23:00:00.000Z",
+      "woocommerce_product_id": "18317",
+      "created_at": "2026-01-07T12:01:07.391Z"
+    },
+    {
+      "id": "NLLSbFg1coZc",
+      "name": "Book Club: \"The Ultimate Hidden Truth of the World...\" by David Graeber",
+      "event_date": "2026-02-24T23:00:00.000Z",
+      "woocommerce_product_id": "18355",
+      "created_at": "2026-01-08T12:01:06.792Z"
+    },
+    {
+      "id": "BGz7kjEhNcQG",
+      "name": "UBI: From Distant Ideal to Transformative Policy with Kate Pickett",
+      "event_date": "2026-02-18T23:00:00.000Z",
+      "woocommerce_product_id": "18258",
+      "created_at": "2026-01-05T15:01:02.641Z"
+    },
+    {
+      "id": "SjckxV27MBgJ",
+      "name": "Book Club: \"Birnam Wood\" by Eleanor Catton",
+      "event_date": "2026-01-27T23:00:00.000Z",
+      "woocommerce_product_id": "18341",
+      "created_at": "2026-01-08T12:01:07.183Z"
+    },
+    {
+      "id": "o13bNsGrzmF4",
+      "name": "In Case of Emergency: Post Performance Supper",
+      "event_date": "2026-01-08T23:00:00.000Z",
+      "woocommerce_product_id": "18366",
+      "created_at": "2026-01-08T13:01:01.615Z"
+    },
+    {
+      "id": "JDbaIIbT0aFM",
+      "name": "Kairos at How the Light Gets In with Roger Hallam",
+      "event_date": "2025-09-19T22:00:00.000Z",
+      "woocommerce_product_id": "15910",
+      "created_at": "2025-12-10T17:01:11.606Z"
+    },
+    {
+      "id": "PQDY189bdzp4",
+      "name": "Friday Drinks - Friday, September 19, 2025",
+      "event_date": "2025-09-18T22:00:00.000Z",
+      "woocommerce_product_id": "15950",
+      "created_at": "2025-11-29T20:11:51.389Z"
+    },
+    {
+      "id": "btUzgu5lwcqf",
+      "name": "Kairos at the Stroud Festival of Commoning: Reviving the Money Commons",
+      "event_date": "2025-09-12T22:00:00.000Z",
+      "woocommerce_product_id": "15606",
+      "created_at": "2025-12-10T17:01:13.189Z"
+    },
+    {
+      "id": "CDOhhlmNkAjD",
+      "name": "Sunday Reading Room",
+      "event_date": "2025-07-19T22:00:00.000Z",
+      "woocommerce_product_id": "14921",
+      "created_at": "2025-11-29T20:11:52.883Z"
+    },
+    {
+      "id": "yaaYRCcolVCY",
+      "name": "Sunday Reading Room",
+      "event_date": "2025-07-05T22:00:00.000Z",
+      "woocommerce_product_id": "14875",
+      "created_at": "2025-11-29T20:11:53.003Z"
+    },
+    {
+      "id": "QdXyvof9uilg",
+      "name": "Friday Drinks",
+      "event_date": "2025-06-12T22:00:00.000Z",
+      "woocommerce_product_id": "14416",
+      "created_at": "2025-12-10T17:01:21.268Z"
+    },
+    {
+      "id": "DuUlQgBKoybg",
+      "name": "Sunday Reading Room",
+      "event_date": "2025-05-31T22:00:00.000Z",
+      "woocommerce_product_id": "14105",
+      "created_at": "2025-11-29T20:11:54.916Z"
+    },
+    {
+      "id": "VE2pqRnOyyfs",
+      "name": "Friday Drinks",
+      "event_date": "2025-04-10T22:00:00.000Z",
+      "woocommerce_product_id": "12686",
+      "created_at": "2025-12-10T17:01:33.040Z"
+    },
+    {
+      "id": "i1rqqk8YXA0K",
+      "name": "Deep Conversations: What Does it Mean To Step Up? - Tuesday, April 8, 2025",
+      "event_date": "2025-04-07T22:00:00.000Z",
+      "woocommerce_product_id": "11671",
+      "created_at": "2025-12-10T17:01:42.973Z"
+    },
+    {
+      "id": "RCvnRB4fgJkM",
+      "name": "Sunday Reading Room",
+      "event_date": "2025-04-05T22:00:00.000Z",
+      "woocommerce_product_id": "12670",
+      "created_at": "2025-11-29T20:11:57.075Z"
+    },
+    {
+      "id": "lipP9Vg2HudX",
+      "name": "Sunday Reading Room",
+      "event_date": "2025-02-22T23:00:00.000Z",
+      "woocommerce_product_id": "11826",
+      "created_at": "2025-12-01T09:20:25.217Z"
+    },
+    {
+      "id": "qp61W9QGpwg8",
+      "name": "test - Tuesday, February 18, 2025",
+      "event_date": "2025-02-17T23:00:00.000Z",
+      "woocommerce_product_id": "11157",
+      "created_at": "2025-12-01T09:19:40.062Z"
+    },
+    {
+      "id": "brpOJr8l7mPh",
+      "name": "Regular Fixtures",
+      "event_date": "2025-02-13T14:52:13.000Z",
+      "woocommerce_product_id": "11648",
+      "created_at": "2026-01-07T07:59:59.782Z"
+    },
+    {
+      "id": "7M74d1XBkTeg",
+      "name": "Save the Date",
+      "event_date": "2025-02-12T14:10:27.000Z",
+      "woocommerce_product_id": "11625",
+      "created_at": "2026-01-07T07:59:59.835Z"
+    },
+    {
+      "id": "JPlwUEls6Rre",
+      "name": "Sunday Reading Room",
+      "event_date": "2025-01-09T16:26:38.000Z",
+      "woocommerce_product_id": "10944",
+      "created_at": "2026-01-07T08:00:00.922Z"
+    },
+    {
+      "id": "Ul0roYRlyMdF",
+      "name": "A New Cosmology: Feeling Our Way into the Imaginal with Ellie Robins - Waiting List Payment Link",
+      "event_date": "2024-11-25T11:07:34.000Z",
+      "woocommerce_product_id": "10237",
+      "created_at": "2026-01-07T08:00:01.448Z"
+    },
+    {
+      "id": "CLon5EbT994N",
+      "name": "Kairos at the Idler Festival",
+      "event_date": "2024-11-18T13:47:36.000Z",
+      "woocommerce_product_id": "10136",
+      "created_at": "2026-01-07T08:00:01.603Z"
+    },
+    {
+      "id": "vMEm4PqJQLtb",
+      "name": "Sewing Circle",
+      "event_date": "2024-11-11T19:33:24.000Z",
+      "woocommerce_product_id": "9910",
+      "created_at": "2026-01-07T08:00:01.762Z"
+    },
+    {
+      "id": "2DYwBY549a0G",
+      "name": "Special Library Opening Hours",
+      "event_date": "2024-10-21T19:03:40.000Z",
+      "woocommerce_product_id": "9291",
+      "created_at": "2026-01-07T08:00:02.209Z"
+    },
+    {
+      "id": "ih4PonElaD49",
+      "name": "Changing Hearts & Minds with Sense and Solidarity",
+      "event_date": "2024-07-22T10:07:20.000Z",
+      "woocommerce_product_id": "8004",
+      "created_at": "2026-01-07T08:00:03.589Z"
+    },
+    {
+      "id": "3QpB3blfE0Vy",
+      "name": "Kairos at the Idler Festival",
+      "event_date": "2024-06-17T08:56:54.000Z",
+      "woocommerce_product_id": "7574",
+      "created_at": "2026-01-07T08:00:03.797Z"
+    },
+    {
+      "id": "rmH3WTKSURai",
+      "name": "The Hole Story, a Workshop with Toby Litt",
+      "event_date": "2024-04-29T15:43:20.000Z",
+      "woocommerce_product_id": "6752",
+      "created_at": "2026-01-07T08:00:04.429Z"
+    },
+    {
+      "id": "TVnREfH44UVL",
+      "name": "Diary Dates",
+      "event_date": "2024-04-24T13:01:43.000Z",
+      "woocommerce_product_id": "6580",
+      "created_at": "2026-01-07T08:00:04.639Z"
+    },
+    {
+      "id": "DfMRYPSof1Nu",
+      "name": "Workshop: Everyday Democracy with Dr Sophie Scott-Brown & Pippa Evans",
+      "event_date": "2024-04-22T13:23:04.000Z",
+      "woocommerce_product_id": "6543",
+      "created_at": "2026-01-07T08:00:04.744Z"
+    },
+    {
+      "id": "6Hc1puD0epi0",
+      "name": "Wednesday Drop-In Hours",
+      "event_date": "2024-03-28T12:58:44.000Z",
+      "woocommerce_product_id": "6183",
+      "created_at": "2026-01-07T08:00:04.954Z"
+    },
+    {
+      "id": "EFqqhGpq7GP6",
+      "name": "Dummy event for email tests",
+      "event_date": "2024-03-25T17:04:55.000Z",
+      "woocommerce_product_id": "6123",
+      "created_at": "2026-01-07T08:00:05.166Z"
+    },
+    {
+      "id": "TK5lHSFeWdYO",
+      "name": "Drop-In Hours Pilot",
+      "event_date": "2024-03-13T16:13:20.000Z",
+      "woocommerce_product_id": "5953",
+      "created_at": "2026-01-07T08:00:05.380Z"
+    },
+    {
+      "id": "7J5GGzhP4w6V",
+      "name": "Lunchtime Video: Jack Halberstam on An Aesthetics of Collapse",
+      "event_date": "2024-01-29T20:14:09.000Z",
+      "woocommerce_product_id": "5317",
+      "created_at": "2026-01-07T08:00:06.065Z"
+    },
+    {
+      "id": "SDY8ezdKgAUC",
+      "name": "Lunchtime Video: James Bridle on Planetary Intelligence",
+      "event_date": "2024-01-11T11:09:39.000Z",
+      "woocommerce_product_id": "5034",
+      "created_at": "2026-01-07T08:00:06.273Z"
+    },
+    {
+      "id": "XmXA97ASO0u8",
+      "name": "Lunchtime Video: Jenny Odell on A Life Beyond the Clock and Amitav Ghosh on The Nutmeg's Curse - Tuesday, January 9, 2024",
+      "event_date": "2024-01-09T14:01:35.000Z",
+      "woocommerce_product_id": "4966",
+      "created_at": "2026-01-07T08:00:06.483Z"
+    },
+    {
+      "id": "Z6GCpsegcnlM",
+      "name": "Lunchtime Video: Guy Standing on a new Commons Charter",
+      "event_date": "2023-11-07T10:13:54.000Z",
+      "woocommerce_product_id": "4198",
+      "created_at": "2026-01-07T08:00:07.279Z"
+    },
+    {
+      "id": "74acswD9gTZr",
+      "name": "Club Night: HSBC9 Celebration, Fundraiser & Games",
+      "event_date": "2023-11-07T10:03:28.000Z",
+      "woocommerce_product_id": "4194",
+      "created_at": "2026-01-07T08:00:07.332Z"
+    },
+    {
+      "id": "fbB1wGMYi1gx",
+      "name": "Kairos with the Frontline Club: The Assault on Protest Rights in the Courts",
+      "event_date": "2023-11-01T20:33:37.000Z",
+      "woocommerce_product_id": "4130",
+      "created_at": "2026-01-07T08:00:07.384Z"
+    },
+    {
+      "id": "inh3NDUwRUNw",
+      "name": "Members' Night",
+      "event_date": "2023-10-09T08:11:59.000Z",
+      "woocommerce_product_id": "3714",
+      "created_at": "2026-01-07T08:00:07.541Z"
+    },
+    {
+      "id": "0BVXLmCDsHyM",
+      "name": "non member test event",
+      "event_date": "2023-10-07T15:50:41.000Z",
+      "woocommerce_product_id": "3676",
+      "created_at": "2026-01-07T08:00:07.752Z"
+    },
+    {
+      "id": "T5gF0OF5SUj9",
+      "name": "member test event",
+      "event_date": "2023-10-07T15:25:20.000Z",
+      "woocommerce_product_id": "3675",
+      "created_at": "2026-01-07T08:00:07.806Z"
+    },
+    {
+      "id": "engoePpjlWh1",
+      "name": "Kairos at Green Gathering",
+      "event_date": "2023-07-17T10:29:37.000Z",
+      "woocommerce_product_id": "3252",
+      "created_at": "2026-01-07T08:00:08.286Z"
+    },
+    {
+      "id": "lqS2nv9scqFb",
+      "name": "Wittgenstein, Co-freedom & The Politics of Ecology with Rupert Read",
+      "event_date": "2023-05-17T09:22:27.000Z",
+      "woocommerce_product_id": "2648",
+      "created_at": "2026-01-07T08:00:08.847Z"
+    },
+    {
+      "id": "tgO5U8xqdcVa",
+      "name": "Protest Rights: A Benchmark For Political Freedom with Raj Chada",
+      "event_date": "2023-03-07T15:17:48.000Z",
+      "woocommerce_product_id": "1817",
+      "created_at": "2026-01-07T08:00:09.540Z"
+    },
+    {
+      "id": "ey0nSSMk9S1F",
+      "name": "Warm Data Lab at Kairos",
+      "event_date": "2023-03-05T12:48:06.000Z",
+      "woocommerce_product_id": "1649",
+      "created_at": "2026-01-07T08:00:09.592Z"
+    },
+    {
+      "id": "XlzOUoLyjVPP",
+      "name": "Box of Darkness: The Transformative Power of Grief with Liz Jensen",
+      "event_date": "2023-02-21T08:33:55.000Z",
+      "woocommerce_product_id": "1420",
+      "created_at": "2026-01-07T08:00:09.694Z"
+    },
+    {
+      "id": "od6mxyFYCRyC",
+      "name": "Doughnut Economics Workshop",
+      "event_date": "2023-02-21T07:28:07.000Z",
+      "woocommerce_product_id": "1411",
+      "created_at": "2026-01-07T08:00:09.749Z"
+    }
+  ],
+  "duplicatesWithinEvent": [],
+  "duplicatesAcrossEvents": [],
+  "purchasesAfterEvent": [
+    {
+      "event_id": "WEeA8oGpl4mS",
+      "event_name": "The Cost of Resistance with Chris Hedges",
+      "event_date": "2024-08-13T09:49:29.000Z",
+      "first_purchase": "2024-08-21T07:54:28.000Z",
+      "last_purchase": "2025-08-17T05:40:45.000Z",
+      "ticket_count": "120",
+      "tickets_after_event": "120"
+    },
+    {
+      "event_id": "4Fkr7B5611F8",
+      "event_name": "Winter Solstice Celebration",
+      "event_date": "2024-11-11T16:32:15.000Z",
+      "first_purchase": "2024-11-19T08:51:54.000Z",
+      "last_purchase": "2024-12-20T17:12:52.000Z",
+      "ticket_count": "76",
+      "tickets_after_event": "76"
+    },
+    {
+      "event_id": "OaqMIfu7EQie",
+      "event_name": "Reviving the Commons: A Unifying Vision for Our Common Wealth with Guy Standing",
+      "event_date": "2024-12-10T09:31:47.000Z",
+      "first_purchase": "2024-12-17T09:05:11.000Z",
+      "last_purchase": "2025-01-16T14:49:13.000Z",
+      "ticket_count": "66",
+      "tickets_after_event": "66"
+    },
+    {
+      "event_id": "gWzhqNGxXSxW",
+      "event_name": "The Meaning of Revolution in the 21st Century with Roger Hallam",
+      "event_date": "2023-11-23T08:35:29.000Z",
+      "first_purchase": "2023-12-01T12:42:49.000Z",
+      "last_purchase": "2024-01-18T16:30:47.000Z",
+      "ticket_count": "52",
+      "tickets_after_event": "52"
+    },
+    {
+      "event_id": "MVoTU1aUkcxd",
+      "event_name": "We Are the Ones We've Been Waiting For with Adam Greenfield",
+      "event_date": "2025-01-21T12:14:52.000Z",
+      "first_purchase": "2025-01-28T15:39:11.000Z",
+      "last_purchase": "2025-03-13T13:58:10.000Z",
+      "ticket_count": "51",
+      "tickets_after_event": "51"
+    },
+    {
+      "event_id": "o6P6OsThIzlS",
+      "event_name": "History for Tomorrow with Roman Krznaric",
+      "event_date": "2024-04-27T09:27:57.000Z",
+      "first_purchase": "2024-05-08T18:28:24.000Z",
+      "last_purchase": "2024-07-11T15:09:19.000Z",
+      "ticket_count": "48",
+      "tickets_after_event": "48"
+    },
+    {
+      "event_id": "hGpwWsDYlU1b",
+      "event_name": "What Can We Learn from the Radical Imagination? with Max Haiven",
+      "event_date": "2024-07-29T08:12:26.000Z",
+      "first_purchase": "2024-08-05T13:13:20.000Z",
+      "last_purchase": "2024-11-14T13:03:00.000Z",
+      "ticket_count": "45",
+      "tickets_after_event": "45"
+    },
+    {
+      "event_id": "WIudhA524EHx",
+      "event_name": "What Can Religion Teach Us About Living in Apocalyptic Times? with Elizabeth Oldfield",
+      "event_date": "2024-08-27T11:48:03.000Z",
+      "first_purchase": "2024-09-03T13:11:23.000Z",
+      "last_purchase": "2024-11-12T15:10:26.000Z",
+      "ticket_count": "44",
+      "tickets_after_event": "44"
+    },
+    {
+      "event_id": "b5epeosbn7iQ",
+      "event_name": "Cognitive Dissonance: Living in a World of Contradictions with Sarah Stein Lubrano",
+      "event_date": "2024-06-10T15:30:32.000Z",
+      "first_purchase": "2024-06-18T18:04:52.000Z",
+      "last_purchase": "2024-07-23T12:47:00.000Z",
+      "ticket_count": "42",
+      "tickets_after_event": "42"
+    },
+    {
+      "event_id": "uTKXhg8DiktQ",
+      "event_name": "Worlds Worth Living For with Dougald Hine",
+      "event_date": "2024-08-13T07:38:53.000Z",
+      "first_purchase": "2024-08-21T12:36:14.000Z",
+      "last_purchase": "2024-10-29T17:31:49.000Z",
+      "ticket_count": "42",
+      "tickets_after_event": "42"
+    },
+    {
+      "event_id": "U5euSP5oRqKl",
+      "event_name": "Keeping the World Intact with Hugh Brody",
+      "event_date": "2024-11-11T17:12:06.000Z",
+      "first_purchase": "2024-11-21T10:39:56.000Z",
+      "last_purchase": "2024-12-10T18:00:32.000Z",
+      "ticket_count": "40",
+      "tickets_after_event": "40"
+    },
+    {
+      "event_id": "KBgmesXy7B3w",
+      "event_name": "What Happens Next? with George Marshall",
+      "event_date": "2024-04-29T08:20:42.000Z",
+      "first_purchase": "2024-05-06T17:53:28.000Z",
+      "last_purchase": "2024-05-16T15:58:43.000Z",
+      "ticket_count": "37",
+      "tickets_after_event": "37"
+    },
+    {
+      "event_id": "VB2QlfspHxGg",
+      "event_name": "Bioregions & the Commons: Becoming Citizens of Place in a Changing World with Isabel Carlisle",
+      "event_date": "2025-01-18T14:55:33.000Z",
+      "first_purchase": "2025-01-26T08:28:28.000Z",
+      "last_purchase": "2025-02-18T17:43:44.000Z",
+      "ticket_count": "37",
+      "tickets_after_event": "37"
+    },
+    {
+      "event_id": "uaoSaxHq9Jq7",
+      "event_name": "A Warm Data Lab with Emily Stewart",
+      "event_date": "2024-08-27T11:48:12.000Z",
+      "first_purchase": "2024-09-03T12:08:57.000Z",
+      "last_purchase": "2024-10-24T15:26:09.000Z",
+      "ticket_count": "36",
+      "tickets_after_event": "36"
+    },
+    {
+      "event_id": "ShTWycn6vI55",
+      "event_name": "A New Cosmology: Feeling Our Way into the Imaginal with Ellie Robins",
+      "event_date": "2024-10-14T14:49:20.000Z",
+      "first_purchase": "2024-10-26T05:49:59.000Z",
+      "last_purchase": "2024-11-28T14:50:46.000Z",
+      "ticket_count": "35",
+      "tickets_after_event": "35"
+    },
+    {
+      "event_id": "teVwxKewpfPM",
+      "event_name": "The Law as a Tool for Radical Change with Jolyon Maugham",
+      "event_date": "2024-03-04T15:55:28.000Z",
+      "first_purchase": "2024-03-21T10:16:31.000Z",
+      "last_purchase": "2024-04-18T15:16:31.000Z",
+      "ticket_count": "34",
+      "tickets_after_event": "34"
+    },
+    {
+      "event_id": "Ka22XfK0HWqC",
+      "event_name": "The Meaning of Revolution in the 21st Century with Roger Hallam",
+      "event_date": "2023-10-09T05:31:39.000Z",
+      "first_purchase": "2023-10-18T04:54:58.000Z",
+      "last_purchase": "2023-11-22T18:00:00.000Z",
+      "ticket_count": "33",
+      "tickets_after_event": "33"
+    },
+    {
+      "event_id": "1gbSU1FAQilM",
+      "event_name": "Strategic Adaptation For Emergency Resilience (\"SAFER\") with Rupert Read",
+      "event_date": "2024-10-14T10:54:22.000Z",
+      "first_purchase": "2024-10-21T09:08:47.000Z",
+      "last_purchase": "2024-11-09T10:02:21.000Z",
+      "ticket_count": "32",
+      "tickets_after_event": "32"
+    },
+    {
+      "event_id": "t8kxQaRsILUH",
+      "event_name": "Both/And: The Climate Majority Project & the Radical Flank",
+      "event_date": "2024-04-10T11:21:43.000Z",
+      "first_purchase": "2024-04-18T18:02:23.000Z",
+      "last_purchase": "2024-05-14T12:10:45.000Z",
+      "ticket_count": "32",
+      "tickets_after_event": "32"
+    },
+    {
+      "event_id": "wCr2UTQGwzCn",
+      "event_name": "Ending the Jobs Fetish: Work, Commoning and Leisure with Guy Standing",
+      "event_date": "2024-01-09T15:35:24.000Z",
+      "first_purchase": "2024-01-17T13:56:47.000Z",
+      "last_purchase": "2024-01-25T17:02:25.000Z",
+      "ticket_count": "32",
+      "tickets_after_event": "32"
+    },
+    {
+      "event_id": "xcBWEz8ld0uv",
+      "event_name": "Learning From Conservative Media: How To Counter Anti-Climate Messages With Geoff Dembicki",
+      "event_date": "2025-01-27T18:30:18.000Z",
+      "first_purchase": "2025-02-05T11:52:41.000Z",
+      "last_purchase": "2025-02-20T17:28:02.000Z",
+      "ticket_count": "31",
+      "tickets_after_event": "31"
+    },
+    {
+      "event_id": "02hc9p131Qud",
+      "event_name": "Anarchism and its Lessons for Now with Ruth Kinna",
+      "event_date": "2024-01-03T09:15:02.000Z",
+      "first_purchase": "2024-01-16T22:10:50.000Z",
+      "last_purchase": "2024-01-30T17:35:47.000Z",
+      "ticket_count": "31",
+      "tickets_after_event": "31"
+    },
+    {
+      "event_id": "4H2j8TKrKfnC",
+      "event_name": "Hit ‘Em Where it Hurts: How to Create an Alternative to Capitalism with Rob Callender",
+      "event_date": "2024-11-11T14:49:49.000Z",
+      "first_purchase": "2024-11-19T16:20:27.000Z",
+      "last_purchase": "2024-12-17T15:18:33.000Z",
+      "ticket_count": "31",
+      "tickets_after_event": "31"
+    },
+    {
+      "event_id": "MLsEYXB6mdWi",
+      "event_name": "Effective Resistance & the Role of Sabotage with Simon Bramwell",
+      "event_date": "2024-01-21T13:51:36.000Z",
+      "first_purchase": "2024-02-08T13:18:18.000Z",
+      "last_purchase": "2024-02-15T17:07:28.000Z",
+      "ticket_count": "30",
+      "tickets_after_event": "30"
+    },
+    {
+      "event_id": "r1Nj1xgjfeDN",
+      "event_name": "Rethinking \"Survival of the Fittest\": From Competition to Cooperation with Buzz Baum",
+      "event_date": "2023-12-28T10:17:17.000Z",
+      "first_purchase": "2024-01-07T08:19:00.000Z",
+      "last_purchase": "2024-02-08T15:11:04.000Z",
+      "ticket_count": "29",
+      "tickets_after_event": "29"
+    },
+    {
+      "event_id": "4csRuVn1CGYL",
+      "event_name": "Podcast Recording of “What Do We Want?: The Pleasures of Activism\"",
+      "event_date": "2024-07-29T18:39:19.000Z",
+      "first_purchase": "2024-08-22T08:28:28.000Z",
+      "last_purchase": "2024-11-15T23:57:59.000Z",
+      "ticket_count": "29",
+      "tickets_after_event": "29"
+    },
+    {
+      "event_id": "Z50BSMnyknNa",
+      "event_name": "Winter Solstice Celebration",
+      "event_date": "2023-11-13T17:55:42.000Z",
+      "first_purchase": "2023-11-28T09:50:06.000Z",
+      "last_purchase": "2024-11-27T04:26:57.000Z",
+      "ticket_count": "29",
+      "tickets_after_event": "29"
+    },
+    {
+      "event_id": "lVYgQ8HaEhMN",
+      "event_name": "\"The Nightingale's Song\" & \"Puffling\" with Sam Lee & Jessica Bishopp",
+      "event_date": "2024-10-28T16:48:46.000Z",
+      "first_purchase": "2024-11-04T22:30:09.000Z",
+      "last_purchase": "2024-12-03T17:01:08.000Z",
+      "ticket_count": "27",
+      "tickets_after_event": "27"
+    },
+    {
+      "event_id": "4RGY90KxMK19",
+      "event_name": "Preparing for Crisis: Why Communities Must Take Control",
+      "event_date": "2024-02-21T13:56:22.000Z",
+      "first_purchase": "2024-03-01T10:48:49.000Z",
+      "last_purchase": "2024-03-21T15:20:32.000Z",
+      "ticket_count": "27",
+      "tickets_after_event": "27"
+    },
+    {
+      "event_id": "AQfTh1iUZgS3",
+      "event_name": "What Does it Mean to Live a Good Life? Kairos Deep Conversations with Georgie Nightingall",
+      "event_date": "2025-01-02T17:54:53.000Z",
+      "first_purchase": "2025-01-10T18:21:35.000Z",
+      "last_purchase": "2025-01-23T16:36:22.000Z",
+      "ticket_count": "27",
+      "tickets_after_event": "27"
+    },
+    {
+      "event_id": "ZfqQnQ0lzRxJ",
+      "event_name": "Planetarity: Some Tools for Thinking About the Earth with Tim Waterman",
+      "event_date": "2024-06-02T19:14:29.000Z",
+      "first_purchase": "2024-06-18T20:16:50.000Z",
+      "last_purchase": "2024-07-16T16:01:19.000Z",
+      "ticket_count": "27",
+      "tickets_after_event": "27"
+    },
+    {
+      "event_id": "u6QaC0E1ecZ5",
+      "event_name": "A State-Driven Energy Transition with Brett Christophers",
+      "event_date": "2024-04-29T16:49:51.000Z",
+      "first_purchase": "2024-05-08T13:04:17.000Z",
+      "last_purchase": "2024-05-21T17:16:26.000Z",
+      "ticket_count": "26",
+      "tickets_after_event": "26"
+    },
+    {
+      "event_id": "nzjgs0yQtZAz",
+      "event_name": "A New Media System To Heal Our Collective Trauma with Matthew Green",
+      "event_date": "2024-03-12T13:46:37.000Z",
+      "first_purchase": "2024-03-24T08:59:29.000Z",
+      "last_purchase": "2024-04-11T12:47:27.000Z",
+      "ticket_count": "26",
+      "tickets_after_event": "26"
+    },
+    {
+      "event_id": "GmrmFAoIpAuv",
+      "event_name": "Facing the Climate Emergency: Discussion & Grief Circle with Margaret Klein Salamon",
+      "event_date": "2024-02-05T17:24:58.000Z",
+      "first_purchase": "2024-02-18T21:59:16.000Z",
+      "last_purchase": "2024-03-05T17:58:08.000Z",
+      "ticket_count": "26",
+      "tickets_after_event": "26"
+    },
+    {
+      "event_id": "hsaDjNdTcN4T",
+      "event_name": "What Next for the Climate Movements? with Gail Bradbrook",
+      "event_date": "2023-09-18T12:53:51.000Z",
+      "first_purchase": "2023-09-25T14:01:48.000Z",
+      "last_purchase": "2023-10-10T05:26:20.000Z",
+      "ticket_count": "26",
+      "tickets_after_event": "26"
+    },
+    {
+      "event_id": "zHtp6dMArmkX",
+      "event_name": "Games Design Workshop with Matteo Menapace & Max Haiven",
+      "event_date": "2024-11-20T12:12:33.000Z",
+      "first_purchase": "2024-11-29T09:57:19.000Z",
+      "last_purchase": "2024-12-15T14:36:52.000Z",
+      "ticket_count": "26",
+      "tickets_after_event": "26"
+    },
+    {
+      "event_id": "u93fnL9HaJkR",
+      "event_name": "Workshop: Imagination Activism for Systemic Shifts with Phoebe Tickell",
+      "event_date": "2023-10-09T07:28:12.000Z",
+      "first_purchase": "2023-10-25T12:36:17.000Z",
+      "last_purchase": "2023-11-07T17:24:30.000Z",
+      "ticket_count": "25",
+      "tickets_after_event": "25"
+    },
+    {
+      "event_id": "k8nn8OqaYtOD",
+      "event_name": "Facing the Unthinkable with Stephen Markley",
+      "event_date": "2024-05-08T11:08:04.000Z",
+      "first_purchase": "2024-05-16T15:06:28.000Z",
+      "last_purchase": "2024-06-08T11:51:49.000Z",
+      "ticket_count": "25",
+      "tickets_after_event": "25"
+    },
+    {
+      "event_id": "ZlNm2jfTagsl",
+      "event_name": "Winter Solstice Celebration",
+      "event_date": "2025-12-19T23:00:00.000Z",
+      "first_purchase": "2025-12-19T23:08:52.000Z",
+      "last_purchase": "2025-12-20T21:10:07.000Z",
+      "ticket_count": "24",
+      "tickets_after_event": "24"
+    },
+    {
+      "event_id": "GvkZUx6GdQDT",
+      "event_name": "Screening of \"Naila and the Uprising\" with Nadia Yahlom",
+      "event_date": "2024-10-21T17:24:11.000Z",
+      "first_purchase": "2024-10-30T16:26:23.000Z",
+      "last_purchase": "2025-10-07T09:17:05.000Z",
+      "ticket_count": "24",
+      "tickets_after_event": "24"
+    },
+    {
+      "event_id": "oYQpFgQh5JZv",
+      "event_name": "New Season Launch: Before the Light Fades with Natasha Walter",
+      "event_date": "2023-09-14T09:20:09.000Z",
+      "first_purchase": "2023-09-25T06:12:02.000Z",
+      "last_purchase": "2023-10-03T13:12:41.000Z",
+      "ticket_count": "23",
+      "tickets_after_event": "23"
+    },
+    {
+      "event_id": "xJwOkfuunPFT",
+      "event_name": "Finding Words to Describe this Moment We're In & Why it Matters with Jonathan Rowson",
+      "event_date": "2023-10-09T06:07:47.000Z",
+      "first_purchase": "2023-10-25T13:37:39.000Z",
+      "last_purchase": "2023-11-14T17:29:39.000Z",
+      "ticket_count": "23",
+      "tickets_after_event": "23"
+    },
+    {
+      "event_id": "lv5k1cUcRTES",
+      "event_name": "Screening of \"Join or Die\" with Sarah Stein Lubrano",
+      "event_date": "2024-08-13T12:31:53.000Z",
+      "first_purchase": "2024-08-22T09:37:40.000Z",
+      "last_purchase": "2024-09-04T15:00:15.000Z",
+      "ticket_count": "22",
+      "tickets_after_event": "22"
+    },
+    {
+      "event_id": "PVHxvdMq3cgN",
+      "event_name": "Climate, Technology, Justice & Rights: Can We Get The Whole World To Agree On Any Of Them? with AC Grayling",
+      "event_date": "2023-03-19T13:05:51.000Z",
+      "first_purchase": "2023-04-03T19:05:32.000Z",
+      "last_purchase": "2023-05-10T12:56:14.000Z",
+      "ticket_count": "21",
+      "tickets_after_event": "21"
+    },
+    {
+      "event_id": "4Ga8Q9L98a8q",
+      "event_name": "Recovering the Middle Voice (or How to Act in a World that Surpasses Us) with Valentin Gerlier",
+      "event_date": "2025-09-24T22:00:00.000Z",
+      "first_purchase": "2025-09-25T03:09:27.000Z",
+      "last_purchase": "2025-09-25T15:41:54.000Z",
+      "ticket_count": "21",
+      "tickets_after_event": "21"
+    },
+    {
+      "event_id": "bpPqnAX96mU5",
+      "event_name": "Rewild the Rich! How to Take Back our Countryside with Joel Scott-Halkes",
+      "event_date": "2024-05-07T06:28:21.000Z",
+      "first_purchase": "2024-05-18T16:58:30.000Z",
+      "last_purchase": "2024-06-18T15:40:34.000Z",
+      "ticket_count": "20",
+      "tickets_after_event": "20"
+    },
+    {
+      "event_id": "MqGuGAMCrri4",
+      "event_name": "Lessons from Ecuador, World Leader in Rights of Nature with Paul Powlesland",
+      "event_date": "2023-10-09T08:45:12.000Z",
+      "first_purchase": "2023-10-26T09:42:33.000Z",
+      "last_purchase": "2023-11-08T17:33:41.000Z",
+      "ticket_count": "20",
+      "tickets_after_event": "20"
+    },
+    {
+      "event_id": "4X5InO496Zus",
+      "event_name": "Britain's Common Land: Past, Present and Future with Helen Baczkowska",
+      "event_date": "2025-02-04T10:26:38.000Z",
+      "first_purchase": "2025-02-15T08:46:36.000Z",
+      "last_purchase": "2025-03-05T17:17:33.000Z",
+      "ticket_count": "20",
+      "tickets_after_event": "20"
+    },
+    {
+      "event_id": "rcX2whbDCcCw",
+      "event_name": "Education for Culture Change with Artemis Bear",
+      "event_date": "2024-03-26T12:04:05.000Z",
+      "first_purchase": "2024-04-15T14:39:57.000Z",
+      "last_purchase": "2024-04-25T12:57:49.000Z",
+      "ticket_count": "20",
+      "tickets_after_event": "20"
+    },
+    {
+      "event_id": "FcCSIpeVl7mQ",
+      "event_name": "David Graeber and the Pirate Enlightenment with Chris Haughton and Nika Dubrovsky",
+      "event_date": "2023-09-21T12:41:13.000Z",
+      "first_purchase": "2023-09-28T17:03:16.000Z",
+      "last_purchase": "2023-10-13T14:42:08.000Z",
+      "ticket_count": "19",
+      "tickets_after_event": "19"
+    },
+    {
+      "event_id": "LtOG6XCVTxlh",
+      "event_name": "What About China? with Songqiao Yao & Faye Lu",
+      "event_date": "2024-03-20T13:57:53.000Z",
+      "first_purchase": "2024-03-27T16:40:41.000Z",
+      "last_purchase": "2024-04-04T13:55:38.000Z",
+      "ticket_count": "19",
+      "tickets_after_event": "19"
+    },
+    {
+      "event_id": "JfOKFsZNKppv",
+      "event_name": "Finding Existential Hope in Humanity with SJ Beard",
+      "event_date": "2024-03-28T11:15:03.000Z",
+      "first_purchase": "2024-04-30T19:20:23.000Z",
+      "last_purchase": "2024-05-09T16:02:07.000Z",
+      "ticket_count": "18",
+      "tickets_after_event": "18"
+    },
+    {
+      "event_id": "RbDgzMNths6J",
+      "event_name": "A Life-Ennobling Economy & How to Get There with Indy Johar",
+      "event_date": "2024-03-04T15:53:05.000Z",
+      "first_purchase": "2024-03-11T19:05:18.000Z",
+      "last_purchase": "2024-03-19T17:21:56.000Z",
+      "ticket_count": "18",
+      "tickets_after_event": "18"
+    },
+    {
+      "event_id": "IXNYnB64CKbw",
+      "event_name": "A Small Farm Future with Chris Smaje",
+      "event_date": "2023-11-14T11:32:35.000Z",
+      "first_purchase": "2023-11-22T09:25:56.000Z",
+      "last_purchase": "2025-11-03T21:18:58.000Z",
+      "ticket_count": "18",
+      "tickets_after_event": "18"
+    },
+    {
+      "event_id": "k2zNlRcGZpwV",
+      "event_name": "Forging a Commons Charter…. & Acting On It with Guy Standing",
+      "event_date": "2023-05-07T13:42:06.000Z",
+      "first_purchase": "2023-05-15T14:19:22.000Z",
+      "last_purchase": "2023-06-09T13:35:48.000Z",
+      "ticket_count": "18",
+      "tickets_after_event": "18"
+    },
+    {
+      "event_id": "YdWouAGoYMLe",
+      "event_name": "Library Celebration with Drinks & Readings",
+      "event_date": "2024-10-21T19:59:07.000Z",
+      "first_purchase": "2024-10-30T22:33:12.000Z",
+      "last_purchase": "2024-11-06T17:59:36.000Z",
+      "ticket_count": "17",
+      "tickets_after_event": "17"
+    },
+    {
+      "event_id": "NCBqbuPr9Mao",
+      "event_name": "Day Walk across Knepp Wildland",
+      "event_date": "2024-04-15T08:16:05.000Z",
+      "first_purchase": "2024-04-24T16:22:10.000Z",
+      "last_purchase": "2024-05-10T10:39:28.000Z",
+      "ticket_count": "17",
+      "tickets_after_event": "17"
+    },
+    {
+      "event_id": "0FD06Ftxpljd",
+      "event_name": "Rethinking Fairness: Navigating Climate Breakdown Across Generations with Kennedy Mbeva",
+      "event_date": "2024-02-22T16:35:52.000Z",
+      "first_purchase": "2024-03-01T17:54:27.000Z",
+      "last_purchase": "2024-03-12T16:56:44.000Z",
+      "ticket_count": "17",
+      "tickets_after_event": "17"
+    },
+    {
+      "event_id": "OvkbnADxOEwp",
+      "event_name": "A Peasant Revolt & A Vision for the Commons with Peter Sahlins",
+      "event_date": "2024-09-20T14:08:38.000Z",
+      "first_purchase": "2024-10-02T13:38:16.000Z",
+      "last_purchase": "2024-10-30T17:01:07.000Z",
+      "ticket_count": "17",
+      "tickets_after_event": "17"
+    },
+    {
+      "event_id": "foE2zALF6iKv",
+      "event_name": "The Climate Crisis: Why Aren't We Angrier? with Josh Cohen",
+      "event_date": "2023-06-08T13:55:16.000Z",
+      "first_purchase": "2023-06-15T12:44:55.000Z",
+      "last_purchase": "2023-07-25T13:23:28.000Z",
+      "ticket_count": "17",
+      "tickets_after_event": "17"
+    },
+    {
+      "event_id": "SbQCNpKHhNT1",
+      "event_name": "Women and the Climate Emergency with Natasha Walter & Trudi Warner",
+      "event_date": "2024-04-24T12:05:11.000Z",
+      "first_purchase": "2024-05-08T13:54:40.000Z",
+      "last_purchase": "2024-05-23T10:14:14.000Z",
+      "ticket_count": "16",
+      "tickets_after_event": "16"
+    },
+    {
+      "event_id": "es1E2vy5mEga",
+      "event_name": "The Liberal \"Guardrails\" Against Radical Climate Action with Chris Shaw",
+      "event_date": "2023-11-27T20:29:42.000Z",
+      "first_purchase": "2023-12-08T11:04:29.000Z",
+      "last_purchase": "2023-12-14T17:24:37.000Z",
+      "ticket_count": "16",
+      "tickets_after_event": "16"
+    },
+    {
+      "event_id": "SHRjztEtCB86",
+      "event_name": "Open Projects Night",
+      "event_date": "2024-05-07T16:48:20.000Z",
+      "first_purchase": "2024-05-15T19:07:17.000Z",
+      "last_purchase": "2024-06-04T11:47:53.000Z",
+      "ticket_count": "15",
+      "tickets_after_event": "15"
+    },
+    {
+      "event_id": "LRHiGeW3YbKu",
+      "event_name": "The Rights of Nature with César Rodríguez-Garavito",
+      "event_date": "2023-02-21T08:38:40.000Z",
+      "first_purchase": "2023-04-04T17:54:50.000Z",
+      "last_purchase": "2023-04-10T14:33:15.000Z",
+      "ticket_count": "15",
+      "tickets_after_event": "15"
+    },
+    {
+      "event_id": "77soRHefFOP0",
+      "event_name": "Midsummer Club Drinks",
+      "event_date": "2024-06-02T19:39:53.000Z",
+      "first_purchase": "2024-06-10T18:45:05.000Z",
+      "last_purchase": "2024-06-19T14:40:23.000Z",
+      "ticket_count": "15",
+      "tickets_after_event": "15"
+    },
+    {
+      "event_id": "KrOVC38DgWGg",
+      "event_name": "August Movie Nights: \"This Is Not a Film\" by Jafar Panahi",
+      "event_date": "2024-07-09T19:41:42.000Z",
+      "first_purchase": "2024-07-19T20:33:34.000Z",
+      "last_purchase": "2024-08-01T15:36:34.000Z",
+      "ticket_count": "15",
+      "tickets_after_event": "15"
+    },
+    {
+      "event_id": "nX6K9CMQyNJP",
+      "event_name": "Club Drinks",
+      "event_date": "2024-02-05T19:42:44.000Z",
+      "first_purchase": "2024-02-15T15:05:54.000Z",
+      "last_purchase": "2024-03-01T15:49:40.000Z",
+      "ticket_count": "15",
+      "tickets_after_event": "15"
+    },
+    {
+      "event_id": "GyYbt5fOP2vF",
+      "event_name": "Navigating Uncertainty: Radical Rethinking for a Turbulent World with Ian Scoones",
+      "event_date": "2024-09-21T06:02:24.000Z",
+      "first_purchase": "2024-09-28T16:47:25.000Z",
+      "last_purchase": "2024-10-22T15:41:21.000Z",
+      "ticket_count": "15",
+      "tickets_after_event": "15"
+    },
+    {
+      "event_id": "G4JTLw0x8xlP",
+      "event_name": "Voluntary Human Extinction is Not the Answer with Ben Ware",
+      "event_date": "2024-05-07T16:08:02.000Z",
+      "first_purchase": "2024-05-21T17:57:08.000Z",
+      "last_purchase": "2024-06-06T15:57:09.000Z",
+      "ticket_count": "15",
+      "tickets_after_event": "15"
+    },
+    {
+      "event_id": "1CzzWMOCCY0v",
+      "event_name": "Club Drinks",
+      "event_date": "2023-12-28T15:06:02.000Z",
+      "first_purchase": "2024-01-04T15:29:32.000Z",
+      "last_purchase": "2024-01-05T16:35:07.000Z",
+      "ticket_count": "14",
+      "tickets_after_event": "14"
+    },
+    {
+      "event_id": "2nDmxTqDr0iN",
+      "event_name": "Kairos Club Drinks & Mixer",
+      "event_date": "2024-10-17T08:51:45.000Z",
+      "first_purchase": "2024-10-26T16:06:43.000Z",
+      "last_purchase": "2024-11-15T16:17:20.000Z",
+      "ticket_count": "14",
+      "tickets_after_event": "14"
+    },
+    {
+      "event_id": "MWx6t86xwuyo",
+      "event_name": "Leap Year Storytelling with Toby Litt",
+      "event_date": "2024-02-06T10:09:13.000Z",
+      "first_purchase": "2024-02-13T17:58:14.000Z",
+      "last_purchase": "2024-02-29T16:53:25.000Z",
+      "ticket_count": "14",
+      "tickets_after_event": "14"
+    },
+    {
+      "event_id": "3dINDViqPRJW",
+      "event_name": "Artful Activism & the Backbone Theory of Change with Bill Moyer",
+      "event_date": "2023-05-13T07:22:03.000Z",
+      "first_purchase": "2023-05-21T08:03:29.000Z",
+      "last_purchase": "2023-06-07T09:15:55.000Z",
+      "ticket_count": "14",
+      "tickets_after_event": "14"
+    },
+    {
+      "event_id": "Bn16mbbYWN1D",
+      "event_name": "Screening of “The Village of Lovers”",
+      "event_date": "2023-11-21T10:21:32.000Z",
+      "first_purchase": "2023-11-29T21:19:07.000Z",
+      "last_purchase": "2023-12-05T17:23:20.000Z",
+      "ticket_count": "14",
+      "tickets_after_event": "14"
+    },
+    {
+      "event_id": "dP38qPYLg2fB",
+      "event_name": "Kinship with All Life: A New Paradigm for Leadership with Justine Huxley",
+      "event_date": "2023-04-25T07:35:44.000Z",
+      "first_purchase": "2023-05-15T14:19:22.000Z",
+      "last_purchase": "2023-06-13T15:33:24.000Z",
+      "ticket_count": "14",
+      "tickets_after_event": "14"
+    },
+    {
+      "event_id": "MDmS0NA0aSOs",
+      "event_name": "A Sustainable Revolution with Sophie Scott-Brown",
+      "event_date": "2024-02-21T11:27:32.000Z",
+      "first_purchase": "2024-03-04T09:41:21.000Z",
+      "last_purchase": "2024-03-14T16:18:46.000Z",
+      "ticket_count": "13",
+      "tickets_after_event": "13"
+    },
+    {
+      "event_id": "iF3VDnIi9J5a",
+      "event_name": "Sewing Club: Moth Hole Repairs & Visible Mends",
+      "event_date": "2023-09-24T18:41:39.000Z",
+      "first_purchase": "2023-10-05T16:51:05.000Z",
+      "last_purchase": "2023-10-24T12:12:39.000Z",
+      "ticket_count": "13",
+      "tickets_after_event": "13"
+    },
+    {
+      "event_id": "ijLNRhR5sU7d",
+      "event_name": "Time Beyond Cronos with Charlotte Du Cann",
+      "event_date": "2023-05-14T17:29:52.000Z",
+      "first_purchase": "2023-05-22T09:34:25.000Z",
+      "last_purchase": "2023-06-01T12:33:02.000Z",
+      "ticket_count": "13",
+      "tickets_after_event": "13"
+    },
+    {
+      "event_id": "TM7VHxs69IYw",
+      "event_name": "August Movie Nights: \"Embrace of the Serpent\"",
+      "event_date": "2024-08-13T14:02:49.000Z",
+      "first_purchase": "2024-08-22T01:41:12.000Z",
+      "last_purchase": "2024-08-28T14:45:39.000Z",
+      "ticket_count": "13",
+      "tickets_after_event": "13"
+    },
+    {
+      "event_id": "LiTygE0o2pZu",
+      "event_name": "The Fossil States of the Earth with Mohamed Amer Meziane",
+      "event_date": "2024-05-15T17:41:35.000Z",
+      "first_purchase": "2024-06-01T03:44:05.000Z",
+      "last_purchase": "2024-06-05T11:19:05.000Z",
+      "ticket_count": "12",
+      "tickets_after_event": "12"
+    },
+    {
+      "event_id": "BhBpzaLwytkd",
+      "event_name": "Open Projects Night",
+      "event_date": "2024-03-19T10:14:21.000Z",
+      "first_purchase": "2024-03-27T22:06:36.000Z",
+      "last_purchase": "2024-04-09T15:07:11.000Z",
+      "ticket_count": "12",
+      "tickets_after_event": "12"
+    },
+    {
+      "event_id": "x6SZA0EnVM5I",
+      "event_name": "Screening of \"The Square\" with Nihal El Aasar",
+      "event_date": "2024-09-25T13:31:20.000Z",
+      "first_purchase": "2024-10-09T06:34:00.000Z",
+      "last_purchase": "2024-10-17T15:31:29.000Z",
+      "ticket_count": "12",
+      "tickets_after_event": "12"
+    },
+    {
+      "event_id": "g4viAeEE9TjR",
+      "event_name": "Club Drinks",
+      "event_date": "2024-01-09T19:07:38.000Z",
+      "first_purchase": "2024-01-25T20:45:28.000Z",
+      "last_purchase": "2024-03-22T12:15:22.000Z",
+      "ticket_count": "12",
+      "tickets_after_event": "12"
+    },
+    {
+      "event_id": "1hss9teOms3N",
+      "event_name": "Changing Hearts & Minds - Payment Link",
+      "event_date": "2024-07-29T08:42:41.000Z",
+      "first_purchase": "2024-10-21T12:54:00.000Z",
+      "last_purchase": "2024-11-13T12:28:50.000Z",
+      "ticket_count": "12",
+      "tickets_after_event": "12"
+    },
+    {
+      "event_id": "lbbQJL5HLTsL",
+      "event_name": "Navigating Collapse, Reclaiming Freedom with Jem Bendell",
+      "event_date": "2023-07-02T18:31:59.000Z",
+      "first_purchase": "2023-07-11T11:41:02.000Z",
+      "last_purchase": "2023-07-15T08:53:44.000Z",
+      "ticket_count": "12",
+      "tickets_after_event": "12"
+    },
+    {
+      "event_id": "DsZfyFqZqOia",
+      "event_name": "Reviving the Blue Commons: A Plan to Repair our Ocean",
+      "event_date": "2025-03-17T23:00:00.000Z",
+      "first_purchase": "2025-03-18T07:01:43.000Z",
+      "last_purchase": "2025-03-18T18:08:56.000Z",
+      "ticket_count": "12",
+      "tickets_after_event": "12"
+    },
+    {
+      "event_id": "sbeSjMmSRNDQ",
+      "event_name": "Club Drinks: Weekly Throughout April",
+      "event_date": "2024-03-14T09:53:41.000Z",
+      "first_purchase": "2024-03-28T10:56:11.000Z",
+      "last_purchase": "2024-04-26T16:10:19.000Z",
+      "ticket_count": "12",
+      "tickets_after_event": "12"
+    },
+    {
+      "event_id": "WEuINt6Xl6DU",
+      "event_name": "Alternative Communities of Care with Lynne Segal",
+      "event_date": "2023-11-27T16:59:42.000Z",
+      "first_purchase": "2023-12-06T21:08:52.000Z",
+      "last_purchase": "2023-12-12T17:36:23.000Z",
+      "ticket_count": "12",
+      "tickets_after_event": "12"
+    },
+    {
+      "event_id": "uGLeEUURKnqp",
+      "event_name": "The Joys (& Tribulations) of Being Animal with Melanie Challenger",
+      "event_date": "2024-03-27T09:25:24.000Z",
+      "first_purchase": "2024-04-07T19:21:42.000Z",
+      "last_purchase": "2024-05-02T10:25:25.000Z",
+      "ticket_count": "11",
+      "tickets_after_event": "11"
+    },
+    {
+      "event_id": "wXRikl7xuyxi",
+      "event_name": "August Movie Nights: \"Jonah Who Will be 25 in the Year 2000\"",
+      "event_date": "2024-08-05T07:55:50.000Z",
+      "first_purchase": "2024-08-13T12:35:18.000Z",
+      "last_purchase": "2024-08-14T15:54:16.000Z",
+      "ticket_count": "11",
+      "tickets_after_event": "11"
+    },
+    {
+      "event_id": "Y14bA6x1xhvU",
+      "event_name": "Screening of “The Seeds of Vandana Shiva\"",
+      "event_date": "2023-12-29T13:03:49.000Z",
+      "first_purchase": "2024-01-05T15:00:45.000Z",
+      "last_purchase": "2024-01-11T12:29:32.000Z",
+      "ticket_count": "11",
+      "tickets_after_event": "11"
+    },
+    {
+      "event_id": "tIABjz2M47R2",
+      "event_name": "Open Projects Night",
+      "event_date": "2024-09-03T07:57:17.000Z",
+      "first_purchase": "2024-09-12T12:18:53.000Z",
+      "last_purchase": "2024-10-01T15:14:14.000Z",
+      "ticket_count": "11",
+      "tickets_after_event": "11"
+    },
+    {
+      "event_id": "j5Z9rcac6oZx",
+      "event_name": "Screening of \"To Hell With Culture\": The Life & Work of Sir Herbert Read",
+      "event_date": "2023-09-21T13:42:35.000Z",
+      "first_purchase": "2023-09-28T20:09:55.000Z",
+      "last_purchase": "2023-10-19T10:04:15.000Z",
+      "ticket_count": "11",
+      "tickets_after_event": "11"
+    },
+    {
+      "event_id": "T4hBF3CjPzjo",
+      "event_name": "Open Projects Night",
+      "event_date": "2024-10-02T09:12:13.000Z",
+      "first_purchase": "2024-11-02T12:25:07.000Z",
+      "last_purchase": "2024-12-03T17:43:25.000Z",
+      "ticket_count": "11",
+      "tickets_after_event": "11"
+    },
+    {
+      "event_id": "sC6ak55W6z5x",
+      "event_name": "Kairos Club Drinks: New Years Special",
+      "event_date": "2024-12-09T12:15:39.000Z",
+      "first_purchase": "2024-12-20T19:18:08.000Z",
+      "last_purchase": "2025-01-03T15:27:13.000Z",
+      "ticket_count": "10",
+      "tickets_after_event": "10"
+    },
+    {
+      "event_id": "Tkc5dOJkno9u",
+      "event_name": "Screening of \"The Grab\"",
+      "event_date": "2024-06-24T09:24:35.000Z",
+      "first_purchase": "2024-07-01T09:10:49.000Z",
+      "last_purchase": "2024-07-03T14:20:49.000Z",
+      "ticket_count": "10",
+      "tickets_after_event": "10"
+    },
+    {
+      "event_id": "kCW6iGTiVAsr",
+      "event_name": "Screening of “How To Blow Up A Pipeline” with Rowan Tilly",
+      "event_date": "2023-03-19T12:50:57.000Z",
+      "first_purchase": "2023-04-01T10:48:12.000Z",
+      "last_purchase": "2023-04-17T11:35:51.000Z",
+      "ticket_count": "10",
+      "tickets_after_event": "10"
+    },
+    {
+      "event_id": "Z2Lva0POpkYe",
+      "event_name": "Kent Day Walk & Visit to DARES",
+      "event_date": "2024-09-25T13:56:53.000Z",
+      "first_purchase": "2024-10-04T08:18:45.000Z",
+      "last_purchase": "2024-10-18T14:51:14.000Z",
+      "ticket_count": "10",
+      "tickets_after_event": "10"
+    },
+    {
+      "event_id": "Rz2NMpIwvCoK",
+      "event_name": "Reviving the Commons: The Civil Commons",
+      "event_date": "2025-11-10T23:00:00.000Z",
+      "first_purchase": "2025-11-11T10:24:28.000Z",
+      "last_purchase": "2025-11-11T18:06:51.000Z",
+      "ticket_count": "10",
+      "tickets_after_event": "10"
+    },
+    {
+      "event_id": "nB9vsFNhVxUQ",
+      "event_name": "Screening of \"Spaceship Earth\" with Michael Hrebeniak & Gessie Houghton",
+      "event_date": "2023-09-17T19:00:37.000Z",
+      "first_purchase": "2023-09-27T19:42:28.000Z",
+      "last_purchase": "2023-10-25T14:31:38.000Z",
+      "ticket_count": "10",
+      "tickets_after_event": "10"
+    },
+    {
+      "event_id": "FzIq5yFOJdkZ",
+      "event_name": "Rewild the Rich! How to Take Back our Countryside with Joel Scott-Halkes",
+      "event_date": "2024-04-14T18:22:44.000Z",
+      "first_purchase": "2024-04-27T13:01:28.000Z",
+      "last_purchase": "2024-05-07T06:30:09.000Z",
+      "ticket_count": "10",
+      "tickets_after_event": "10"
+    },
+    {
+      "event_id": "6N62g2SJOiEm",
+      "event_name": "Imagining Futures with Sandra Newman",
+      "event_date": "2024-04-29T14:09:25.000Z",
+      "first_purchase": "2024-05-10T08:50:59.000Z",
+      "last_purchase": "2024-06-11T13:40:43.000Z",
+      "ticket_count": "10",
+      "tickets_after_event": "10"
+    },
+    {
+      "event_id": "aPwZ2GGI5eDO",
+      "event_name": "\"On Being, In Prison\" with Roger Hallam",
+      "event_date": "2025-09-06T22:00:00.000Z",
+      "first_purchase": "2025-09-07T08:43:04.000Z",
+      "last_purchase": "2025-09-07T12:46:04.000Z",
+      "ticket_count": "10",
+      "tickets_after_event": "10"
+    },
+    {
+      "event_id": "TGGREy23lLUP",
+      "event_name": "Friday Drinks featuring \"Fools Leap\" with Orlando Seale & Friends",
+      "event_date": "2025-10-30T23:00:00.000Z",
+      "first_purchase": "2025-10-31T10:01:13.000Z",
+      "last_purchase": "2025-10-31T17:46:02.000Z",
+      "ticket_count": "10",
+      "tickets_after_event": "10"
+    },
+    {
+      "event_id": "ZHb5EvXZYPwb",
+      "event_name": "Launch of Artivism Futures: Drinks & Screenings",
+      "event_date": "2025-11-13T23:00:00.000Z",
+      "first_purchase": "2025-11-13T23:10:49.000Z",
+      "last_purchase": "2025-11-14T17:01:23.000Z",
+      "ticket_count": "9",
+      "tickets_after_event": "9"
+    },
+    {
+      "event_id": "6vMys2eIjvin",
+      "event_name": "Revisiting Radical Ideas Past: An Evening of Shared Readings",
+      "event_date": "2025-02-04T12:55:53.000Z",
+      "first_purchase": "2025-02-12T11:08:54.000Z",
+      "last_purchase": "2025-02-27T13:28:22.000Z",
+      "ticket_count": "9",
+      "tickets_after_event": "9"
+    },
+    {
+      "event_id": "qAami0KQ2mKL",
+      "event_name": "Leaders & Intellectuals: From 'Legislators' to Catalysts of Democracy with Sophie Scott-Brown",
+      "event_date": "2023-05-31T17:20:47.000Z",
+      "first_purchase": "2023-06-29T14:55:43.000Z",
+      "last_purchase": "2023-07-04T15:31:56.000Z",
+      "ticket_count": "9",
+      "tickets_after_event": "9"
+    },
+    {
+      "event_id": "8pILccL1rAfz",
+      "event_name": "Future Visions: An Evening of Shared Readings",
+      "event_date": "2025-11-05T23:00:00.000Z",
+      "first_purchase": "2025-11-06T10:03:09.000Z",
+      "last_purchase": "2025-11-06T17:57:35.000Z",
+      "ticket_count": "8",
+      "tickets_after_event": "8"
+    },
+    {
+      "event_id": "beW6aP5jwJu0",
+      "event_name": "Screening of “Night Moves\"",
+      "event_date": "2024-01-21T11:48:23.000Z",
+      "first_purchase": "2024-02-09T15:34:28.000Z",
+      "last_purchase": "2024-02-13T13:49:46.000Z",
+      "ticket_count": "8",
+      "tickets_after_event": "8"
+    },
+    {
+      "event_id": "NvwC9uSCyIZk",
+      "event_name": "Cultural Atlas of Solidarity with Vali Mahlouji",
+      "event_date": "2024-06-10T13:25:43.000Z",
+      "first_purchase": "2024-06-24T12:08:26.000Z",
+      "last_purchase": "2024-06-25T15:57:30.000Z",
+      "ticket_count": "8",
+      "tickets_after_event": "8"
+    },
+    {
+      "event_id": "B5GteK8UDK2Y",
+      "event_name": "Cocktail Night with Veteran Prankster Andrew Boyd",
+      "event_date": "2023-05-31T19:26:29.000Z",
+      "first_purchase": "2023-06-10T10:21:34.000Z",
+      "last_purchase": "2023-06-16T14:04:53.000Z",
+      "ticket_count": "8",
+      "tickets_after_event": "8"
+    },
+    {
+      "event_id": "qAPiQga9y774",
+      "event_name": "Why Look at Animals? with Jo-Anne McArthur and Zed Nelson",
+      "event_date": "2025-12-10T23:00:00.000Z",
+      "first_purchase": "2025-12-11T11:13:26.000Z",
+      "last_purchase": "2025-12-11T17:51:53.000Z",
+      "ticket_count": "8",
+      "tickets_after_event": "8"
+    },
+    {
+      "event_id": "vws8gU8BEZ0L",
+      "event_name": "The Meat Paradox with Rob Percival",
+      "event_date": "2023-09-21T13:56:28.000Z",
+      "first_purchase": "2023-09-28T16:34:05.000Z",
+      "last_purchase": "2023-10-26T16:23:32.000Z",
+      "ticket_count": "8",
+      "tickets_after_event": "8"
+    },
+    {
+      "event_id": "QOLp14DcCLYA",
+      "event_name": "Word-Making Salon with the Bureau of Linguistical Reality",
+      "event_date": "2024-10-15T06:36:23.000Z",
+      "first_purchase": "2024-10-25T08:53:30.000Z",
+      "last_purchase": "2024-11-08T14:01:19.000Z",
+      "ticket_count": "8",
+      "tickets_after_event": "8"
+    },
+    {
+      "event_id": "h6i49DcIq1Uc",
+      "event_name": "Defashion: Dismantling the Fashion Industry with Sandra Niessen",
+      "event_date": "2023-06-13T10:47:07.000Z",
+      "first_purchase": "2023-06-20T16:01:52.000Z",
+      "last_purchase": "2023-06-21T14:04:21.000Z",
+      "ticket_count": "7",
+      "tickets_after_event": "7"
+    },
+    {
+      "event_id": "fPgXezuTK1y3",
+      "event_name": "Wilderness and Belonging with Sicelo Mbatha",
+      "event_date": "2023-05-29T07:22:16.000Z",
+      "first_purchase": "2023-06-21T10:24:55.000Z",
+      "last_purchase": "2023-07-27T11:19:34.000Z",
+      "ticket_count": "7",
+      "tickets_after_event": "7"
+    },
+    {
+      "event_id": "aFEEtgWNmwAM",
+      "event_name": "Open Projects Night",
+      "event_date": "2025-01-07T09:55:49.000Z",
+      "first_purchase": "2025-01-28T12:02:30.000Z",
+      "last_purchase": "2025-02-04T16:58:12.000Z",
+      "ticket_count": "7",
+      "tickets_after_event": "7"
+    },
+    {
+      "event_id": "hkQtGlx23Ygr",
+      "event_name": "Open Projects Night",
+      "event_date": "2026-01-05T23:00:00.000Z",
+      "first_purchase": "2026-01-06T09:43:01.000Z",
+      "last_purchase": "2026-01-06T18:00:52.000Z",
+      "ticket_count": "7",
+      "tickets_after_event": "7"
+    },
+    {
+      "event_id": "HIZjRT8BuoN4",
+      "event_name": "Screening of Iain McGilchrist Documentary “The Divided Brain”",
+      "event_date": "2023-05-14T16:22:48.000Z",
+      "first_purchase": "2023-05-22T09:15:39.000Z",
+      "last_purchase": "2023-05-24T13:14:39.000Z",
+      "ticket_count": "7",
+      "tickets_after_event": "7"
+    },
+    {
+      "event_id": "dj90LsNzmBDO",
+      "event_name": "Screening of \"Bank Job\"",
+      "event_date": "2025-12-01T23:00:00.000Z",
+      "first_purchase": "2025-12-02T06:58:42.000Z",
+      "last_purchase": "2025-12-02T17:09:55.000Z",
+      "ticket_count": "6",
+      "tickets_after_event": "6"
+    },
+    {
+      "event_id": "ADjqpu82dLzS",
+      "event_name": "Revolution: Inevitable, Justified and Effective with Roger Hallam",
+      "event_date": "2023-03-19T12:35:19.000Z",
+      "first_purchase": "2023-03-27T08:31:35.000Z",
+      "last_purchase": "2023-04-03T08:33:01.000Z",
+      "ticket_count": "6",
+      "tickets_after_event": "6"
+    },
+    {
+      "event_id": "zvJEUElwcbvb",
+      "event_name": "Screening of \"All That Breathes\"",
+      "event_date": "2025-01-17T13:50:22.000Z",
+      "first_purchase": "2025-01-24T22:09:59.000Z",
+      "last_purchase": "2025-01-28T11:56:45.000Z",
+      "ticket_count": "6",
+      "tickets_after_event": "6"
+    },
+    {
+      "event_id": "n7eT6p3oLn98",
+      "event_name": "Screening of “The Troublemaker\"",
+      "event_date": "2024-01-02T15:23:47.000Z",
+      "first_purchase": "2024-01-10T12:46:42.000Z",
+      "last_purchase": "2024-01-15T16:17:51.000Z",
+      "ticket_count": "6",
+      "tickets_after_event": "6"
+    },
+    {
+      "event_id": "y1DCPIFW5tdf",
+      "event_name": "Screening of “Accidental Anarchist” with Güney Yildiz & Carne Ross in conversation",
+      "event_date": "2023-03-27T10:31:17.000Z",
+      "first_purchase": "2023-04-04T09:29:06.000Z",
+      "last_purchase": "2023-04-11T14:40:40.000Z",
+      "ticket_count": "5",
+      "tickets_after_event": "5"
+    },
+    {
+      "event_id": "R45YFxtdl6h0",
+      "event_name": "The Family: Is There a Better Way to Live Together? with Sarah Stein Lubrano",
+      "event_date": "2023-06-14T11:06:25.000Z",
+      "first_purchase": "2023-06-21T09:54:56.000Z",
+      "last_purchase": "2023-06-27T13:55:24.000Z",
+      "ticket_count": "5",
+      "tickets_after_event": "5"
+    },
+    {
+      "event_id": "RzXFTSItm7o6",
+      "event_name": "Walking the London Martyr’s Way, a Pilgrimage with Guy Hayward",
+      "event_date": "2024-08-05T10:28:01.000Z",
+      "first_purchase": "2024-08-22T13:38:27.000Z",
+      "last_purchase": "2024-08-28T15:53:47.000Z",
+      "ticket_count": "5",
+      "tickets_after_event": "5"
+    },
+    {
+      "event_id": "OoL8e1WnUHCO",
+      "event_name": "Kairos Club Drinks",
+      "event_date": "2025-01-18T14:10:54.000Z",
+      "first_purchase": "2025-01-31T15:23:45.000Z",
+      "last_purchase": "2025-01-31T16:29:44.000Z",
+      "ticket_count": "4",
+      "tickets_after_event": "4"
+    },
+    {
+      "event_id": "Gd0kw1CqMunn",
+      "event_name": "Friday Drinks",
+      "event_date": "2025-09-11T22:00:00.000Z",
+      "first_purchase": "2025-09-12T07:23:44.000Z",
+      "last_purchase": "2025-09-12T12:31:08.000Z",
+      "ticket_count": "4",
+      "tickets_after_event": "4"
+    },
+    {
+      "event_id": "jUN6oZVivkrW",
+      "event_name": "Open Projects Night",
+      "event_date": "2025-11-03T23:00:00.000Z",
+      "first_purchase": "2025-11-04T08:32:54.000Z",
+      "last_purchase": "2025-11-04T15:52:14.000Z",
+      "ticket_count": "4",
+      "tickets_after_event": "4"
+    },
+    {
+      "event_id": "4mqUo7gWXuTI",
+      "event_name": "Kairos Club Drinks - Monday, January 27, 2025",
+      "event_date": "2025-01-27T18:51:43.000Z",
+      "first_purchase": "2025-02-04T16:06:33.000Z",
+      "last_purchase": "2025-02-14T16:08:23.000Z",
+      "ticket_count": "4",
+      "tickets_after_event": "4"
+    },
+    {
+      "event_id": "IgWJSRE5bk1K",
+      "event_name": "Screening of \"Carnage\" by Simon Amstell",
+      "event_date": "2023-09-18T12:53:41.000Z",
+      "first_purchase": "2023-10-01T15:59:53.000Z",
+      "last_purchase": "2023-10-05T15:37:25.000Z",
+      "ticket_count": "4",
+      "tickets_after_event": "4"
+    },
+    {
+      "event_id": "LgL0cOyOF5Nv",
+      "event_name": "Screening of \"My Octopus Teacher\"",
+      "event_date": "2025-03-10T23:00:00.000Z",
+      "first_purchase": "2025-03-11T06:25:17.000Z",
+      "last_purchase": "2025-03-11T14:52:07.000Z",
+      "ticket_count": "4",
+      "tickets_after_event": "4"
+    },
+    {
+      "event_id": "2T5vZI6gc0iQ",
+      "event_name": "The New Lucas Plan: A Workers-Led Transition",
+      "event_date": "2023-03-19T12:57:34.000Z",
+      "first_purchase": "2023-04-10T12:40:44.000Z",
+      "last_purchase": "2023-04-18T15:04:29.000Z",
+      "ticket_count": "4",
+      "tickets_after_event": "4"
+    },
+    {
+      "event_id": "Lzd8lc7yFtUS",
+      "event_name": "August Movie Nights: \"Neptune Frost\"",
+      "event_date": "2024-07-29T13:01:45.000Z",
+      "first_purchase": "2024-08-05T11:02:50.000Z",
+      "last_purchase": "2024-08-05T18:40:15.000Z",
+      "ticket_count": "4",
+      "tickets_after_event": "4"
+    },
+    {
+      "event_id": "IpTRkJdN5Hyn",
+      "event_name": "Rooted Innovation: The Future of Technology with Joycelyn Longdon",
+      "event_date": "2025-04-14T22:00:00.000Z",
+      "first_purchase": "2025-04-15T07:38:30.000Z",
+      "last_purchase": "2025-04-15T08:25:46.000Z",
+      "ticket_count": "3",
+      "tickets_after_event": "3"
+    },
+    {
+      "event_id": "xwxsm3GIIxDj",
+      "event_name": "Book Club: \"The Word for the World is Forest\" by Ursula Le Guin - Wednesday, and \"Birnam Wood\" by Eleanor Catton - Wednesday, November 19, 2025",
+      "event_date": "2025-11-18T23:00:00.000Z",
+      "first_purchase": "2025-11-19T06:06:52.000Z",
+      "last_purchase": "2025-11-19T16:00:13.000Z",
+      "ticket_count": "3",
+      "tickets_after_event": "3"
+    },
+    {
+      "event_id": "qmXWQvoXGdfK",
+      "event_name": "Kairos Sewing Club: Day-Long Drop-In",
+      "event_date": "2024-07-10T09:37:18.000Z",
+      "first_purchase": "2024-07-28T14:42:34.000Z",
+      "last_purchase": "2024-08-05T19:05:21.000Z",
+      "ticket_count": "3",
+      "tickets_after_event": "3"
+    },
+    {
+      "event_id": "S0XOTVKJDXoD",
+      "event_name": "Sunday Reading Room",
+      "event_date": "2024-11-18T10:06:23.000Z",
+      "first_purchase": "2024-11-28T11:31:27.000Z",
+      "last_purchase": "2024-11-29T21:47:08.000Z",
+      "ticket_count": "3",
+      "tickets_after_event": "3"
+    },
+    {
+      "event_id": "7qXGWTWyN5m4",
+      "event_name": "Screening of \"Power Station\" with Dan Edelstyn & Howard Johns",
+      "event_date": "2025-12-03T23:00:00.000Z",
+      "first_purchase": "2025-12-04T10:32:31.000Z",
+      "last_purchase": "2025-12-04T13:17:18.000Z",
+      "ticket_count": "3",
+      "tickets_after_event": "3"
+    },
+    {
+      "event_id": "MXJRXSsFJIK2",
+      "event_name": "Colin Ward Festival Launch & Mixer",
+      "event_date": "2025-10-16T22:00:00.000Z",
+      "first_purchase": "2025-10-17T08:41:26.000Z",
+      "last_purchase": "2025-10-18T08:44:13.000Z",
+      "ticket_count": "3",
+      "tickets_after_event": "3"
+    },
+    {
+      "event_id": "pb62fz9cUcMs",
+      "event_name": "Kairos Club Drinks - Thursday, January 9, 2025",
+      "event_date": "2025-01-09T16:00:44.000Z",
+      "first_purchase": "2025-01-17T08:07:38.000Z",
+      "last_purchase": "2025-01-17T13:10:38.000Z",
+      "ticket_count": "3",
+      "tickets_after_event": "3"
+    },
+    {
+      "event_id": "0P9jlr51v95m",
+      "event_name": "Friday Drinks - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, - Friday, February...",
+      "event_date": "2025-02-27T23:00:00.000Z",
+      "first_purchase": "2025-02-28T17:00:49.000Z",
+      "last_purchase": "2025-03-07T16:55:39.000Z",
+      "ticket_count": "2",
+      "tickets_after_event": "2"
+    },
+    {
+      "event_id": "LuLHgBnkoyXc",
+      "event_name": "Artivism Futures: Draft with Additional Text and Reimagining Human Rights Activism and Draft with Additional Text - Saturday, and Draft with Additional Text - Saturday, and Draft with Additional Text - Saturday, - Saturday, - Saturday, - Saturday, Nove...",
+      "event_date": "2025-11-14T23:00:00.000Z",
+      "first_purchase": "2025-11-15T11:20:55.000Z",
+      "last_purchase": "2025-11-15T11:20:55.000Z",
+      "ticket_count": "2",
+      "tickets_after_event": "2"
+    },
+    {
+      "event_id": "fLRVxntsbIrt",
+      "event_name": "Screening Of “Cow” with Anat Pick",
+      "event_date": "2023-03-27T10:40:35.000Z",
+      "first_purchase": "2023-04-26T10:00:30.000Z",
+      "last_purchase": "2023-04-30T08:14:01.000Z",
+      "ticket_count": "2",
+      "tickets_after_event": "2"
+    },
+    {
+      "event_id": "gh6ks5C83kpa",
+      "event_name": "Friday Drinks",
+      "event_date": "2025-03-20T23:00:00.000Z",
+      "first_purchase": "2025-03-21T06:31:27.000Z",
+      "last_purchase": "2025-03-21T06:31:27.000Z",
+      "ticket_count": "2",
+      "tickets_after_event": "2"
+    },
+    {
+      "event_id": "phBjTn9t5onZ",
+      "event_name": "Could Radical Democracy Avert Collapse? with Luke Kemp",
+      "event_date": "2025-10-27T23:00:00.000Z",
+      "first_purchase": "2025-10-28T12:15:52.000Z",
+      "last_purchase": "2025-10-28T14:39:09.000Z",
+      "ticket_count": "2",
+      "tickets_after_event": "2"
+    },
+    {
+      "event_id": "NUES2mtSdXn9",
+      "event_name": "Co-Creating the Future with Jean Boulton",
+      "event_date": "2025-10-22T22:00:00.000Z",
+      "first_purchase": "2025-10-23T06:05:46.000Z",
+      "last_purchase": "2025-10-23T08:03:43.000Z",
+      "ticket_count": "2",
+      "tickets_after_event": "2"
+    },
+    {
+      "event_id": "ZEfW97xrbHnj",
+      "event_name": "Sewing Club: Alterations",
+      "event_date": "2023-10-25T11:07:09.000Z",
+      "first_purchase": "2023-11-20T13:59:50.000Z",
+      "last_purchase": "2023-11-21T12:51:56.000Z",
+      "ticket_count": "2",
+      "tickets_after_event": "2"
+    },
+    {
+      "event_id": "ghedOGk0VVtg",
+      "event_name": "Sewing Club: Machine Skills",
+      "event_date": "2024-01-30T09:19:54.000Z",
+      "first_purchase": "2024-02-23T08:13:50.000Z",
+      "last_purchase": "2024-02-24T11:56:30.000Z",
+      "ticket_count": "2",
+      "tickets_after_event": "2"
+    },
+    {
+      "event_id": "4t5ZYPDdDWvf",
+      "event_name": "Kairos Club Drinks",
+      "event_date": "2025-02-20T23:00:00.000Z",
+      "first_purchase": "2025-02-21T19:21:53.000Z",
+      "last_purchase": "2025-05-08T07:08:10.000Z",
+      "ticket_count": "2",
+      "tickets_after_event": "2"
+    },
+    {
+      "event_id": "ETdnkGIIynq7",
+      "event_name": "Sewing Club: Machine Skills",
+      "event_date": "2023-11-21T11:59:11.000Z",
+      "first_purchase": "2023-12-09T17:25:58.000Z",
+      "last_purchase": "2023-12-14T05:35:01.000Z",
+      "ticket_count": "2",
+      "tickets_after_event": "2"
+    },
+    {
+      "event_id": "g00pQaNFIdpY",
+      "event_name": "Book Club: \"All Art is Ecological\" by Timothy Morton - Wednesday, September 10, 2025",
+      "event_date": "2025-09-09T22:00:00.000Z",
+      "first_purchase": "2025-09-10T12:18:07.000Z",
+      "last_purchase": "2025-09-10T12:18:07.000Z",
+      "ticket_count": "1",
+      "tickets_after_event": "1"
+    },
+    {
+      "event_id": "YVJWgJGd1nxv",
+      "event_name": "Sunday Reading Room",
+      "event_date": "2025-03-22T23:00:00.000Z",
+      "first_purchase": "2025-03-23T12:54:33.000Z",
+      "last_purchase": "2025-03-23T12:54:33.000Z",
+      "ticket_count": "1",
+      "tickets_after_event": "1"
+    },
+    {
+      "event_id": "nBJFWSLGdRbM",
+      "event_name": "Knepp Transport Payment Link",
+      "event_date": "2024-05-09T06:08:55.000Z",
+      "first_purchase": "2024-05-21T07:18:23.000Z",
+      "last_purchase": "2024-05-21T07:18:23.000Z",
+      "ticket_count": "1",
+      "tickets_after_event": "1"
+    },
+    {
+      "event_id": "BnCmnhOJIctU",
+      "event_name": "Sunday Reading Room",
+      "event_date": "2025-04-12T22:00:00.000Z",
+      "first_purchase": "2025-04-20T08:43:46.000Z",
+      "last_purchase": "2025-04-20T08:43:46.000Z",
+      "ticket_count": "1",
+      "tickets_after_event": "1"
+    },
+    {
+      "event_id": "gFXQrLCCI42S",
+      "event_name": "Friday Drinks",
+      "event_date": "2025-05-29T22:00:00.000Z",
+      "first_purchase": "2025-05-30T05:58:52.000Z",
+      "last_purchase": "2025-05-30T05:58:52.000Z",
+      "ticket_count": "1",
+      "tickets_after_event": "1"
+    },
+    {
+      "event_id": "CcHaJedhRROS",
+      "event_name": "Friday Drinks",
+      "event_date": "2025-04-17T22:00:00.000Z",
+      "first_purchase": "2025-04-18T15:18:59.000Z",
+      "last_purchase": "2025-04-18T15:18:59.000Z",
+      "ticket_count": "1",
+      "tickets_after_event": "1"
+    },
+    {
+      "event_id": "NqOvDPIpLhwC",
+      "event_name": "Book Club: \"Anarchy in Action\" by Colin Ward - Wednesday, October 15, 2025",
+      "event_date": "2025-10-14T22:00:00.000Z",
+      "first_purchase": "2025-10-15T09:16:01.000Z",
+      "last_purchase": "2025-10-15T09:16:01.000Z",
+      "ticket_count": "1",
+      "tickets_after_event": "1"
+    },
+    {
+      "event_id": "mb0CDws652Y8",
+      "event_name": "Friday Drinks: Games Night Special",
+      "event_date": "2025-02-27T23:00:00.000Z",
+      "first_purchase": "2025-03-07T14:50:56.000Z",
+      "last_purchase": "2025-03-07T14:50:56.000Z",
+      "ticket_count": "1",
+      "tickets_after_event": "1"
+    }
+  ],
+  "earlyBirdTickets": [],
+  "suspiciousEvents": [
+    {
+      "id": "sDozIrrpWWeh",
+      "name": "Sunday Reading Room",
+      "event_date": "2025-07-12T22:00:00.000Z",
+      "woocommerce_product_id": "15054",
+      "ticket_count": "1"
+    },
+    {
+      "id": "u8yVcLS9uE8j",
+      "name": "Sunday Reading Room",
+      "event_date": "2025-06-07T22:00:00.000Z",
+      "woocommerce_product_id": "14335",
+      "ticket_count": "1"
+    },
+    {
+      "id": "9DEg7Gg59GOA",
+      "name": "Sunday Reading Room",
+      "event_date": "2025-05-24T22:00:00.000Z",
+      "woocommerce_product_id": "13953",
+      "ticket_count": "1"
+    },
+    {
+      "id": "G5pMZZ91mGHl",
+      "name": "Sunday Reading Room",
+      "event_date": "2025-05-17T22:00:00.000Z",
+      "woocommerce_product_id": "13767",
+      "ticket_count": "1"
+    },
+    {
+      "id": "O1FLFEgbyAwy",
+      "name": "Sunday Reading Room",
+      "event_date": "2025-03-29T23:00:00.000Z",
+      "woocommerce_product_id": "12453",
+      "ticket_count": "1"
+    },
+    {
+      "id": "YVJWgJGd1nxv",
+      "name": "Sunday Reading Room",
+      "event_date": "2025-03-22T23:00:00.000Z",
+      "woocommerce_product_id": "12331",
+      "ticket_count": "1"
+    },
+    {
+      "id": "HWNBQjxCYaB6",
+      "name": "Sunday Reading Room - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, - Sunday, Ma...",
+      "event_date": "2025-03-08T23:00:00.000Z",
+      "woocommerce_product_id": "12028",
+      "ticket_count": "1"
+    },
+    {
+      "id": "RiynBhNYuEqm",
+      "name": "Sunday Reading Room",
+      "event_date": "2025-03-01T23:00:00.000Z",
+      "woocommerce_product_id": "11891",
+      "ticket_count": "1"
+    },
+    {
+      "id": "mb0CDws652Y8",
+      "name": "Friday Drinks: Games Night Special",
+      "event_date": "2025-02-27T23:00:00.000Z",
+      "woocommerce_product_id": "11990",
+      "ticket_count": "1"
+    },
+    {
+      "id": "ovgmRAZul43l",
+      "name": "Sunday Reading Room",
+      "event_date": "2025-02-10T09:32:47.000Z",
+      "woocommerce_product_id": "11573",
+      "ticket_count": "1"
+    },
+    {
+      "id": "4OYFrGEz6IHA",
+      "name": "Sunday Reading Room",
+      "event_date": "2025-02-04T09:57:58.000Z",
+      "woocommerce_product_id": "11465",
+      "ticket_count": "1"
+    },
+    {
+      "id": "ua3yAqcjk7WJ",
+      "name": "Sunday Reading Room",
+      "event_date": "2025-01-29T14:24:55.000Z",
+      "woocommerce_product_id": "11416",
+      "ticket_count": "1"
+    },
+    {
+      "id": "2FwQeKKWuLwf",
+      "name": "Sunday Reading Room",
+      "event_date": "2025-01-17T12:53:36.000Z",
+      "woocommerce_product_id": "11087",
+      "ticket_count": "1"
+    },
+    {
+      "id": "NBqTH9p16hSv",
+      "name": "Kairos Club Drinks",
+      "event_date": "2025-01-07T09:37:46.000Z",
+      "woocommerce_product_id": "10886",
+      "ticket_count": "1"
+    },
+    {
+      "id": "rPbaETAvSHpN",
+      "name": "Sunday Sci-Fi: “Children Of Men” by Alfonso Cuarón",
+      "event_date": "2023-03-27T10:24:56.000Z",
+      "woocommerce_product_id": "1944",
+      "ticket_count": "1"
+    }
+  ]
+}

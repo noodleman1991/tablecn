@@ -32,6 +32,35 @@ const woocommerce = new WooCommerceRestApi({
   version: 'wc/v3',
 });
 
+/**
+ * Retry function with exponential backoff
+ * Handles transient network errors (socket hangs, DNS failures, timeouts)
+ */
+async function retryWithBackoff(fn, maxRetries = 3, initialDelay = 1000) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      const isLastAttempt = attempt === maxRetries;
+      const isRetryable =
+        error.code === 'ECONNRESET' ||
+        error.code === 'ETIMEDOUT' ||
+        error.code === 'ENOTFOUND' ||
+        error.code === 'EADDRNOTAVAIL' ||
+        error.message?.includes('socket hang up');
+
+      if (!isRetryable || isLastAttempt) {
+        throw error;
+      }
+
+      const delay = initialDelay * Math.pow(2, attempt - 1);
+      console.log(`   ⚠️  Network error (attempt ${attempt}/${maxRetries}), retrying in ${delay}ms...`);
+      console.log(`      Error: ${error.message}`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+}
+
 function extractTicketAttendees(order, lineItem) {
   const attendees = [];
   const ticketDataMeta = lineItem.meta_data?.find((m) => m.key === '_ticket_data');
@@ -98,11 +127,15 @@ async function fetchAllOrders() {
 
   while (hasMore && page <= 50) {
     try {
-      const response = await woocommerce.get('orders', {
-        per_page: 100,
-        page,
-        status: 'completed,processing,on-hold',
-      });
+      const response = await retryWithBackoff(
+        () => woocommerce.get('orders', {
+          per_page: 100,
+          page,
+          status: 'completed,processing,on-hold',
+        }),
+        3,
+        2000
+      );
 
       const orders = response.data;
       allOrders = allOrders.concat(orders);
@@ -118,7 +151,7 @@ async function fetchAllOrders() {
       // Rate limiting
       await new Promise(resolve => setTimeout(resolve, 100));
     } catch (error) {
-      console.error(`   ⚠️  Error on page ${page}:`, error.message);
+      console.error(`   ✗ Error on page ${page} after 3 retries:`, error.message);
       hasMore = false;
     }
   }
