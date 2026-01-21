@@ -8,6 +8,31 @@ import { recalculateMembershipByEmail } from "@/lib/calculate-membership";
 import { invalidateCache } from "@/lib/cache-utils";
 
 /**
+ * Advisory lock key for merge operations
+ * Using a fixed key ensures only one merge process runs at a time
+ */
+const MERGE_LOCK_KEY = 123456789; // Arbitrary but consistent
+
+/**
+ * Try to acquire an advisory lock for merge operations
+ * Returns true if lock acquired, false if already held by another process
+ */
+async function tryAcquireMergeLock(): Promise<boolean> {
+  const result = await db.execute<{ pg_try_advisory_lock: boolean }>(
+    sql`SELECT pg_try_advisory_lock(${MERGE_LOCK_KEY}) as pg_try_advisory_lock`
+  );
+  const rows = Array.from(result);
+  return rows[0]?.pg_try_advisory_lock === true;
+}
+
+/**
+ * Release the advisory lock for merge operations
+ */
+async function releaseMergeLock(): Promise<void> {
+  await db.execute(sql`SELECT pg_advisory_unlock(${MERGE_LOCK_KEY})`);
+}
+
+/**
  * Type definitions for merge operations
  */
 export interface DuplicateEventGroup {
@@ -51,6 +76,127 @@ function extractFirstNWords(name: string, n: number): string {
 }
 
 /**
+ * Patterns that indicate a members-only variant event
+ * These events should be merged with their parent event
+ */
+const MEMBERS_ONLY_PATTERNS = [
+  /members?\s*only/i,
+  /members?\s*booking/i,
+  /members?\s*link/i,
+  /community\s*member/i,
+  /-\s*members$/i,
+];
+
+/**
+ * Event types that should NEVER be auto-merged
+ * Different instances are distinct events even on the same date
+ */
+const NEVER_MERGE_PATTERNS = [
+  /book\s*club/i, // Different books are different events
+  /open\s*projects?\s*night/i, // Each session is unique
+];
+
+/**
+ * Check if an event name indicates it's a members-only variant
+ */
+function isMembersOnlyVariant(name: string): boolean {
+  return MEMBERS_ONLY_PATTERNS.some(pattern => pattern.test(name));
+}
+
+/**
+ * Check if an event should never be auto-merged
+ */
+function shouldNeverMerge(name: string): boolean {
+  return NEVER_MERGE_PATTERNS.some(pattern => pattern.test(name));
+}
+
+/**
+ * Extract the base event name by removing members-only suffixes and date patterns
+ */
+function extractBaseName(name: string): string {
+  let baseName = name;
+
+  // Remove members-only suffixes
+  baseName = baseName
+    .replace(/\s*-?\s*community\s*member.*$/i, "")
+    .replace(/\s*-?\s*members?\s*(only|booking|link).*$/i, "")
+    .replace(/\s*-\s*members$/i, "");
+
+  // Remove date patterns
+  baseName = removeDateFromName(baseName);
+
+  return baseName.trim();
+}
+
+/**
+ * Determine if two events should be merged
+ * ONLY merge when:
+ * 1. Same date
+ * 2. One is a members-only variant
+ * 3. Neither is in the "never merge" category
+ * 4. Base names are similar
+ */
+function shouldMergeEvents(
+  event1: { name: string; eventDate: Date },
+  event2: { name: string; eventDate: Date }
+): { shouldMerge: boolean; reason: string } {
+  // Check if either event should never be merged
+  if (shouldNeverMerge(event1.name) || shouldNeverMerge(event2.name)) {
+    return {
+      shouldMerge: false,
+      reason: "Event type should never be auto-merged (e.g., Book Club)",
+    };
+  }
+
+  // Check if same date (compare date portion only)
+  const date1 = new Date(event1.eventDate).toDateString();
+  const date2 = new Date(event2.eventDate).toDateString();
+  if (date1 !== date2) {
+    return { shouldMerge: false, reason: "Different dates" };
+  }
+
+  // Check if at least one is a members-only variant
+  const e1Members = isMembersOnlyVariant(event1.name);
+  const e2Members = isMembersOnlyVariant(event2.name);
+
+  if (!e1Members && !e2Members) {
+    return {
+      shouldMerge: false,
+      reason: "Neither event is a members-only variant",
+    };
+  }
+
+  if (e1Members && e2Members) {
+    return {
+      shouldMerge: false,
+      reason: "Both events are members-only variants (shouldn't happen)",
+    };
+  }
+
+  // Check if base names are similar
+  const baseName1 = extractBaseName(event1.name).toLowerCase();
+  const baseName2 = extractBaseName(event2.name).toLowerCase();
+
+  // Compare base names - allow for minor variations
+  const similar =
+    baseName1 === baseName2 ||
+    baseName1.startsWith(baseName2) ||
+    baseName2.startsWith(baseName1);
+
+  if (!similar) {
+    return {
+      shouldMerge: false,
+      reason: `Base names don't match: "${baseName1}" vs "${baseName2}"`,
+    };
+  }
+
+  return {
+    shouldMerge: true,
+    reason: `Members-only variant merge: "${extractBaseName(event1.name)}"`,
+  };
+}
+
+/**
  * Remove date patterns from event name
  * Handles formats: DD/MM/YYYY, YYYY-MM-DD, "Month DD, YYYY"
  */
@@ -63,69 +209,34 @@ function removeDateFromName(name: string): string {
 }
 
 /**
- * Create merged event name combining variations
- * Format: "{shared prefix} {diff1} and {diff2} - {formatted date}"
+ * Create merged event name for members-only merge
+ * Simply uses the regular event name (non-members-only) with date formatting
+ * This prevents the corruption from combining different event names
  */
 function createMergedEventName(events: Array<Event & { attendeeCount: number }>, eventDate: Date): string {
-  // Sort by attendee count (desc) to prioritize main event
-  const sortedEvents = [...events].sort((a, b) => b.attendeeCount - a.attendeeCount);
+  // Find the regular (non-members-only) event - this is the canonical name
+  const regularEvent = events.find(e => !isMembersOnlyVariant(e.name));
 
-  // Remove dates from names
-  const cleanedNames = sortedEvents.map(e => removeDateFromName(e.name));
-
-  // Find shared prefix (minimum 2 words)
-  const firstEvent = cleanedNames[0];
-  if (!firstEvent) {
-    // Fallback if no events (shouldn't happen)
-    return `Merged Event - ${format(eventDate, "EEEE, MMMM d, yyyy")}`;
-  }
-
-  const words = firstEvent.split(/\s+/);
-  let sharedWordCount = 0;
-
-  for (let i = 0; i < words.length; i++) {
-    const prefix = words.slice(0, i + 1).join(" ").toLowerCase();
-    const allMatch = cleanedNames.every(name =>
-      name.toLowerCase().startsWith(prefix)
-    );
-
-    if (allMatch) {
-      sharedWordCount = i + 1;
-    } else {
-      break;
+  if (!regularEvent) {
+    // Fallback: use the event with most attendees
+    const sorted = [...events].sort((a, b) => b.attendeeCount - a.attendeeCount);
+    const primary = sorted[0];
+    if (!primary) {
+      return `Merged Event - ${format(eventDate, "EEEE, MMMM d, yyyy")}`;
     }
+    // Clean the members-only name
+    const baseName = extractBaseName(primary.name);
+    return `${baseName} - ${format(eventDate, "EEEE, MMMM d, yyyy")}`;
   }
 
-  // Require minimum 2 shared words
-  if (sharedWordCount < 2) {
-    sharedWordCount = Math.min(2, words.length);
-  }
-
-  const sharedPrefix = words.slice(0, sharedWordCount).join(" ");
-
-  // Extract differences
-  const differences = cleanedNames
-    .map(name => name.substring(sharedPrefix.length).trim())
-    .filter(diff => diff.length > 0);
+  // Use the regular event's base name
+  const baseName = extractBaseName(regularEvent.name);
 
   // Format date
   const formattedDate = format(eventDate, "EEEE, MMMM d, yyyy");
 
-  // Build final name
-  let finalName: string;
-  if (differences.length === 0) {
-    // No differences, use first event name
-    finalName = `${sharedPrefix} - ${formattedDate}`;
-  } else if (differences.length === 1) {
-    finalName = `${sharedPrefix} ${differences[0]} - ${formattedDate}`;
-  } else if (differences.length === 2) {
-    finalName = `${sharedPrefix} ${differences[0]} and ${differences[1]} - ${formattedDate}`;
-  } else {
-    // 3+ events: use comma-separated with "and" before last
-    const lastDiff = differences[differences.length - 1];
-    const otherDiffs = differences.slice(0, -1).join(", ");
-    finalName = `${sharedPrefix} ${otherDiffs} and ${lastDiff} - ${formattedDate}`;
-  }
+  // Build final name - simple and clean
+  let finalName = `${baseName} - ${formattedDate}`;
 
   // Truncate if exceeds database limit (255 chars)
   if (finalName.length > 255) {
@@ -136,19 +247,17 @@ function createMergedEventName(events: Array<Event & { attendeeCount: number }>,
 }
 
 /**
- * Find duplicate events based on:
- * - Same date (using SQL DATE() for timezone-safe comparison)
- * - Same first 2 words of name
+ * Find events that should be merged based on smart criteria:
+ * - Same date
+ * - One must be a members-only variant of the other
+ * - Never merge Book Club or other distinct event types
  * - Only unmerged events with WooCommerce product IDs
  */
 export async function findDuplicateEvents(): Promise<DuplicateEventGroup[]> {
-  console.log("[merge-events] Finding duplicate events using SQL grouping...");
+  console.log("[merge-events] Finding merge candidates using smart criteria...");
 
-  // Use raw SQL for efficient, timezone-safe grouping
+  // First, get all unmerged events with WooCommerce IDs
   const result = await db.execute<{
-    event_day: Date;
-    first_two_words: string;
-    event_count: number;
     id: string;
     name: string;
     event_date: Date;
@@ -157,97 +266,100 @@ export async function findDuplicateEvents(): Promise<DuplicateEventGroup[]> {
     updated_at: Date;
     attendee_count: string;
   }>(sql`
-    WITH event_analysis AS (
-      SELECT
-        e.id,
-        e.name,
-        e.event_date,
-        e.woocommerce_product_id,
-        e.created_at,
-        e.updated_at,
-        DATE(e.event_date) as event_day,
-        SPLIT_PART(e.name, ' ', 1) || ' ' || SPLIT_PART(e.name, ' ', 2) as first_two_words,
-        COUNT(a.id) as attendee_count
-      FROM tablecn_events e
-      LEFT JOIN tablecn_attendees a ON e.id = a.event_id
-      WHERE e.woocommerce_product_id IS NOT NULL
-        AND e.merged_into_event_id IS NULL
-        AND LENGTH(TRIM(e.name)) > 0
-      GROUP BY e.id, e.name, e.event_date, e.woocommerce_product_id, e.created_at, e.updated_at
-    ),
-    grouped AS (
-      SELECT
-        event_day,
-        first_two_words,
-        COUNT(*) as event_count
-      FROM event_analysis
-      WHERE LENGTH(TRIM(first_two_words)) >= 3
-      GROUP BY event_day, first_two_words
-      HAVING COUNT(*) >= 2
-    )
     SELECT
-      g.event_day,
-      g.first_two_words,
-      g.event_count,
-      ea.id,
-      ea.name,
-      ea.event_date,
-      ea.woocommerce_product_id,
-      ea.created_at,
-      ea.updated_at,
-      ea.attendee_count
-    FROM grouped g
-    JOIN event_analysis ea
-      ON g.event_day = DATE(ea.event_date)
-      AND g.first_two_words = SPLIT_PART(ea.name, ' ', 1) || ' ' || SPLIT_PART(ea.name, ' ', 2)
-    ORDER BY g.event_day DESC, ea.attendee_count DESC
+      e.id,
+      e.name,
+      e.event_date,
+      e.woocommerce_product_id,
+      e.created_at,
+      e.updated_at,
+      COUNT(a.id) as attendee_count
+    FROM tablecn_events e
+    LEFT JOIN tablecn_attendees a ON e.id = a.event_id
+    WHERE e.woocommerce_product_id IS NOT NULL
+      AND e.merged_into_event_id IS NULL
+      AND LENGTH(TRIM(e.name)) > 0
+    GROUP BY e.id, e.name, e.event_date, e.woocommerce_product_id, e.created_at, e.updated_at
+    ORDER BY e.event_date DESC
   `);
 
-  const rows = Array.from(result);
-  console.log(`[merge-events] SQL query returned ${rows.length} event rows in duplicate groups`);
+  const allEvents = Array.from(result).map(row => ({
+    id: row.id,
+    name: row.name,
+    eventDate: new Date(row.event_date),
+    woocommerceProductId: row.woocommerce_product_id,
+    mergedIntoEventId: null,
+    mergedProductIds: [] as string[],
+    isMembersOnlyProduct: isMembersOnlyVariant(row.name),
+    createdAt: new Date(row.created_at),
+    updatedAt: new Date(row.updated_at),
+    attendeeCount: parseInt(row.attendee_count || "0"),
+  }));
 
-  // Process results and build DuplicateEventGroup objects
-  const groupMap = new Map<string, DuplicateEventGroup>();
+  console.log(`[merge-events] Analyzing ${allEvents.length} events for merge candidates...`);
 
-  for (const row of rows) {
-    const groupKey = `${row.event_day}::${row.first_two_words}`;
-
-    if (!groupMap.has(groupKey)) {
-      groupMap.set(groupKey, {
-        date: new Date(row.event_date),
-        events: [],
-        sharedPrefix: row.first_two_words,
-      });
+  // Group events by date for efficient comparison
+  const eventsByDate = new Map<string, typeof allEvents>();
+  for (const event of allEvents) {
+    const dateKey = event.eventDate.toDateString();
+    if (!eventsByDate.has(dateKey)) {
+      eventsByDate.set(dateKey, []);
     }
-
-    groupMap.get(groupKey)!.events.push({
-      id: row.id,
-      name: row.name,
-      eventDate: new Date(row.event_date),
-      woocommerceProductId: row.woocommerce_product_id,
-      mergedIntoEventId: null,
-      createdAt: new Date(row.created_at),
-      updatedAt: new Date(row.updated_at),
-      attendeeCount: parseInt(row.attendee_count || "0"),
-    });
+    eventsByDate.get(dateKey)!.push(event);
   }
 
-  const duplicateGroups = Array.from(groupMap.values());
+  // Find valid merge groups (only members-only variants with their parent events)
+  const mergeGroups: DuplicateEventGroup[] = [];
+  const processedIds = new Set<string>();
 
-  // Detailed logging
-  console.log(`[merge-events] Found ${duplicateGroups.length} duplicate groups:`);
-  for (const group of duplicateGroups) {
-    console.log(`  📅 ${group.sharedPrefix} (${format(group.date, 'yyyy-MM-dd')}): ${group.events.length} events`);
-    for (const event of group.events) {
-      console.log(`     • "${event.name}" (${event.attendeeCount} attendees, product ${event.woocommerceProductId})`);
+  for (const [dateKey, dateEvents] of eventsByDate) {
+    if (dateEvents.length < 2) continue;
+
+    // Find members-only events and their potential parent events
+    const membersOnlyEvents = dateEvents.filter(e => isMembersOnlyVariant(e.name));
+    const regularEvents = dateEvents.filter(e => !isMembersOnlyVariant(e.name));
+
+    for (const membersEvent of membersOnlyEvents) {
+      if (processedIds.has(membersEvent.id)) continue;
+
+      // Find matching regular event
+      for (const regularEvent of regularEvents) {
+        if (processedIds.has(regularEvent.id)) continue;
+
+        const { shouldMerge, reason } = shouldMergeEvents(regularEvent, membersEvent);
+
+        if (shouldMerge) {
+          console.log(`[merge-events] ✅ Merge candidate found:`);
+          console.log(`[merge-events]    Regular: "${regularEvent.name}"`);
+          console.log(`[merge-events]    Members: "${membersEvent.name}"`);
+          console.log(`[merge-events]    Reason: ${reason}`);
+
+          mergeGroups.push({
+            date: regularEvent.eventDate,
+            events: [regularEvent, membersEvent],
+            sharedPrefix: extractBaseName(regularEvent.name),
+          });
+
+          processedIds.add(membersEvent.id);
+          processedIds.add(regularEvent.id);
+          break; // Found match, move to next members-only event
+        } else {
+          console.log(`[merge-events] ❌ Skipping potential pair:`);
+          console.log(`[merge-events]    Event 1: "${regularEvent.name}"`);
+          console.log(`[merge-events]    Event 2: "${membersEvent.name}"`);
+          console.log(`[merge-events]    Reason: ${reason}`);
+        }
+      }
     }
   }
 
-  if (duplicateGroups.length === 0) {
-    console.log(`[merge-events] ✓ No duplicate events found - all events are unique`);
+  console.log(`[merge-events] Found ${mergeGroups.length} valid merge groups`);
+
+  if (mergeGroups.length === 0) {
+    console.log(`[merge-events] ✓ No events need merging - all events are correctly separated`);
   }
 
-  return duplicateGroups;
+  return mergeGroups;
 }
 
 /**
@@ -302,6 +414,13 @@ export async function mergeEventGroup(group: DuplicateEventGroup): Promise<Merge
     let attendeesMoved = 0;
     const secondaryIds = secondaries.map(e => e.id);
 
+    // Collect ALL product IDs that will be part of this merged event
+    const allProductIds = sortedEvents
+      .map(e => e.woocommerceProductId)
+      .filter((id): id is string => id !== null && id !== undefined);
+
+    console.log(`[merge-events]   📦 Storing merged product IDs: ${allProductIds.join(", ")}`);
+
     // Perform merge in transaction
     await db.transaction(async (tx) => {
       // 1. Get all attendees from secondary events
@@ -314,7 +433,7 @@ export async function mergeEventGroup(group: DuplicateEventGroup): Promise<Merge
 
       console.log(`[merge-events]   👥 Moving ${secondaryAttendees.length} attendees to primary event`);
 
-      // 2. Move attendees to primary event
+      // 2. Move attendees to primary event (preserve their sourceProductId if set)
       if (secondaryAttendees.length > 0) {
         await tx
           .update(attendees)
@@ -322,10 +441,13 @@ export async function mergeEventGroup(group: DuplicateEventGroup): Promise<Merge
           .where(inArray(attendees.eventId, secondaryIds));
       }
 
-      // 3. Update primary event name
+      // 3. Update primary event: name AND mergedProductIds
       await tx
         .update(events)
-        .set({ name: mergedName })
+        .set({
+          name: mergedName,
+          mergedProductIds: allProductIds, // Store ALL product IDs for future sync
+        })
         .where(eq(events.id, primary.id));
 
       // 4. DELETE secondary events (unique constraint prevents duplicates now)
@@ -412,65 +534,88 @@ export async function mergeEventGroup(group: DuplicateEventGroup): Promise<Merge
 /**
  * Find and merge all duplicate events
  * Main entry point for automatic merging
+ * Uses PostgreSQL advisory lock to prevent concurrent merge operations
  */
 export async function mergeDuplicateEvents(): Promise<BatchMergeResult> {
   console.log("[merge-events] Starting batch merge process...");
   const startTime = Date.now();
 
-  const duplicateGroups = await findDuplicateEvents();
-
-  const result: BatchMergeResult = {
-    groupsFound: duplicateGroups.length,
-    groupsMerged: 0,
-    groupsFailed: 0,
-    totalEventsMerged: 0,
-    totalAttendeesAffected: 0,
-    details: [],
-  };
-
-  if (duplicateGroups.length === 0) {
-    console.log("[merge-events] No duplicate groups found");
-    return result;
+  // Try to acquire lock - if another process is merging, skip
+  const lockAcquired = await tryAcquireMergeLock();
+  if (!lockAcquired) {
+    console.log("[merge-events] Another merge process is running, skipping...");
+    return {
+      groupsFound: 0,
+      groupsMerged: 0,
+      groupsFailed: 0,
+      totalEventsMerged: 0,
+      totalAttendeesAffected: 0,
+      details: [],
+    };
   }
 
-  // Process each group
-  for (const group of duplicateGroups) {
-    const dateStr = format(group.date, "yyyy-MM-dd");
-    const originalNames = group.events.map(e => e.name);
+  console.log("[merge-events] Lock acquired, proceeding with merge...");
 
-    const mergeResult = await mergeEventGroup(group);
+  try {
+    const duplicateGroups = await findDuplicateEvents();
 
-    if (mergeResult.success) {
-      result.groupsMerged++;
-      result.totalEventsMerged += mergeResult.mergedEventIds.length;
-      result.totalAttendeesAffected += mergeResult.attendeesMoved;
+    const result: BatchMergeResult = {
+      groupsFound: duplicateGroups.length,
+      groupsMerged: 0,
+      groupsFailed: 0,
+      totalEventsMerged: 0,
+      totalAttendeesAffected: 0,
+      details: [],
+    };
 
-      result.details.push({
-        date: dateStr,
-        originalNames,
-        mergedName: mergeResult.primaryEventName,
-        attendeesMoved: mergeResult.attendeesMoved,
-        success: true,
-      });
-    } else {
-      result.groupsFailed++;
-
-      result.details.push({
-        date: dateStr,
-        originalNames,
-        mergedName: "",
-        attendeesMoved: 0,
-        success: false,
-        error: mergeResult.error,
-      });
+    if (duplicateGroups.length === 0) {
+      console.log("[merge-events] No duplicate groups found");
+      return result;
     }
+
+    // Process each group
+    for (const group of duplicateGroups) {
+      const dateStr = format(group.date, "yyyy-MM-dd");
+      const originalNames = group.events.map(e => e.name);
+
+      const mergeResult = await mergeEventGroup(group);
+
+      if (mergeResult.success) {
+        result.groupsMerged++;
+        result.totalEventsMerged += mergeResult.mergedEventIds.length;
+        result.totalAttendeesAffected += mergeResult.attendeesMoved;
+
+        result.details.push({
+          date: dateStr,
+          originalNames,
+          mergedName: mergeResult.primaryEventName,
+          attendeesMoved: mergeResult.attendeesMoved,
+          success: true,
+        });
+      } else {
+        result.groupsFailed++;
+
+        result.details.push({
+          date: dateStr,
+          originalNames,
+          mergedName: "",
+          attendeesMoved: 0,
+          success: false,
+          error: mergeResult.error,
+        });
+      }
+    }
+
+    const duration = Date.now() - startTime;
+    console.log(`[merge-events] Batch merge completed in ${duration}ms`);
+    console.log(`[merge-events] Groups merged: ${result.groupsMerged}/${result.groupsFound}`);
+    console.log(`[merge-events] Total events merged: ${result.totalEventsMerged}`);
+    console.log(`[merge-events] Total attendees affected: ${result.totalAttendeesAffected}`);
+
+    return result;
+  } finally {
+    // Always release the lock
+    await releaseMergeLock();
+    console.log("[merge-events] Lock released");
   }
-
-  const duration = Date.now() - startTime;
-  console.log(`[merge-events] Batch merge completed in ${duration}ms`);
-  console.log(`[merge-events] Groups merged: ${result.groupsMerged}/${result.groupsFound}`);
-  console.log(`[merge-events] Total events merged: ${result.totalEventsMerged}`);
-  console.log(`[merge-events] Total attendees affected: ${result.totalAttendeesAffected}`);
-
-  return result;
 }
