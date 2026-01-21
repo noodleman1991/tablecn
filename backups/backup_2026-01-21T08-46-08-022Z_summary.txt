@@ -1,0 +1,15 @@
+
+Database Backup Summary
+=======================
+Timestamp: 2026-01-21T08:46:09.914Z
+Backup File: /Users/amitlockshinski/WebstormProjects/tablecn/backups/backup_2026-01-21T08-46-08-022Z.json
+
+Tables Backed Up:
+- events: 434 records
+- attendees: 4922 records
+- members: 1020 records
+- emailLogs: 6 records
+- woocommerceCache: 0 records
+- loopsSyncLog: 8 records
+
+Total Records: 6390

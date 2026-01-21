@@ -36,6 +36,13 @@
       "when": 1767809566469,
       "tag": "0004_wild_beyonder",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1768985277023,
+      "tag": "0005_bright_charles_xavier",
+      "breakpoints": true
     }
   ]
 }

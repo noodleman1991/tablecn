@@ -1,11 +1,29 @@
 import "server-only";
 
 import { db } from "@/db";
-import { attendees, events, members, type Attendee } from "@/db/schema";
+import { attendees, events, members, type Attendee, type OrderStatus } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getOrdersForProductCached } from "./woocommerce";
 import { getCacheAge, setCachedData, getCachedData } from "./cache-utils";
-import { toZonedTime } from "date-fns-tz";
+import { toZonedTime, fromZonedTime } from "date-fns-tz";
+
+/**
+ * Patterns that indicate a members-only product
+ */
+const MEMBERS_ONLY_PATTERNS = [
+  /members?\s*only/i,
+  /members?\s*booking/i,
+  /members?\s*link/i,
+  /community\s*member/i,
+  /-\s*members$/i,
+];
+
+/**
+ * Check if a product name indicates it's a members-only variant
+ */
+function isMembersOnlyProduct(productName: string): boolean {
+  return MEMBERS_ONLY_PATTERNS.some(pattern => pattern.test(productName));
+}
 
 /**
  * Helper: Find a meta value in WooCommerce meta_data array
@@ -153,17 +171,24 @@ export async function syncAttendeesForEvent(
   const LONDON_TZ = 'Europe/London';
 
   // Create cutoff: event date at 23:00 London time
-  const cutoffDate = new Date(eventDate);
-  cutoffDate.setHours(23, 0, 0, 0);
-  const cutoffLondon = toZonedTime(cutoffDate, LONDON_TZ);
+  // FIXED: Convert event date to London timezone first, then create 23:00 in London,
+  // then convert back to UTC for proper comparison
+  const eventDateLondon = toZonedTime(eventDate, LONDON_TZ);
 
-  // Get current time in London
-  const nowLondon = toZonedTime(new Date(), LONDON_TZ);
+  // Create a date representing 23:00 London time on the event date
+  // We construct a date string in ISO format with London's 23:00 time
+  const cutoffLondonStr = `${eventDateLondon.getFullYear()}-${String(eventDateLondon.getMonth() + 1).padStart(2, '0')}-${String(eventDateLondon.getDate()).padStart(2, '0')}T23:00:00`;
+
+  // fromZonedTime converts a "wall clock time in London" to the equivalent UTC instant
+  const cutoffUTC = fromZonedTime(cutoffLondonStr, LONDON_TZ);
+
+  // Get current time (already in UTC internally)
+  const nowUTC = new Date();
 
   // If we're past the cutoff (23:00 London time on event day), skip WooCommerce sync
-  if (nowLondon > cutoffLondon) {
+  if (nowUTC > cutoffUTC) {
     console.log(
-      `[sync-attendees] Event ${eventData.name} has passed 23:00 London cutoff, using database records`,
+      `[sync-attendees] Event ${eventData.name} has passed 23:00 London cutoff (cutoff: ${cutoffUTC.toISOString()}), using database records`,
     );
     return {
       synced: false,
@@ -218,52 +243,104 @@ export async function syncAttendeesForEvent(
   // Since we're here, we know we're before the cutoff (check above), so always filter
   const shouldFilterByDate = true;
 
-  // Fetch orders from WooCommerce with caching and error handling
-  let orders;
-  try {
-    orders = await getOrdersForProductCached(
-      eventData.woocommerceProductId,
-      shouldFilterByDate ? eventDate : undefined,
-      forceRefresh
-    );
+  // Collect ALL product IDs to fetch orders from
+  // This includes the primary product AND any merged product IDs
+  const allProductIds = [
+    eventData.woocommerceProductId,
+    ...((eventData.mergedProductIds as string[]) || []),
+  ].filter((id): id is string => id !== null && id !== undefined);
+
+  console.log(
+    `[sync-attendees] Fetching orders from ${allProductIds.length} product ID(s): ${allProductIds.join(", ")}`,
+  );
+
+  // Fetch orders from ALL product IDs with caching and error handling
+  // Tag each order with which product it came from
+  interface OrderWithSource {
+    order: any;
+    sourceProductId: string;
+    isMembersOnlyProduct: boolean;
+  }
+
+  const allOrdersWithSource: OrderWithSource[] = [];
+
+  for (const productId of allProductIds) {
+    try {
+      const orders = await getOrdersForProductCached(
+        productId,
+        shouldFilterByDate ? eventDate : undefined,
+        forceRefresh
+      );
+
+      // Determine if this product is a members-only variant
+      // We check based on event name patterns (since we don't have product names here)
+      // For merged events, the members-only product ID is typically in mergedProductIds
+      const isMembers = productId !== eventData.woocommerceProductId ||
+        isMembersOnlyProduct(eventData.name);
+
+      for (const order of orders) {
+        allOrdersWithSource.push({
+          order,
+          sourceProductId: productId,
+          isMembersOnlyProduct: isMembers && productId !== eventData.woocommerceProductId,
+        });
+      }
+
+      console.log(
+        `[sync-attendees] Found ${orders.length} orders for product ${productId}${isMembers && productId !== eventData.woocommerceProductId ? ' (members-only)' : ''}`,
+      );
+    } catch (error) {
+      console.error(
+        `[sync-attendees] Failed to fetch orders for product ${productId}:`,
+        error instanceof Error ? error.message : error,
+      );
+      // Continue with other products - don't fail entirely
+    }
+  }
+
+  if (allOrdersWithSource.length === 0) {
     console.log(
-      `[sync-attendees] Found ${orders.length} orders for ${eventData.name}`,
-    );
-  } catch (error) {
-    console.error(
-      `[sync-attendees] Failed to fetch orders from WooCommerce for ${eventData.name}:`,
-      error instanceof Error ? error.message : error,
-    );
-    console.log(
-      `[sync-attendees] Falling back to existing database records`,
+      `[sync-attendees] No orders found from any product, falling back to existing database records`,
     );
     return {
       synced: false,
       reason: "woocommerce_error",
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: "No orders found from any product",
     };
   }
+
+  console.log(
+    `[sync-attendees] Found ${allOrdersWithSource.length} total orders for ${eventData.name}`,
+  );
 
   let createdCount = 0;
   let updatedCount = 0;
 
-  // Process each order
-  for (const order of orders) {
+  // Process each order (now with source product tracking)
+  for (const { order, sourceProductId, isMembersOnlyProduct: isMembersProduct } of allOrdersWithSource) {
     // Process line items to get tickets per product
     const relevantLineItems = order.line_items?.filter((item: any) => {
       const itemProductId = item.product_id?.toString();
-      // For variable products, line items have the parent product_id set correctly
-      // The variation_id is just metadata about which variant (e.g., "Standard", "Under 30")
-      // was selected, and will never match the product ID
-      return itemProductId === eventData.woocommerceProductId;
+      // Match line items for this specific source product
+      return itemProductId === sourceProductId;
     }) || [];
 
     if (relevantLineItems.length === 0) {
       console.warn(
-        `[sync-attendees] Order ${order.id} has no matching line items, skipping`,
+        `[sync-attendees] Order ${order.id} has no matching line items for product ${sourceProductId}, skipping`,
       );
       continue;
     }
+
+    // Map WooCommerce order status to our OrderStatus type
+    const orderStatus: OrderStatus = (
+      ["completed", "processing", "on-hold", "pending", "cancelled", "refunded", "failed"].includes(order.status)
+        ? order.status
+        : "completed"
+    ) as OrderStatus;
+
+    // Parse order date
+    const orderDate = order.date_created ? new Date(order.date_created) : undefined;
 
     // Process each line item
     for (const lineItem of relevantLineItems) {
@@ -285,9 +362,6 @@ export async function syncAttendeesForEvent(
         // IMPORTANT: Do NOT match by email+name - same person can legitimately buy multiple tickets
         // Example: maria-goddard@live.co.uk bought ticket 17257 on Nov 4 and ticket 17915 on Dec 6
         // These are 2 separate purchases, not duplicates!
-        //
-        // Previous bug: We were matching by (email + firstName + lastName) which incorrectly
-        // merged separate ticket purchases for the same person, causing data loss.
 
         let existingAttendee = null;
 
@@ -324,8 +398,12 @@ export async function syncAttendeesForEvent(
               email: ticket.email,
               firstName: ticket.firstName,
               lastName: ticket.lastName,
-              ticketId: ticket.ticketId, // FIX: Update ticketId field
-              woocommerceOrderId: order.id.toString(), // FIX: Store actual order ID
+              ticketId: ticket.ticketId,
+              woocommerceOrderId: order.id.toString(),
+              woocommerceOrderDate: orderDate,
+              orderStatus, // Track order status (for cancellations/refunds)
+              sourceProductId, // Track which product this ticket came from
+              isMembersOnlyTicket: isMembersProduct, // Track if members-only ticket
               bookerFirstName: ticket.bookerFirstName,
               bookerLastName: ticket.bookerLastName,
               bookerEmail: ticket.bookerEmail,
@@ -335,14 +413,18 @@ export async function syncAttendeesForEvent(
 
           updatedCount++;
         } else {
-          // Create new attendee
+          // Create new attendee with full tracking
           await db.insert(attendees).values({
             eventId,
             email: ticket.email,
             firstName: ticket.firstName,
             lastName: ticket.lastName,
-            ticketId: ticket.ticketId, // FIX: Store ticket ID
-            woocommerceOrderId: order.id.toString(), // FIX: Store order ID
+            ticketId: ticket.ticketId,
+            woocommerceOrderId: order.id.toString(),
+            woocommerceOrderDate: orderDate,
+            orderStatus, // Track order status
+            sourceProductId, // Track source product
+            isMembersOnlyTicket: isMembersProduct, // Track if members-only
             bookerFirstName: ticket.bookerFirstName,
             bookerLastName: ticket.bookerLastName,
             bookerEmail: ticket.bookerEmail,
