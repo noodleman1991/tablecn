@@ -1,7 +1,7 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { Check, X } from "lucide-react";
+import { Check, X, BookUser } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
@@ -99,12 +99,17 @@ export function getCheckInTableColumns(
         <DataTableColumnHeader column={column} label="First Name" />
       ),
       cell: ({ row }) => (
-        <EditableAttendeeCell
-          value={row.getValue("firstName")}
-          attendeeId={row.original.id}
-          field="firstName"
-          placeholder="First name"
-        />
+        <div className="flex items-center gap-1.5">
+          {row.original.isMembersOnlyTicket && (
+            <BookUser className="size-4 text-purple-600 flex-shrink-0" aria-label="Members-only ticket" />
+          )}
+          <EditableAttendeeCell
+            value={row.getValue("firstName")}
+            attendeeId={row.original.id}
+            field="firstName"
+            placeholder="First name"
+          />
+        </div>
       ),
       sortingFn: (rowA, rowB, columnId) => {
         const a = (rowA.getValue(columnId) as string | null) ?? "";

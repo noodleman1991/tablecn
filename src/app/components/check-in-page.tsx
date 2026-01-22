@@ -108,6 +108,7 @@ export function CheckInPage({
 
   const checkedInCount = attendees.filter((a) => a.checkedIn).length;
   const totalCount = attendees.length;
+  const membersOnlyCount = attendees.filter((a) => a.isMembersOnlyTicket).length;
 
   const handleLoadPastEvents = () => {
     // Check cache first
@@ -266,6 +267,11 @@ export function CheckInPage({
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{totalCount}</div>
+                {membersOnlyCount > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {membersOnlyCount} via members link
+                  </p>
+                )}
               </CardContent>
             </Card>
             <Card>
