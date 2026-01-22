@@ -11,6 +11,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandSeparator,
 } from "@/components/ui/command";
 import {
   Popover,
@@ -19,15 +20,26 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
+interface AdditionalViewItem {
+  id: string;
+  label: string;
+  checked: boolean;
+  onToggle: (checked: boolean) => void;
+}
+
 interface DataTableViewOptionsProps<TData>
   extends React.ComponentProps<typeof PopoverContent> {
   table: Table<TData>;
+  additionalItems?: AdditionalViewItem[];
 }
 
 export function DataTableViewOptions<TData>({
   table,
+  additionalItems,
   ...props
 }: DataTableViewOptionsProps<TData>) {
+  const [open, setOpen] = React.useState(false);
+
   const columns = React.useMemo(
     () =>
       table
@@ -40,7 +52,7 @@ export function DataTableViewOptions<TData>({
   );
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           aria-label="Toggle columns"
@@ -58,7 +70,7 @@ export function DataTableViewOptions<TData>({
           <CommandInput placeholder="Search columns..." />
           <CommandList>
             <CommandEmpty>No columns found.</CommandEmpty>
-            <CommandGroup>
+            <CommandGroup heading="Columns">
               {columns.map((column) => (
                 <CommandItem
                   key={column.id}
@@ -78,6 +90,31 @@ export function DataTableViewOptions<TData>({
                 </CommandItem>
               ))}
             </CommandGroup>
+            {additionalItems && additionalItems.length > 0 && (
+              <>
+                <CommandSeparator />
+                <CommandGroup heading="View Options">
+                  {additionalItems.map((item) => (
+                    <CommandItem
+                      key={item.id}
+                      onSelect={() => {
+                        item.onToggle(!item.checked);
+                        // Keep popover open after toggling
+                        setOpen(true);
+                      }}
+                    >
+                      <span className="truncate">{item.label}</span>
+                      <Check
+                        className={cn(
+                          "ml-auto size-4 shrink-0",
+                          item.checked ? "opacity-100" : "opacity-0",
+                        )}
+                      />
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </>
+            )}
           </CommandList>
         </Command>
       </PopoverContent>

@@ -374,6 +374,13 @@ export async function syncAttendeesForEvent(
             continue;
           }
 
+          // Determine the orderStatus to use:
+          // - If attendee was soft-deleted via UI ("deleted"), preserve that status
+          // - Otherwise, use the WooCommerce order status
+          const effectiveOrderStatus = existingAttendee.orderStatus === "deleted"
+            ? "deleted"  // Preserve soft-delete, don't overwrite
+            : orderStatus; // Use WooCommerce status (completed, cancelled, refunded, etc.)
+
           // Update existing attendee (preserve check-in status and local modifications)
           await db
             .update(attendees)
@@ -384,7 +391,7 @@ export async function syncAttendeesForEvent(
               ticketId: ticket.ticketId,
               woocommerceOrderId: order.id.toString(),
               woocommerceOrderDate: orderDate,
-              orderStatus, // Track order status (for cancellations/refunds)
+              orderStatus: effectiveOrderStatus, // Preserve soft-delete, sync WooCommerce statuses
               sourceProductId, // Track which product this ticket came from
               isMembersOnlyTicket: isMembersProduct, // Track if members-only ticket
               bookerFirstName: ticket.bookerFirstName,

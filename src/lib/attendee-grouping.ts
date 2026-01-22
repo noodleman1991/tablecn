@@ -238,14 +238,24 @@ export function groupAttendeesByOrder(attendees: Attendee[]): GroupedOrder[] {
 
     const first = tickets[0]!;
 
-    // Calculate check-in status
-    const checkedInTickets = tickets.filter(t => t.checkedIn);
+    // Calculate check-in status based on ACTIVE tickets only
+    // (exclude deleted/cancelled/refunded tickets from calculation)
+    const activeTickets = tickets.filter(t =>
+      t.orderStatus !== "deleted" &&
+      t.orderStatus !== "cancelled" &&
+      t.orderStatus !== "refunded"
+    );
+    const checkedInTickets = activeTickets.filter(t => t.checkedIn);
     const checkedInCount = checkedInTickets.length;
-    const allCheckedIn = checkedInCount === tickets.length;
+    // If no active tickets, consider "all checked in" to show Undo button (or disable)
+    const allCheckedIn = activeTickets.length === 0 || checkedInCount === activeTickets.length;
     const someCheckedIn = checkedInCount > 0;
 
     let checkedInStatus: "all" | "partial" | "none";
-    if (allCheckedIn) {
+    if (activeTickets.length === 0) {
+      // All tickets deleted - show as "none" (will be handled by isInactiveOrder)
+      checkedInStatus = "none";
+    } else if (allCheckedIn) {
       checkedInStatus = "all";
     } else if (someCheckedIn) {
       checkedInStatus = "partial";

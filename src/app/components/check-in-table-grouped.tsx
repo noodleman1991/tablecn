@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { flexRender } from "@tanstack/react-table";
-import { DataTable } from "@/components/data-table/data-table";
 import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
 import { DataTablePagination } from "@/components/data-table/data-table-pagination";
 import { useDataTable } from "@/hooks/use-data-table";
@@ -18,6 +17,17 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { DataTableScrollToggle } from "@/components/data-table/data-table-scroll-toggle";
 
+/**
+ * Check if an individual ticket is inactive (deleted, cancelled, or refunded)
+ */
+function isInactiveTicket(ticket: Attendee): boolean {
+  return (
+    ticket.orderStatus === "deleted" ||
+    ticket.orderStatus === "cancelled" ||
+    ticket.orderStatus === "refunded"
+  );
+}
+
 interface CheckInTableProps {
   attendees: Attendee[];
 }
@@ -28,14 +38,71 @@ export function CheckInTable({ attendees }: CheckInTableProps) {
   const [selectedAttendee, setSelectedAttendee] = React.useState<Attendee | null>(null);
   const [isDeletingBulk, setIsDeletingBulk] = React.useState(false);
   const [horizontalScrollEnabled, setHorizontalScrollEnabled] = React.useState(false);
+  const [showDeletedTickets, setShowDeletedTickets] = React.useState(false);
+
+  // Load persisted view state from localStorage on mount (client-side only)
+  React.useEffect(() => {
+    const savedHorizontalScroll = localStorage.getItem("checkInTable:horizontalScroll");
+    const savedShowDeleted = localStorage.getItem("checkInTable:showDeleted");
+
+    if (savedHorizontalScroll === "true") {
+      setHorizontalScrollEnabled(true);
+    }
+    if (savedShowDeleted === "true") {
+      setShowDeletedTickets(true);
+    }
+  }, []);
+
+  // Persist view state to localStorage
+  React.useEffect(() => {
+    localStorage.setItem("checkInTable:horizontalScroll", String(horizontalScrollEnabled));
+  }, [horizontalScrollEnabled]);
+
+  React.useEffect(() => {
+    localStorage.setItem("checkInTable:showDeleted", String(showDeletedTickets));
+  }, [showDeletedTickets]);
 
   // Expanded rows state
   const [expandedRows, setExpandedRows] = React.useState<Set<string>>(new Set());
 
   // Transform attendees into grouped data (by ORDER)
-  const groupedOrders = React.useMemo(
+  const allGroupedOrders = React.useMemo(
     () => groupAttendeesByOrder(attendees),
     [attendees]
+  );
+
+  // Process orders to filter out deleted tickets when toggle is OFF (ticket-level filtering)
+  const processedOrders = React.useMemo(() => {
+    if (showDeletedTickets) return allGroupedOrders;
+
+    return allGroupedOrders
+      .map(order => {
+        const visibleTickets = order.tickets.filter(t => !isInactiveTicket(t));
+        if (visibleTickets.length === 0) return null; // Hide entire order if no visible tickets
+
+        // Recalculate order properties based on visible tickets
+        return {
+          ...order,
+          tickets: visibleTickets,
+          ticketCount: visibleTickets.length,
+          checkedInCount: visibleTickets.filter(t => t.checkedIn).length,
+          allCheckedIn: visibleTickets.every(t => t.checkedIn),
+          checkedInStatus: visibleTickets.every(t => t.checkedIn)
+            ? "all"
+            : visibleTickets.some(t => t.checkedIn)
+              ? "partial"
+              : "none",
+        } as GroupedOrder;
+      })
+      .filter(Boolean) as GroupedOrder[];
+  }, [allGroupedOrders, showDeletedTickets]);
+
+  // Count individual deleted tickets (not orders) for the toggle label
+  const deletedTicketCount = React.useMemo(
+    () => allGroupedOrders.reduce((count, order) =>
+      count + order.tickets.filter(t => isInactiveTicket(t)).length, 0
+    ),
+    [allGroupedOrders]
   );
 
   const toggleRow = React.useCallback((id: string) => {
@@ -62,7 +129,7 @@ export function CheckInTable({ attendees }: CheckInTableProps) {
   const columns = React.useMemo(() => getCheckInTableColumns(handlers), [handlers]);
 
   const { table } = useDataTable({
-    data: groupedOrders,
+    data: processedOrders,
     columns,
     initialState: {
       pagination: { pageIndex: 0, pageSize: 20 },
@@ -163,7 +230,15 @@ export function CheckInTable({ attendees }: CheckInTableProps) {
 
       {/* Custom table with expandable rows */}
       <div className="flex w-full flex-col gap-2.5 overflow-auto">
-        <DataTableToolbar table={table}>
+        <DataTableToolbar
+          table={table}
+          viewOptionsAdditionalItems={deletedTicketCount > 0 ? [{
+            id: "show-deleted",
+            label: `Show deleted (${deletedTicketCount})`,
+            checked: showDeletedTickets,
+            onToggle: setShowDeletedTickets,
+          }] : []}
+        >
           <DataTableScrollToggle
             enabled={horizontalScrollEnabled}
             onToggle={() => setHorizontalScrollEnabled(!horizontalScrollEnabled)}

@@ -19,7 +19,7 @@ export async function GET(request: Request) {
       .from(events)
       .orderBy(desc(events.eventDate))
       .limit(1);
-    eventId = latestEvent?.id;
+    eventId = latestEvent?.id ?? null;
   }
 
   if (!eventId) {

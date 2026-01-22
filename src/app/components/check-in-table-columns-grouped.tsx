@@ -11,7 +11,7 @@
 "use client";
 
 import type { ColumnDef, Row } from "@tanstack/react-table";
-import { Check, X, ChevronRight, ChevronDown } from "lucide-react";
+import { Check, X, ChevronRight, ChevronDown, BookUser } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
@@ -31,6 +31,60 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
+
+/**
+ * Check if an order is inactive (deleted, cancelled, or refunded)
+ * Used for styling and disabling check-in buttons
+ */
+function isInactiveOrder(order: GroupedOrder): boolean {
+  return order.tickets.every(t =>
+    t.orderStatus === "deleted" ||
+    t.orderStatus === "cancelled" ||
+    t.orderStatus === "refunded"
+  );
+}
+
+/**
+ * Check if an individual ticket is inactive
+ */
+function isInactiveTicket(ticket: Attendee): boolean {
+  return (
+    ticket.orderStatus === "deleted" ||
+    ticket.orderStatus === "cancelled" ||
+    ticket.orderStatus === "refunded"
+  );
+}
+
+/**
+ * Count how many tickets in an order are inactive
+ */
+function getInactiveTicketCount(order: GroupedOrder): number {
+  return order.tickets.filter(t =>
+    t.orderStatus === "deleted" ||
+    t.orderStatus === "cancelled" ||
+    t.orderStatus === "refunded"
+  ).length;
+}
+
+/**
+ * Get the status badge label for an inactive order
+ */
+function getInactiveStatusLabel(order: GroupedOrder): string | null {
+  const firstTicket = order.tickets[0];
+  if (!firstTicket) return null;
+  if (firstTicket.orderStatus === "deleted") return "Deleted";
+  if (firstTicket.orderStatus === "cancelled") return "Cancelled";
+  if (firstTicket.orderStatus === "refunded") return "Refunded";
+  return null;
+}
+
+/**
+ * Check if order has any members-only tickets
+ */
+function hasMembersOnlyTickets(order: GroupedOrder): boolean {
+  return order.tickets.some(t => t.isMembersOnlyTicket);
+}
 
 /**
  * Editable cell for booker information (main row)
@@ -47,15 +101,44 @@ function BookerDisplayCell({
   value: string | null;
   placeholder: string;
 }) {
+  const inactive = isInactiveOrder(order);
+  const inactiveLabel = getInactiveStatusLabel(order);
+  const hasMembersOnly = hasMembersOnlyTickets(order);
+  const inactiveCount = getInactiveTicketCount(order);
+  const hasPartialDeletion = !inactive && inactiveCount > 0;
+
   // Booker info is read-only display with (Booker) badge
   return (
-    <div className="flex items-center gap-2">
+    <div className={cn("flex items-center gap-2", inactive && "line-through opacity-50")}>
       <span className="text-sm">
         {value || <span className="text-muted-foreground">{placeholder}</span>}
       </span>
-      {order.ticketCount > 1 && (
+      {/* Members-only indicator (purple icon) */}
+      {hasMembersOnly && field === "bookerFirstName" && (
+        <BookUser
+          className="size-4 text-purple-600 flex-shrink-0"
+          aria-label="Members-only ticket"
+        />
+      )}
+      {/* Booker badge for multi-ticket orders */}
+      {order.ticketCount > 1 && field === "bookerFirstName" && (
         <Badge variant="outline" className="text-xs">
           Booker
+        </Badge>
+      )}
+      {/* Inactive status badge (Deleted/Cancelled/Refunded) - when ALL tickets are inactive */}
+      {inactive && inactiveLabel && field === "bookerFirstName" && (
+        <Badge
+          variant={inactiveLabel === "Deleted" ? "destructive" : "secondary"}
+          className="text-xs"
+        >
+          {inactiveLabel}
+        </Badge>
+      )}
+      {/* Partial deletion badge - when SOME (not all) tickets are inactive */}
+      {hasPartialDeletion && field === "bookerFirstName" && (
+        <Badge variant="secondary" className="text-xs">
+          {inactiveCount} of {order.ticketCount} deleted
         </Badge>
       )}
     </div>
@@ -304,6 +387,8 @@ function TicketSubRow({
   total: number;
   onDelete: (attendee: Attendee) => void;
 }) {
+  const inactive = isInactiveTicket(ticket);
+
   const handleCheckIn = () => {
     toast.promise(checkInAttendee(ticket.id), {
       loading: "Checking in ticket...",
@@ -325,10 +410,19 @@ function TicketSubRow({
     ticket.bookerFirstName && ticket.bookerLastName &&
     (ticket.firstName !== ticket.bookerFirstName || ticket.lastName !== ticket.bookerLastName);
 
+  // Get inactive status label for this ticket
+  const getTicketInactiveLabel = () => {
+    if (ticket.orderStatus === "deleted") return "Deleted";
+    if (ticket.orderStatus === "cancelled") return "Cancelled";
+    if (ticket.orderStatus === "refunded") return "Refunded";
+    return null;
+  };
+  const inactiveLabel = getTicketInactiveLabel();
+
   return (
-    <tr className="border-b bg-muted/30">
+    <tr className={cn("border-b bg-muted/30", inactive && "opacity-50")}>
       <td className="p-2 pl-12" colSpan={5}>
-        <div className="flex items-center justify-between text-sm">
+        <div className={cn("flex items-center justify-between text-sm", inactive && "line-through")}>
           <div className="flex flex-col gap-1 flex-1">
             <div className="flex gap-2 items-center">
               <EditableTicketField
@@ -343,6 +437,22 @@ function TicketSubRow({
                 value={ticket.lastName}
                 placeholder="Last name"
               />
+              {/* Members-only indicator */}
+              {ticket.isMembersOnlyTicket && (
+                <BookUser
+                  className="size-4 text-purple-600 flex-shrink-0"
+                  aria-label="Members-only ticket"
+                />
+              )}
+              {/* Inactive status badge */}
+              {inactive && inactiveLabel && (
+                <Badge
+                  variant={inactiveLabel === "Deleted" ? "destructive" : "secondary"}
+                  className="text-xs"
+                >
+                  {inactiveLabel}
+                </Badge>
+              )}
             </div>
             <EditableTicketField
               ticket={ticket}
@@ -376,7 +486,12 @@ function TicketSubRow({
       </td>
       <td className="p-2">
         {!ticket.checkedIn ? (
-          <Button size="sm" onClick={handleCheckIn} className="min-h-[36px] min-w-[36px]">
+          <Button
+            size="sm"
+            onClick={handleCheckIn}
+            disabled={inactive}
+            className="min-h-[36px] min-w-[36px]"
+          >
             Check In
           </Button>
         ) : (
@@ -384,6 +499,7 @@ function TicketSubRow({
             size="sm"
             variant="outline"
             onClick={handleUndoCheckIn}
+            disabled={inactive}
             className="min-h-[36px] min-w-[36px]"
           >
             Undo
@@ -480,6 +596,22 @@ export function getCheckInTableColumns(
         const b = (rowB.getValue(columnId) as string | null) ?? "";
         return a.toLowerCase().localeCompare(b.toLowerCase());
       },
+      // Deep search: search both booker AND all ticket holders
+      filterFn: (row, columnId, filterValue) => {
+        if (!filterValue || typeof filterValue !== "string") return true;
+        const order = row.original;
+        const searchTerm = filterValue.toLowerCase();
+
+        // Search booker first name
+        if (order.bookerFirstName?.toLowerCase().includes(searchTerm)) return true;
+
+        // Search ALL tickets' first names in the order
+        for (const ticket of order.tickets) {
+          if (ticket.firstName?.toLowerCase().includes(searchTerm)) return true;
+        }
+
+        return false;
+      },
       meta: {
         label: "First Name",
         placeholder: "Search first name...",
@@ -507,6 +639,22 @@ export function getCheckInTableColumns(
         const b = (rowB.getValue(columnId) as string | null) ?? "";
         return a.toLowerCase().localeCompare(b.toLowerCase());
       },
+      // Deep search: search both booker AND all ticket holders
+      filterFn: (row, columnId, filterValue) => {
+        if (!filterValue || typeof filterValue !== "string") return true;
+        const order = row.original;
+        const searchTerm = filterValue.toLowerCase();
+
+        // Search booker last name
+        if (order.bookerLastName?.toLowerCase().includes(searchTerm)) return true;
+
+        // Search ALL tickets' last names in the order
+        for (const ticket of order.tickets) {
+          if (ticket.lastName?.toLowerCase().includes(searchTerm)) return true;
+        }
+
+        return false;
+      },
       meta: {
         label: "Last Name",
         placeholder: "Search last name...",
@@ -533,6 +681,22 @@ export function getCheckInTableColumns(
         const a = (rowA.getValue(columnId) as string | null) ?? "";
         const b = (rowB.getValue(columnId) as string | null) ?? "";
         return a.toLowerCase().localeCompare(b.toLowerCase());
+      },
+      // Deep search: search both booker AND all ticket holders
+      filterFn: (row, columnId, filterValue) => {
+        if (!filterValue || typeof filterValue !== "string") return true;
+        const order = row.original;
+        const searchTerm = filterValue.toLowerCase();
+
+        // Search booker email
+        if (order.bookerEmail?.toLowerCase().includes(searchTerm)) return true;
+
+        // Search ALL tickets' emails in the order
+        for (const ticket of order.tickets) {
+          if (ticket.email?.toLowerCase().includes(searchTerm)) return true;
+        }
+
+        return false;
       },
       meta: {
         label: "Email",
@@ -680,9 +844,10 @@ export function getCheckInTableColumns(
       header: "Actions",
       cell: function Cell({ row }) {
         const grouped = row.original;
+        const inactive = isInactiveOrder(grouped);
 
         const handleCheckInAll = () => {
-          const uncheckedTickets = grouped.tickets.filter(t => !t.checkedIn);
+          const uncheckedTickets = grouped.tickets.filter(t => !t.checkedIn && !isInactiveTicket(t));
 
           if (uncheckedTickets.length === 0) {
             toast.info("All tickets already checked in");
@@ -700,7 +865,7 @@ export function getCheckInTableColumns(
         };
 
         const handleUndoAll = () => {
-          const checkedTickets = grouped.tickets.filter(t => t.checkedIn);
+          const checkedTickets = grouped.tickets.filter(t => t.checkedIn && !isInactiveTicket(t));
 
           if (checkedTickets.length === 0) {
             toast.info("No tickets to undo");
@@ -724,6 +889,7 @@ export function getCheckInTableColumns(
             size="sm"
             variant="outline"
             onClick={handleUndoAll}
+            disabled={inactive}
             className="min-h-[44px] px-2 md:px-4"
           >
             <span className="hidden md:inline">Undo All</span>
@@ -733,6 +899,7 @@ export function getCheckInTableColumns(
           <Button
             size="sm"
             onClick={handleCheckInAll}
+            disabled={inactive}
             className="min-h-[44px] px-2 md:px-4"
           >
             <span className="hidden md:inline">
