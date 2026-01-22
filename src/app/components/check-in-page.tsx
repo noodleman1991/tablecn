@@ -95,7 +95,7 @@ export function CheckInPage({
   const [cacheAge, setCacheAge] = useState<number | null>(null);
   const [attendees, setAttendees] = useState<Attendee[]>(initialAttendees);
 
-  // Load cached past events on client-side only (after hydration)
+  // Load cached past events on client-side only (after hydration) - SINGLE effect
   useEffect(() => {
     const cached = getCachedPastEvents();
     if (cached && cached.length > 0) {
@@ -106,9 +106,14 @@ export function CheckInPage({
   const allEvents = [...futureEvents, ...pastEvents];
   const selectedEvent = allEvents.find((e) => e.id === selectedEventId);
 
-  const checkedInCount = attendees.filter((a) => a.checkedIn).length;
-  const totalCount = attendees.length;
-  const membersOnlyCount = attendees.filter((a) => a.isMembersOnlyTicket).length;
+  // Filter out deleted/cancelled/refunded tickets for counts
+  const activeAttendees = attendees.filter(
+    (a) => a.orderStatus !== "deleted" && a.orderStatus !== "cancelled" && a.orderStatus !== "refunded"
+  );
+  const deletedCount = attendees.length - activeAttendees.length;
+  const checkedInCount = activeAttendees.filter((a) => a.checkedIn).length;
+  const totalCount = activeAttendees.length;
+  const membersOnlyCount = activeAttendees.filter((a) => a.isMembersOnlyTicket).length;
 
   const handleLoadPastEvents = () => {
     // Check cache first
@@ -126,28 +131,16 @@ export function CheckInPage({
     });
   };
 
-  // Auto-load past events from cache on mount
-  useEffect(() => {
-    const cached = getCachedPastEvents();
-    if (cached && cached.length > 0) {
-      setPastEvents(cached);
-    }
-  }, []);
-
-  // Sync selectedEventId with URL params
+  // Sync selectedEventId: prioritize URL params, then initialEventId
+  // Combined into ONE effect to avoid race conditions
   useEffect(() => {
     const eventIdFromUrl = searchParams.get("eventId");
-    if (eventIdFromUrl && eventIdFromUrl !== selectedEventId) {
-      setSelectedEventId(eventIdFromUrl);
-    }
-  }, [searchParams, selectedEventId]);
+    const targetEventId = eventIdFromUrl || initialEventId;
 
-  // Sync with initialEventId when it changes
-  useEffect(() => {
-    if (initialEventId && initialEventId !== selectedEventId) {
-      setSelectedEventId(initialEventId);
+    if (targetEventId && targetEventId !== selectedEventId) {
+      setSelectedEventId(targetEventId);
     }
-  }, [initialEventId, selectedEventId]);
+  }, [searchParams, initialEventId]); // Removed selectedEventId from deps to prevent loops
 
   // Sync attendees when initialAttendees prop changes
   useEffect(() => {
@@ -168,7 +161,7 @@ export function CheckInPage({
         setCacheAge(null); // Past events don't have cache
       }
     }
-  }, [selectedEventId, selectedEvent]);
+  }, [selectedEventId]); // Removed selectedEvent - only need eventId
 
   // Handle manual refresh
   const handleRefresh = async () => {
@@ -208,12 +201,15 @@ export function CheckInPage({
                 handleLoadPastEvents();
                 return;
               }
-              setSelectedEventId(value);
-              // Preserve existing query params (perPage, filters, etc.) when changing events
-              const params = new URLSearchParams(searchParams.toString());
-              params.set('eventId', value);
-              params.set('page', '1'); // Reset to page 1 for new event
-              router.push(`/?${params.toString()}`);
+              // Use startTransition for smooth UI during navigation
+              startTransition(() => {
+                setSelectedEventId(value);
+                // Preserve existing query params (perPage, filters, etc.) when changing events
+                const params = new URLSearchParams(searchParams.toString());
+                params.set('eventId', value);
+                params.set('page', '1'); // Reset to page 1 for new event
+                router.push(`/?${params.toString()}`);
+              });
             }}
           >
             <SelectTrigger className="w-full md:w-[600px]">
@@ -267,11 +263,18 @@ export function CheckInPage({
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{totalCount}</div>
-                {membersOnlyCount > 0 && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {membersOnlyCount} via members link
-                  </p>
-                )}
+                <div className="flex flex-col gap-0.5 mt-1">
+                  {membersOnlyCount > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {membersOnlyCount} via members link
+                    </p>
+                  )}
+                  {deletedCount > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {deletedCount} deleted
+                    </p>
+                  )}
+                </div>
               </CardContent>
             </Card>
             <Card>
@@ -376,7 +379,18 @@ export function CheckInPage({
               </div>
             </CardHeader>
             <CardContent>
-              <CheckInTable key={selectedEventId} attendees={attendees} />
+              {/* Show loading overlay during event transition */}
+              <div className={cn("relative", isPending && "opacity-50 pointer-events-none")}>
+                {isPending && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-10">
+                    <div className="flex flex-col items-center gap-2">
+                      <RefreshCw className="size-6 animate-spin text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Loading event...</span>
+                    </div>
+                  </div>
+                )}
+                <CheckInTable attendees={attendees} />
+              </div>
             </CardContent>
           </Card>
         </>

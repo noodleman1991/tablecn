@@ -12,14 +12,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
+interface AdditionalViewItem {
+  id: string;
+  label: string;
+  checked: boolean;
+  onToggle: (checked: boolean) => void;
+}
+
 interface DataTableToolbarProps<TData> extends React.ComponentProps<"div"> {
   table: Table<TData>;
+  viewOptionsAdditionalItems?: AdditionalViewItem[];
 }
 
 export function DataTableToolbar<TData>({
   table,
   children,
   className,
+  viewOptionsAdditionalItems,
   ...props
 }: DataTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0;
@@ -62,7 +71,7 @@ export function DataTableToolbar<TData>({
       </div>
       <div className="flex flex-wrap items-center gap-2">
         {children}
-        <DataTableViewOptions table={table} align="end" />
+        <DataTableViewOptions table={table} align="end" additionalItems={viewOptionsAdditionalItems} />
       </div>
     </div>
   );

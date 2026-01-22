@@ -5,7 +5,7 @@ import { attendees, events, members } from "@/db/schema";
 import { eq, desc, gte, lt, isNull, and, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { syncAttendeesForEvent } from "@/lib/sync-attendees";
-import { getCacheAge } from "@/lib/cache-utils";
+import { getCacheAge, invalidateCache } from "@/lib/cache-utils";
 import { syncMemberToLoops, removeMemberFromLoops } from "@/lib/loops-sync";
 
 /**
@@ -771,12 +771,57 @@ export async function updateAttendeeDetails(
 }
 
 /**
- * Delete an attendee record
+ * Soft delete an attendee record (sets orderStatus to "deleted")
+ * The attendee remains visible in the UI with strikethrough styling
  */
 export async function deleteAttendee(attendeeId: string) {
   "use server";
 
-  await db.delete(attendees).where(eq(attendees.id, attendeeId));
+  // Get the attendee to find their eventId for cache invalidation
+  const [attendee] = await db
+    .select({ eventId: attendees.eventId })
+    .from(attendees)
+    .where(eq(attendees.id, attendeeId))
+    .limit(1);
+
+  await db
+    .update(attendees)
+    .set({ orderStatus: "deleted" })
+    .where(eq(attendees.id, attendeeId));
+
+  // Invalidate the sync cache so the UI shows fresh data
+  if (attendee?.eventId) {
+    await invalidateCache(`sync:event:${attendee.eventId}`);
+  }
+
+  revalidatePath("/");
+
+  return { success: true };
+}
+
+/**
+ * Soft delete an entire order (all tickets with same woocommerceOrderId)
+ * Sets orderStatus to "deleted" for all attendees in the order
+ */
+export async function deleteOrder(woocommerceOrderId: string) {
+  "use server";
+
+  // Get one attendee to find the eventId for cache invalidation
+  const [attendee] = await db
+    .select({ eventId: attendees.eventId })
+    .from(attendees)
+    .where(eq(attendees.woocommerceOrderId, woocommerceOrderId))
+    .limit(1);
+
+  await db
+    .update(attendees)
+    .set({ orderStatus: "deleted" })
+    .where(eq(attendees.woocommerceOrderId, woocommerceOrderId));
+
+  // Invalidate the sync cache so the UI shows fresh data
+  if (attendee?.eventId) {
+    await invalidateCache(`sync:event:${attendee.eventId}`);
+  }
 
   revalidatePath("/");
 

@@ -52,8 +52,9 @@ export function AttendeeDeleteDialog({
         <DialogHeader>
           <DialogTitle>Delete Attendee</DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete this attendee? This action cannot be
-            undone.
+            Are you sure you want to delete this attendee? The attendee will be
+            marked as deleted and shown with a strikethrough. This action cannot
+            be undone.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
