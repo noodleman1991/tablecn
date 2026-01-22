@@ -6,24 +6,7 @@ import { eq, and } from "drizzle-orm";
 import { getOrdersForProductCached } from "./woocommerce";
 import { getCacheAge, setCachedData, getCachedData } from "./cache-utils";
 import { toZonedTime, fromZonedTime } from "date-fns-tz";
-
-/**
- * Patterns that indicate a members-only product
- */
-const MEMBERS_ONLY_PATTERNS = [
-  /members?\s*only/i,
-  /members?\s*booking/i,
-  /members?\s*link/i,
-  /community\s*member/i,
-  /-\s*members$/i,
-];
-
-/**
- * Check if a product name indicates it's a members-only variant
- */
-function isMembersOnlyProduct(productName: string): boolean {
-  return MEMBERS_ONLY_PATTERNS.some(pattern => pattern.test(productName));
-}
+import { isMembersOnlyProduct } from "@/lib/event-patterns";
 
 /**
  * Helper: Find a meta value in WooCommerce meta_data array

@@ -6,6 +6,10 @@ import { and, eq, inArray, isNull, sql, count } from "drizzle-orm";
 import { format } from "date-fns";
 import { recalculateMembershipByEmail } from "@/lib/calculate-membership";
 import { invalidateCache } from "@/lib/cache-utils";
+import {
+  shouldNeverMerge,
+  isMembersOnlyProduct,
+} from "@/lib/event-patterns";
 
 /**
  * Advisory lock key for merge operations
@@ -76,41 +80,6 @@ function extractFirstNWords(name: string, n: number): string {
 }
 
 /**
- * Patterns that indicate a members-only variant event
- * These events should be merged with their parent event
- */
-const MEMBERS_ONLY_PATTERNS = [
-  /members?\s*only/i,
-  /members?\s*booking/i,
-  /members?\s*link/i,
-  /community\s*member/i,
-  /-\s*members$/i,
-];
-
-/**
- * Event types that should NEVER be auto-merged
- * Different instances are distinct events even on the same date
- */
-const NEVER_MERGE_PATTERNS = [
-  /book\s*club/i, // Different books are different events
-  /open\s*projects?\s*night/i, // Each session is unique
-];
-
-/**
- * Check if an event name indicates it's a members-only variant
- */
-function isMembersOnlyVariant(name: string): boolean {
-  return MEMBERS_ONLY_PATTERNS.some(pattern => pattern.test(name));
-}
-
-/**
- * Check if an event should never be auto-merged
- */
-function shouldNeverMerge(name: string): boolean {
-  return NEVER_MERGE_PATTERNS.some(pattern => pattern.test(name));
-}
-
-/**
  * Extract the base event name by removing members-only suffixes and date patterns
  */
 function extractBaseName(name: string): string {
@@ -156,8 +125,8 @@ function shouldMergeEvents(
   }
 
   // Check if at least one is a members-only variant
-  const e1Members = isMembersOnlyVariant(event1.name);
-  const e2Members = isMembersOnlyVariant(event2.name);
+  const e1Members = isMembersOnlyProduct(event1.name);
+  const e2Members = isMembersOnlyProduct(event2.name);
 
   if (!e1Members && !e2Members) {
     return {
@@ -215,7 +184,7 @@ function removeDateFromName(name: string): string {
  */
 function createMergedEventName(events: Array<Event & { attendeeCount: number }>, eventDate: Date): string {
   // Find the regular (non-members-only) event - this is the canonical name
-  const regularEvent = events.find(e => !isMembersOnlyVariant(e.name));
+  const regularEvent = events.find(e => !isMembersOnlyProduct(e.name));
 
   if (!regularEvent) {
     // Fallback: use the event with most attendees
@@ -290,7 +259,7 @@ export async function findDuplicateEvents(): Promise<DuplicateEventGroup[]> {
     woocommerceProductId: row.woocommerce_product_id,
     mergedIntoEventId: null,
     mergedProductIds: [] as string[],
-    isMembersOnlyProduct: isMembersOnlyVariant(row.name),
+    isMembersOnlyProduct: isMembersOnlyProduct(row.name),
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
     attendeeCount: parseInt(row.attendee_count || "0"),
@@ -316,8 +285,8 @@ export async function findDuplicateEvents(): Promise<DuplicateEventGroup[]> {
     if (dateEvents.length < 2) continue;
 
     // Find members-only events and their potential parent events
-    const membersOnlyEvents = dateEvents.filter(e => isMembersOnlyVariant(e.name));
-    const regularEvents = dateEvents.filter(e => !isMembersOnlyVariant(e.name));
+    const membersOnlyEvents = dateEvents.filter(e => isMembersOnlyProduct(e.name));
+    const regularEvents = dateEvents.filter(e => !isMembersOnlyProduct(e.name));
 
     for (const membersEvent of membersOnlyEvents) {
       if (processedIds.has(membersEvent.id)) continue;
