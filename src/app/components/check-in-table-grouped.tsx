@@ -30,9 +30,10 @@ function isInactiveTicket(ticket: Attendee): boolean {
 
 interface CheckInTableProps {
   attendees: Attendee[];
+  onMutationSuccess?: (eventId: string) => void;
 }
 
-export function CheckInTable({ attendees }: CheckInTableProps) {
+export function CheckInTable({ attendees, onMutationSuccess }: CheckInTableProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [mergeDialogOpen, setMergeDialogOpen] = React.useState(false);
   const [selectedAttendee, setSelectedAttendee] = React.useState<Attendee | null>(null);
@@ -124,7 +125,8 @@ export function CheckInTable({ attendees }: CheckInTableProps) {
     },
     expandedRows,
     toggleRow,
-  }), [expandedRows, toggleRow]);
+    onMutationSuccess,
+  }), [expandedRows, toggleRow, onMutationSuccess]);
 
   const columns = React.useMemo(() => getCheckInTableColumns(handlers), [handlers]);
 
@@ -152,7 +154,16 @@ export function CheckInTable({ attendees }: CheckInTableProps) {
   // Flatten grouped orders back to individual attendees for bulk operations
   const selectedAttendees = selectedGroupedOrders.flatMap(g => g.tickets);
 
+  // Check if any selected attendees are deleted/cancelled/refunded
+  const hasDeletedTickets = selectedAttendees.some(
+    (a) => a.orderStatus === "deleted" || a.orderStatus === "cancelled" || a.orderStatus === "refunded"
+  );
+
   const handleBulkMerge = () => {
+    if (hasDeletedTickets) {
+      toast.error("Cannot merge orders containing deleted tickets");
+      return;
+    }
     if (selectedAttendees.length < 2) {
       toast.error("Please select at least 2 attendees to merge");
       return;
@@ -210,7 +221,7 @@ export function CheckInTable({ attendees }: CheckInTableProps) {
               variant="outline"
               size="sm"
               onClick={handleBulkMerge}
-              disabled={selectedAttendees.length < 2 || isDeletingBulk}
+              disabled={selectedAttendees.length < 2 || isDeletingBulk || hasDeletedTickets}
               className="min-h-[44px] w-full sm:w-auto"
             >
               Merge Selected

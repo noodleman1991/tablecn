@@ -214,6 +214,7 @@ export async function checkInAttendee(attendeeId: string) {
   if (memberResult.ambiguous) {
     return {
       success: true,
+      eventId: attendee.eventId,
       requiresManualMatch: true,
       possibleMatches: memberResult.possibleMatches,
       attendeeId,
@@ -227,7 +228,7 @@ export async function checkInAttendee(attendeeId: string) {
   }
 
   revalidatePath("/");
-  return { success: true };
+  return { success: true, eventId: attendee.eventId };
 }
 
 /**
@@ -286,6 +287,13 @@ export async function confirmMemberMatch(data: {
  * Undo check-in for an attendee
  */
 export async function undoCheckIn(attendeeId: string) {
+  // Get attendee to return eventId
+  const [attendee] = await db
+    .select({ eventId: attendees.eventId })
+    .from(attendees)
+    .where(eq(attendees.id, attendeeId))
+    .limit(1);
+
   await db
     .update(attendees)
     .set({
@@ -295,7 +303,7 @@ export async function undoCheckIn(attendeeId: string) {
     .where(eq(attendees.id, attendeeId));
 
   revalidatePath("/");
-  return { success: true };
+  return { success: true, eventId: attendee?.eventId };
 }
 
 /**
@@ -702,6 +710,7 @@ export async function createManualAttendee(data: {
   return {
     success: true,
     attendee: newAttendee[0],
+    eventId: data.eventId,
   };
 }
 
@@ -767,7 +776,7 @@ export async function updateAttendeeDetails(
 
   revalidatePath("/");
 
-  return { success: true };
+  return { success: true, eventId: currentAttendee.eventId };
 }
 
 /**
@@ -796,7 +805,7 @@ export async function deleteAttendee(attendeeId: string) {
 
   revalidatePath("/");
 
-  return { success: true };
+  return { success: true, eventId: attendee?.eventId };
 }
 
 /**
@@ -825,7 +834,7 @@ export async function deleteOrder(woocommerceOrderId: string) {
 
   revalidatePath("/");
 
-  return { success: true };
+  return { success: true, eventId: attendee?.eventId };
 }
 
 /**
@@ -873,5 +882,5 @@ export async function mergeAttendeeRecords(data: {
 
   revalidatePath("/");
 
-  return { success: true };
+  return { success: true, eventId: primary.eventId };
 }
