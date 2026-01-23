@@ -284,6 +284,7 @@ interface CheckInTableHandlers {
   onDelete: (attendee: Attendee) => void;
   expandedRows: Set<string>;
   toggleRow: (id: string) => void;
+  onMutationSuccess?: (eventId: string) => void;
 }
 
 export type { CheckInTableHandlers };
@@ -381,28 +382,38 @@ function TicketSubRow({
   index,
   total,
   onDelete,
+  onMutationSuccess,
 }: {
   ticket: Attendee;
   index: number;
   total: number;
   onDelete: (attendee: Attendee) => void;
+  onMutationSuccess?: (eventId: string) => void;
 }) {
   const inactive = isInactiveTicket(ticket);
 
-  const handleCheckIn = () => {
-    toast.promise(checkInAttendee(ticket.id), {
-      loading: "Checking in ticket...",
-      success: "Ticket checked in",
-      error: (err) => err.message || "Failed to check in",
-    });
+  const handleCheckIn = async () => {
+    try {
+      const result = await checkInAttendee(ticket.id);
+      if (result.eventId && onMutationSuccess) {
+        onMutationSuccess(result.eventId);
+      }
+      toast.success("Ticket checked in");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to check in");
+    }
   };
 
-  const handleUndoCheckIn = () => {
-    toast.promise(undoCheckIn(ticket.id), {
-      loading: "Undoing check-in...",
-      success: "Check-in undone",
-      error: (err) => err.message || "Failed to undo",
-    });
+  const handleUndoCheckIn = async () => {
+    try {
+      const result = await undoCheckIn(ticket.id);
+      if (result.eventId && onMutationSuccess) {
+        onMutationSuccess(result.eventId);
+      }
+      toast.success("Check-in undone");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to undo");
+    }
   };
 
   // Check if ticket holder is different from booker
@@ -846,7 +857,7 @@ export function getCheckInTableColumns(
         const grouped = row.original;
         const inactive = isInactiveOrder(grouped);
 
-        const handleCheckInAll = () => {
+        const handleCheckInAll = async () => {
           const uncheckedTickets = grouped.tickets.filter(t => !t.checkedIn && !isInactiveTicket(t));
 
           if (uncheckedTickets.length === 0) {
@@ -854,17 +865,19 @@ export function getCheckInTableColumns(
             return;
           }
 
-          toast.promise(
-            Promise.all(uncheckedTickets.map(t => checkInAttendee(t.id))),
-            {
-              loading: `Checking in ${uncheckedTickets.length} ticket(s)...`,
-              success: `Checked in ${uncheckedTickets.length} ticket(s)`,
-              error: "Failed to check in some tickets",
+          try {
+            const results = await Promise.all(uncheckedTickets.map(t => checkInAttendee(t.id)));
+            // Trigger cache invalidation with first result's eventId
+            if (results[0]?.eventId && handlers.onMutationSuccess) {
+              handlers.onMutationSuccess(results[0].eventId);
             }
-          );
+            toast.success(`Checked in ${uncheckedTickets.length} ticket(s)`);
+          } catch {
+            toast.error("Failed to check in some tickets");
+          }
         };
 
-        const handleUndoAll = () => {
+        const handleUndoAll = async () => {
           const checkedTickets = grouped.tickets.filter(t => t.checkedIn && !isInactiveTicket(t));
 
           if (checkedTickets.length === 0) {
@@ -872,14 +885,16 @@ export function getCheckInTableColumns(
             return;
           }
 
-          toast.promise(
-            Promise.all(checkedTickets.map(t => undoCheckIn(t.id))),
-            {
-              loading: `Undoing ${checkedTickets.length} ticket(s)...`,
-              success: `Undone ${checkedTickets.length} ticket(s)`,
-              error: "Failed to undo some tickets",
+          try {
+            const results = await Promise.all(checkedTickets.map(t => undoCheckIn(t.id)));
+            // Trigger cache invalidation with first result's eventId
+            if (results[0]?.eventId && handlers.onMutationSuccess) {
+              handlers.onMutationSuccess(results[0].eventId);
             }
-          );
+            toast.success(`Undone ${checkedTickets.length} ticket(s)`);
+          } catch {
+            toast.error("Failed to undo some tickets");
+          }
         };
 
         // If all checked in, show Undo All button
@@ -935,6 +950,7 @@ export function renderSubRow(
       index={index}
       total={order.ticketCount}
       onDelete={handlers.onDelete}
+      onMutationSuccess={handlers.onMutationSuccess}
     />
   ));
 }

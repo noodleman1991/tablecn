@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -23,9 +23,10 @@ import {
 } from "@/lib/csv-export";
 import { CheckInTable } from "./check-in-table-grouped";
 import { toast } from "sonner";
-import { getPastEvents, refreshAttendeesForEvent, getSyncCacheAge } from "../actions";
+import { getPastEvents, refreshAttendeesForEvent } from "../actions";
 import { cn } from "@/lib/utils";
 import { AddManualAttendeeDialog } from "./add-manual-attendee-dialog";
+import { useEventAttendees, useInvalidateEventAttendees, usePrefetchEventAttendees } from "@/hooks/use-event-attendees";
 
 // Cache configuration
 const PAST_EVENTS_CACHE_KEY = "tablecn_past_events";
@@ -83,7 +84,6 @@ export function CheckInPage({
   initialEventId,
   initialAttendees = [],
 }: CheckInPageProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   const [selectedEventId, setSelectedEventId] = useState<string | undefined>(
@@ -92,8 +92,16 @@ export function CheckInPage({
   const [pastEvents, setPastEvents] = useState<Event[]>([]);
   const [isPending, startTransition] = useTransition();
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [cacheAge, setCacheAge] = useState<number | null>(null);
-  const [attendees, setAttendees] = useState<Attendee[]>(initialAttendees);
+
+  // Use TanStack Query for client-side data fetching when switching events
+  const { data: eventData, isLoading: isLoadingAttendees } = useEventAttendees(selectedEventId);
+  const invalidateEventAttendees = useInvalidateEventAttendees();
+  const prefetchEventAttendees = usePrefetchEventAttendees();
+
+  // Determine attendees: use query data if available, otherwise fall back to initial props
+  // This allows SSR hydration with initialAttendees, then client-side updates via TanStack Query
+  const attendees = eventData?.attendees ?? initialAttendees;
+  const cacheAge = eventData?.cacheAge ?? null;
 
   // Load cached past events on client-side only (after hydration) - SINGLE effect
   useEffect(() => {
@@ -104,7 +112,7 @@ export function CheckInPage({
   }, []);
 
   const allEvents = [...futureEvents, ...pastEvents];
-  const selectedEvent = allEvents.find((e) => e.id === selectedEventId);
+  const selectedEvent = eventData?.event ?? allEvents.find((e) => e.id === selectedEventId);
 
   // Filter out deleted/cancelled/refunded tickets for counts
   const activeAttendees = attendees.filter(
@@ -131,8 +139,7 @@ export function CheckInPage({
     });
   };
 
-  // Sync selectedEventId: prioritize URL params, then initialEventId
-  // Combined into ONE effect to avoid race conditions
+  // Sync selectedEventId from URL on initial load/URL changes
   useEffect(() => {
     const eventIdFromUrl = searchParams.get("eventId");
     const targetEventId = eventIdFromUrl || initialEventId;
@@ -142,27 +149,6 @@ export function CheckInPage({
     }
   }, [searchParams, initialEventId]); // Removed selectedEventId from deps to prevent loops
 
-  // Sync attendees when initialAttendees prop changes
-  useEffect(() => {
-    setAttendees(initialAttendees);
-  }, [initialAttendees]);
-
-  // Fetch cache age when event changes
-  useEffect(() => {
-    if (selectedEventId && selectedEvent) {
-      // Only check cache age for future/today events
-      const eventDate = new Date(selectedEvent.eventDate);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      if (eventDate >= today) {
-        getSyncCacheAge(selectedEventId).then(setCacheAge);
-      } else {
-        setCacheAge(null); // Past events don't have cache
-      }
-    }
-  }, [selectedEventId]); // Removed selectedEvent - only need eventId
-
   // Handle manual refresh
   const handleRefresh = async () => {
     if (!selectedEventId) return;
@@ -170,11 +156,12 @@ export function CheckInPage({
     setIsRefreshing(true);
     try {
       await refreshAttendeesForEvent(selectedEventId);
-      setCacheAge(0); // Just refreshed
-      // Page will auto-reload due to revalidatePath in the action
+      // Invalidate TanStack Query cache to refetch fresh data
+      invalidateEventAttendees(selectedEventId);
+      toast.success("Attendees refreshed");
     } catch (error) {
       console.error("Refresh failed:", error);
-      // You could add toast notification here
+      toast.error("Failed to refresh attendees");
     } finally {
       setIsRefreshing(false);
     }
@@ -201,15 +188,13 @@ export function CheckInPage({
                 handleLoadPastEvents();
                 return;
               }
-              // Use startTransition for smooth UI during navigation
-              startTransition(() => {
-                setSelectedEventId(value);
-                // Preserve existing query params (perPage, filters, etc.) when changing events
-                const params = new URLSearchParams(searchParams.toString());
-                params.set('eventId', value);
-                params.set('page', '1'); // Reset to page 1 for new event
-                router.push(`/?${params.toString()}`);
-              });
+              // Update state immediately - TanStack Query will fetch data client-side
+              setSelectedEventId(value);
+              // Update URL without triggering full page navigation
+              const params = new URLSearchParams(searchParams.toString());
+              params.set('eventId', value);
+              params.set('page', '1'); // Reset to page 1 for new event
+              window.history.pushState(null, '', `/?${params.toString()}`);
             }}
           >
             <SelectTrigger className="w-full md:w-[600px]">
@@ -219,7 +204,12 @@ export function CheckInPage({
               {futureEvents.length > 0 && (
                 <>
                   {futureEvents.map((event) => (
-                    <SelectItem key={event.id} value={event.id}>
+                    <SelectItem
+                      key={event.id}
+                      value={event.id}
+                      onMouseEnter={() => prefetchEventAttendees(event.id)}
+                      onFocus={() => prefetchEventAttendees(event.id)}
+                    >
                       {event.name} - {format(new Date(event.eventDate), "PPP")}
                     </SelectItem>
                   ))}
@@ -229,7 +219,12 @@ export function CheckInPage({
                 <>
                   <SelectSeparator />
                   {pastEvents.map((event) => (
-                    <SelectItem key={event.id} value={event.id}>
+                    <SelectItem
+                      key={event.id}
+                      value={event.id}
+                      onMouseEnter={() => prefetchEventAttendees(event.id)}
+                      onFocus={() => prefetchEventAttendees(event.id)}
+                    >
                       {event.name} - {format(new Date(event.eventDate), "PPP")}
                     </SelectItem>
                   ))}
@@ -380,8 +375,8 @@ export function CheckInPage({
             </CardHeader>
             <CardContent>
               {/* Show loading overlay during event transition */}
-              <div className={cn("relative", isPending && "opacity-50 pointer-events-none")}>
-                {isPending && (
+              <div className={cn("relative", isLoadingAttendees && "opacity-50 pointer-events-none")}>
+                {isLoadingAttendees && (
                   <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-10">
                     <div className="flex flex-col items-center gap-2">
                       <RefreshCw className="size-6 animate-spin text-muted-foreground" />
@@ -389,7 +384,7 @@ export function CheckInPage({
                     </div>
                   </div>
                 )}
-                <CheckInTable attendees={attendees} />
+                <CheckInTable attendees={attendees} onMutationSuccess={invalidateEventAttendees} />
               </div>
             </CardContent>
           </Card>

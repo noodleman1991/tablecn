@@ -42,26 +42,16 @@ export default async function IndexPage(props: IndexPageProps) {
 }
 
 async function CheckInPageWrapper({ eventId }: { eventId?: string }) {
-  const futureEvents = await getFutureEvents();
+  // Fetch future events and validate event ID in parallel
+  const [futureEvents, eventData] = await Promise.all([
+    getFutureEvents(),
+    eventId ? getEventById(eventId) : Promise.resolve(null),
+  ]);
 
   // Determine selected event ID
-  let selectedEventId: string | undefined;
+  const selectedEventId = eventData?.id ?? futureEvents[0]?.id;
 
-  if (eventId) {
-    // If eventId is provided, verify it exists (could be past or future event)
-    const event = await getEventById(eventId);
-    if (event) {
-      selectedEventId = eventId;
-    } else {
-      // If event doesn't exist, fall back to first future event
-      selectedEventId = futureEvents[0]?.id;
-    }
-  } else {
-    // No eventId provided, use first future event
-    selectedEventId = futureEvents[0]?.id;
-  }
-
-  // Get attendees for the selected event
+  // Fetch attendees (depends on knowing the selected event)
   const attendees = selectedEventId
     ? await getAttendeesForEvent(selectedEventId)
     : [];
