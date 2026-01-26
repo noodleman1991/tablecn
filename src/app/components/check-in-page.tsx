@@ -296,6 +296,13 @@ export function CheckInPage({
             </Card>
           </div>
 
+          {/* Door staff instructions */}
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+            <strong>Door Check-In Instructions:</strong> Verify the attendee&apos;s name and email are correct
+            BEFORE checking them in. Edit the ticket details first if needed — only then will the check-in
+            count towards their community membership status.
+          </div>
+
           <Card>
             <CardHeader className="flex flex-col gap-4 space-y-0 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex flex-col gap-1">

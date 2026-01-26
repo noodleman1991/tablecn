@@ -28,13 +28,55 @@ interface TicketDataEntry {
 }
 
 /**
+ * Helper: Extract ticket type from WooCommerce line item variation attributes
+ */
+function getTicketTypeFromLineItem(lineItem: any): string | null {
+  // Method 1: Check variation_attributes meta (most reliable)
+  const variationAttrsMeta = lineItem.meta_data?.find(
+    (m: any) => m.key === '_variation_attributes' || m.key === 'variation_attributes'
+  );
+  if (variationAttrsMeta?.value) {
+    const attrs = variationAttrsMeta.value;
+    if (Array.isArray(attrs)) {
+      const ticketTypeAttr = attrs.find(
+        (a: any) => a.name?.toLowerCase().includes('ticket type') || a.key?.toLowerCase().includes('ticket-type')
+      ) as { option?: string; value?: string } | undefined;
+      if (ticketTypeAttr?.option || ticketTypeAttr?.value) {
+        return ticketTypeAttr.option || ticketTypeAttr.value || null;
+      }
+    } else if (typeof attrs === 'object') {
+      // Handle object format: {"pa_ticket-type": "standard"}
+      for (const [key, value] of Object.entries(attrs)) {
+        if (key.toLowerCase().includes('ticket-type') || key.toLowerCase().includes('ticket_type')) {
+          return value as string;
+        }
+      }
+    }
+  }
+
+  // Method 2: Parse from line item name suffix (e.g., "Event Name - Standard")
+  const name = lineItem.name || '';
+  const dashIndex = name.lastIndexOf(' - ');
+  if (dashIndex !== -1) {
+    const suffix = name.substring(dashIndex + 3).trim();
+    // Validate it looks like a ticket type (not just random text)
+    const knownTypes = ['standard', 'under 30', 'struggling financially', 'with donation', 'member', 'reduced'];
+    if (knownTypes.some(t => suffix.toLowerCase().includes(t))) {
+      return suffix;
+    }
+  }
+
+  return null;
+}
+
+/**
  * Helper: Extract per-ticket attendee info from WooCommerce order
  * Handles the actual _ticket_data structure used by WooCommerce ticketing plugin
  */
 function extractTicketAttendees(
   order: any,
   lineItem: any
-): Array<{ firstName: string; lastName: string; email: string; ticketId: string; uid: string; bookerFirstName: string; bookerLastName: string; bookerEmail: string }> {
+): Array<{ firstName: string; lastName: string; email: string; ticketId: string; uid: string; bookerFirstName: string; bookerLastName: string; bookerEmail: string; ticketType: string | null }> {
   const attendees = [];
 
   // Find _ticket_data in line item meta_data
@@ -89,6 +131,9 @@ function extractTicketAttendees(
     const ticketId = ticketIdMeta?.value || `${lineItem.id}-${index}`;
 
 
+    // Get ticket type from line item (same for all tickets in the line item)
+    const ticketType = getTicketTypeFromLineItem(lineItem);
+
     attendees.push({
       firstName,
       lastName,
@@ -99,6 +144,7 @@ function extractTicketAttendees(
       bookerFirstName: order.billing?.first_name || '',
       bookerLastName: order.billing?.last_name || '',
       bookerEmail: order.billing?.email?.toLowerCase() || '',
+      ticketType,
     });
   }
 
@@ -118,6 +164,7 @@ function extractTicketAttendees(
         bookerFirstName: order.billing?.first_name || '',
         bookerLastName: order.billing?.last_name || '',
         bookerEmail: order.billing?.email?.toLowerCase() || '',
+        ticketType: getTicketTypeFromLineItem(lineItem), // Still try to extract ticket type
       });
     }
   }
@@ -198,26 +245,19 @@ export async function syncAttendeesForEvent(
   const cacheKey = `sync:event:${eventId}`;
   const cacheAge = await getCacheAge(cacheKey);
 
-  // Skip sync if cached recently (unless forceRefresh)
+  // Skip WooCommerce sync if synced recently (unless forceRefresh)
+  // Note: We only cache sync timing, NOT attendee data - attendees always come fresh from DB
   if (!forceRefresh && cacheAge && cacheAge < 8 * 60 * 60) {
     const minutesOld = Math.floor(cacheAge / 60);
     console.log(
-      `[sync-attendees] Using cached sync result for ${eventData.name} (${minutesOld} minutes old)`,
+      `[sync-attendees] Skipping WooCommerce sync for ${eventData.name} (synced ${minutesOld} minutes ago)`,
     );
-
-    // Retrieve cached data including attendees
-    const cachedData = await getCachedData<{
-      created: number;
-      updated: number;
-      timestamp: number;
-      attendees?: Attendee[];
-    }>(cacheKey);
 
     return {
       synced: false,
       reason: "cached" as const,
       cacheAgeSeconds: cacheAge,
-      cachedAttendees: cachedData?.attendees,
+      // No cachedAttendees - always read fresh from database
     };
   }
 
@@ -397,6 +437,7 @@ export async function syncAttendeesForEvent(
               bookerFirstName: ticket.bookerFirstName,
               bookerLastName: ticket.bookerLastName,
               bookerEmail: ticket.bookerEmail,
+              ticketType: ticket.ticketType, // Track ticket type (Standard, Under 30, etc.)
               // NOT updating: checkedIn, checkedInAt, locallyModified, manuallyAdded
             })
             .where(eq(attendees.id, existingAttendee.id));
@@ -418,6 +459,7 @@ export async function syncAttendeesForEvent(
             bookerFirstName: ticket.bookerFirstName,
             bookerLastName: ticket.bookerLastName,
             bookerEmail: ticket.bookerEmail,
+            ticketType: ticket.ticketType, // Track ticket type (Standard, Under 30, etc.)
             manuallyAdded: false,
             locallyModified: false,
             checkedIn: false,
@@ -436,21 +478,14 @@ export async function syncAttendeesForEvent(
     `[sync-attendees] Sync complete: ${createdCount} created, ${updatedCount} updated`,
   );
 
-  // Query the synced attendees to cache them
-  const syncedAttendees = await db
-    .select()
-    .from(attendees)
-    .where(eq(attendees.eventId, eventId))
-    .orderBy(attendees.email);
-
-  // Cache the sync result including attendee data
+  // Cache only sync metadata (timing, counts) - NOT attendee data
+  // Attendees should always be read fresh from database to reflect local changes (check-ins, edits)
   await setCachedData(
     cacheKey,
     {
       created: createdCount,
       updated: updatedCount,
       timestamp: Date.now(),
-      attendees: syncedAttendees,
     },
     8 * 60 * 60
   );

@@ -87,10 +87,14 @@ export async function getOrdersForProduct(productId: string, eventDate?: Date): 
     const perPage = 100;
 
     // Calculate date range if eventDate provided
+    // Use the earlier of: 120 days before event OR Jan 1 of event year
+    // This ensures early-bird sales are captured for events far in the future
     let dateParams: any = {};
     if (eventDate) {
-      const after = new Date(eventDate);
-      after.setDate(after.getDate() - 60); // 60 days before event
+      const yearStart = new Date(eventDate.getFullYear(), 0, 1);
+      const lookback = new Date(eventDate);
+      lookback.setDate(lookback.getDate() - 120); // 120 days (4 months) before event
+      const after = lookback < yearStart ? yearStart : lookback;
 
       const before = new Date(eventDate);
       before.setDate(before.getDate() + 7); // 7 days after event

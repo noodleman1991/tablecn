@@ -69,6 +69,8 @@ export const attendees = pgTable("attendees", {
   isMembersOnlyTicket: boolean("is_members_only_ticket").default(false),
   // NEW: WooCommerce product ID this ticket came from (for tracking after merges)
   sourceProductId: varchar("source_product_id", { length: 128 }),
+  // Ticket type from WooCommerce variation (Standard, Under 30, etc.)
+  ticketType: varchar("ticket_type", { length: 100 }),
   bookerFirstName: varchar("booker_first_name", { length: 128 }),  // Order purchaser's first name
   bookerLastName: varchar("booker_last_name", { length: 128 }),   // Order purchaser's last name
   bookerEmail: varchar("booker_email", { length: 255 }),           // Order purchaser's email
