@@ -87,6 +87,111 @@ function hasMembersOnlyTickets(order: GroupedOrder): boolean {
 }
 
 /**
+ * Smart cell for order information (main row)
+ * - For single-ticket orders: editable (allows editing name/email directly)
+ * - For multi-ticket orders: read-only display (edit via expanded sub-rows)
+ */
+function OrderDisplayCell({
+  order,
+  field,
+  bookerField,
+  ticketField,
+  value,
+  placeholder,
+}: {
+  order: GroupedOrder;
+  field: "firstName" | "lastName" | "email";
+  bookerField: "bookerFirstName" | "bookerLastName" | "bookerEmail";
+  ticketField: "firstName" | "lastName" | "email";
+  value: string | null;
+  placeholder: string;
+}) {
+  const inactive = isInactiveOrder(order);
+  const inactiveLabel = getInactiveStatusLabel(order);
+  const hasMembersOnly = hasMembersOnlyTickets(order);
+  const inactiveCount = getInactiveTicketCount(order);
+  const hasPartialDeletion = !inactive && inactiveCount > 0;
+  const isSingleTicket = order.ticketCount === 1;
+  const ticket = order.tickets[0];
+
+  // For single-ticket orders, show editable field with badges
+  if (isSingleTicket && ticket) {
+    return (
+      <div className={cn("flex items-center gap-2", inactive && "line-through opacity-50")}>
+        {inactive ? (
+          // If inactive, show read-only text
+          <span className="text-sm">
+            {ticket[ticketField] || <span className="text-muted-foreground">{placeholder}</span>}
+          </span>
+        ) : (
+          // If active, show editable field
+          <EditableTicketField
+            ticket={ticket}
+            field={ticketField}
+            value={ticket[ticketField]}
+            placeholder={placeholder}
+          />
+        )}
+        {/* Members-only indicator (purple icon) */}
+        {hasMembersOnly && field === "firstName" && (
+          <BookUser
+            className="size-4 text-purple-600 flex-shrink-0"
+            aria-label="Members-only ticket"
+          />
+        )}
+        {/* Inactive status badge (Deleted/Cancelled/Refunded) */}
+        {inactive && inactiveLabel && field === "firstName" && (
+          <Badge
+            variant={inactiveLabel === "Deleted" ? "destructive" : "secondary"}
+            className="text-xs"
+          >
+            {inactiveLabel}
+          </Badge>
+        )}
+      </div>
+    );
+  }
+
+  // For multi-ticket orders, show read-only booker info with badges
+  return (
+    <div className={cn("flex items-center gap-2", inactive && "line-through opacity-50")}>
+      <span className="text-sm">
+        {value || <span className="text-muted-foreground">{placeholder}</span>}
+      </span>
+      {/* Members-only indicator (purple icon) */}
+      {hasMembersOnly && field === "firstName" && (
+        <BookUser
+          className="size-4 text-purple-600 flex-shrink-0"
+          aria-label="Members-only ticket"
+        />
+      )}
+      {/* Booker badge for multi-ticket orders */}
+      {field === "firstName" && (
+        <Badge variant="outline" className="text-xs">
+          Booker
+        </Badge>
+      )}
+      {/* Inactive status badge (Deleted/Cancelled/Refunded) - when ALL tickets are inactive */}
+      {inactive && inactiveLabel && field === "firstName" && (
+        <Badge
+          variant={inactiveLabel === "Deleted" ? "destructive" : "secondary"}
+          className="text-xs"
+        >
+          {inactiveLabel}
+        </Badge>
+      )}
+      {/* Partial deletion badge - when SOME (not all) tickets are inactive */}
+      {hasPartialDeletion && field === "firstName" && (
+        <Badge variant="secondary" className="text-xs">
+          {inactiveCount} of {order.ticketCount} deleted
+        </Badge>
+      )}
+    </div>
+  );
+}
+
+/**
+ * @deprecated Use OrderDisplayCell instead - kept for backward compatibility
  * Editable cell for booker information (main row)
  * Booker info is NOT editable directly - only ticket holder info can be edited
  */
@@ -391,8 +496,10 @@ function TicketSubRow({
   onMutationSuccess?: (eventId: string) => void;
 }) {
   const inactive = isInactiveTicket(ticket);
+  const [isPending, setIsPending] = React.useState(false);
 
   const handleCheckIn = async () => {
+    setIsPending(true);
     try {
       const result = await checkInAttendee(ticket.id);
       if (result.eventId && onMutationSuccess) {
@@ -401,10 +508,13 @@ function TicketSubRow({
       toast.success("Ticket checked in");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to check in");
+    } finally {
+      setIsPending(false);
     }
   };
 
   const handleUndoCheckIn = async () => {
+    setIsPending(true);
     try {
       const result = await undoCheckIn(ticket.id);
       if (result.eventId && onMutationSuccess) {
@@ -413,6 +523,8 @@ function TicketSubRow({
       toast.success("Check-in undone");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to undo");
+    } finally {
+      setIsPending(false);
     }
   };
 
@@ -473,6 +585,9 @@ function TicketSubRow({
             />
             <div className="text-xs text-muted-foreground px-2">
               Ticket {index + 1} of {total} • Order #{ticket.woocommerceOrderId || "-"}
+              {ticket.ticketType && (
+                <span className="ml-2">• Type: {ticket.ticketType}</span>
+              )}
               {isDifferentPerson && (
                 <span className="ml-2">
                   • Booked by: {ticket.bookerFirstName} {ticket.bookerLastName}
@@ -500,20 +615,20 @@ function TicketSubRow({
           <Button
             size="sm"
             onClick={handleCheckIn}
-            disabled={inactive}
+            disabled={inactive || isPending}
             className="min-h-[36px] min-w-[36px]"
           >
-            Check In
+            {isPending ? "..." : "Check In"}
           </Button>
         ) : (
           <Button
             size="sm"
             variant="outline"
             onClick={handleUndoCheckIn}
-            disabled={inactive}
+            disabled={inactive || isPending}
             className="min-h-[36px] min-w-[36px]"
           >
-            Undo
+            {isPending ? "..." : "Undo"}
           </Button>
         )}
       </td>
@@ -595,9 +710,11 @@ export function getCheckInTableColumns(
         <DataTableColumnHeader column={column} label="First Name" />
       ),
       cell: ({ row }) => (
-        <BookerDisplayCell
+        <OrderDisplayCell
           order={row.original}
-          field="bookerFirstName"
+          field="firstName"
+          bookerField="bookerFirstName"
+          ticketField="firstName"
           value={row.getValue("bookerFirstName")}
           placeholder="First name"
         />
@@ -638,9 +755,11 @@ export function getCheckInTableColumns(
         <DataTableColumnHeader column={column} label="Last Name" />
       ),
       cell: ({ row }) => (
-        <BookerDisplayCell
+        <OrderDisplayCell
           order={row.original}
-          field="bookerLastName"
+          field="lastName"
+          bookerField="bookerLastName"
+          ticketField="lastName"
           value={row.getValue("bookerLastName")}
           placeholder="Last name"
         />
@@ -681,9 +800,11 @@ export function getCheckInTableColumns(
         <DataTableColumnHeader column={column} label="Email" />
       ),
       cell: ({ row }) => (
-        <BookerDisplayCell
+        <OrderDisplayCell
           order={row.original}
-          field="bookerEmail"
+          field="email"
+          bookerField="bookerEmail"
+          ticketField="email"
           value={row.getValue("bookerEmail")}
           placeholder="email@example.com"
         />
@@ -766,6 +887,70 @@ export function getCheckInTableColumns(
         label: "Source",
         className: "hidden lg:table-cell",
       } as any,
+    },
+    {
+      id: "ticketType",
+      accessorFn: (row) => {
+        // For single ticket: show ticket type
+        // For multi-ticket: show comma-separated or "Mixed"
+        if (row.ticketCount === 1) {
+          return row.tickets[0]?.ticketType || null;
+        }
+        const types = row.ticketTypes;
+        if (types.length === 0) return null;
+        if (types.length === 1) return types[0];
+        return "Mixed";
+      },
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} label="Ticket Type" />
+      ),
+      cell: ({ row }) => {
+        const ticketType = row.getValue("ticketType") as string | null;
+
+        if (!ticketType) {
+          return <span className="text-muted-foreground">-</span>;
+        }
+
+        // Color-code by type
+        const typeColors: Record<string, string> = {
+          "standard": "bg-gray-100 text-gray-800",
+          "under 30": "bg-green-100 text-green-800",
+          "struggling financially": "bg-amber-100 text-amber-800",
+          "with donation": "bg-purple-100 text-purple-800",
+          "mixed": "bg-blue-100 text-blue-800",
+        };
+
+        const colorClass = typeColors[ticketType.toLowerCase()] || "bg-gray-100 text-gray-800";
+
+        return (
+          <Badge variant="outline" className={cn("text-xs", colorClass)}>
+            {ticketType}
+          </Badge>
+        );
+      },
+      filterFn: (row, id, value) => {
+        if (value === "all") return true;
+        const ticketType = row.getValue(id) as string | null;
+        if (!ticketType) return value === "none";
+        return ticketType.toLowerCase() === value.toLowerCase();
+      },
+      meta: {
+        label: "Ticket Type",
+        variant: "select",
+        options: [
+          { label: "All", value: "all" },
+          { label: "Standard", value: "standard" },
+          { label: "Under 30", value: "under 30" },
+          { label: "Struggling Financially", value: "struggling financially" },
+          { label: "With Donation", value: "with donation" },
+          { label: "Mixed (Multi-ticket)", value: "mixed" },
+          { label: "None", value: "none" },
+        ],
+        className: "hidden lg:table-cell",
+      },
+      enableColumnFilter: true,
+      enableSorting: true,
+      enableHiding: true,
     },
     {
       id: "checkedInStatus",
@@ -856,6 +1041,7 @@ export function getCheckInTableColumns(
       cell: function Cell({ row }) {
         const grouped = row.original;
         const inactive = isInactiveOrder(grouped);
+        const [isPending, setIsPending] = React.useState(false);
 
         const handleCheckInAll = async () => {
           const uncheckedTickets = grouped.tickets.filter(t => !t.checkedIn && !isInactiveTicket(t));
@@ -865,6 +1051,7 @@ export function getCheckInTableColumns(
             return;
           }
 
+          setIsPending(true);
           try {
             const results = await Promise.all(uncheckedTickets.map(t => checkInAttendee(t.id)));
             // Trigger cache invalidation with first result's eventId
@@ -874,6 +1061,8 @@ export function getCheckInTableColumns(
             toast.success(`Checked in ${uncheckedTickets.length} ticket(s)`);
           } catch {
             toast.error("Failed to check in some tickets");
+          } finally {
+            setIsPending(false);
           }
         };
 
@@ -885,6 +1074,7 @@ export function getCheckInTableColumns(
             return;
           }
 
+          setIsPending(true);
           try {
             const results = await Promise.all(checkedTickets.map(t => undoCheckIn(t.id)));
             // Trigger cache invalidation with first result's eventId
@@ -894,6 +1084,8 @@ export function getCheckInTableColumns(
             toast.success(`Undone ${checkedTickets.length} ticket(s)`);
           } catch {
             toast.error("Failed to undo some tickets");
+          } finally {
+            setIsPending(false);
           }
         };
 
@@ -904,23 +1096,23 @@ export function getCheckInTableColumns(
             size="sm"
             variant="outline"
             onClick={handleUndoAll}
-            disabled={inactive}
+            disabled={inactive || isPending}
             className="min-h-[44px] px-2 md:px-4"
           >
-            <span className="hidden md:inline">Undo All</span>
-            <span className="md:hidden">Undo</span>
+            <span className="hidden md:inline">{isPending ? "Processing..." : "Undo All"}</span>
+            <span className="md:hidden">{isPending ? "..." : "Undo"}</span>
           </Button>
         ) : (
           <Button
             size="sm"
             onClick={handleCheckInAll}
-            disabled={inactive}
+            disabled={inactive || isPending}
             className="min-h-[44px] px-2 md:px-4"
           >
             <span className="hidden md:inline">
-              Check In {grouped.checkedInStatus === "none" ? "All" : "Remaining"}
+              {isPending ? "Checking in..." : `Check In ${grouped.checkedInStatus === "none" ? "All" : "Remaining"}`}
             </span>
-            <span className="md:hidden">Check</span>
+            <span className="md:hidden">{isPending ? "..." : "Check"}</span>
           </Button>
         );
       },

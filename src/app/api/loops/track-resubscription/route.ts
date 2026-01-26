@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
         },
         body: JSON.stringify({
           email,
+          subscribed: true, // Re-enable email delivery
           resubscribed: true,
           resubscriptionDate: new Date().toISOString(),
         }),

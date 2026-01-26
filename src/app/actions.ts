@@ -78,15 +78,11 @@ export async function getEventById(eventId: string) {
  * Triggers smart sync for today/future events
  */
 export async function getAttendeesForEvent(eventId: string) {
-  // Sync attendees if event is today or in the future
-  const syncResult = await syncAttendeesForEvent(eventId);
+  // Trigger sync if needed (for future events) - sync cache controls WooCommerce API calls
+  await syncAttendeesForEvent(eventId);
 
-  // If sync returned cached attendees, use them
-  if (syncResult.reason === 'cached' && syncResult.cachedAttendees) {
-    return syncResult.cachedAttendees;
-  }
-
-  // Otherwise, fresh sync happened - query database
+  // ALWAYS return fresh data from database
+  // The sync cache only tracks WooCommerce sync timing, not attendee data
   return await db
     .select()
     .from(attendees)
@@ -192,6 +188,15 @@ export async function checkInAttendee(attendeeId: string) {
 
   if (!attendee) {
     throw new Error("Attendee not found");
+  }
+
+  // Validate ticket status - reject deleted/cancelled/refunded tickets
+  if (
+    attendee.orderStatus === "deleted" ||
+    attendee.orderStatus === "cancelled" ||
+    attendee.orderStatus === "refunded"
+  ) {
+    throw new Error(`Cannot check in a ${attendee.orderStatus} ticket`);
   }
 
   // Step 1: Check-in the attendee
@@ -773,6 +778,34 @@ export async function updateAttendeeDetails(
       locallyModified: true, // Mark as edited
     })
     .where(eq(attendees.id, attendeeId));
+
+  // Recalculate membership when email changes
+  // This ensures attendance counts are correct for both old and new email addresses
+  if (emailChanged) {
+    const { recalculateMembershipForMember } = await import("@/lib/calculate-membership");
+
+    // Recalculate for the NEW email's member
+    const [newMember] = await db
+      .select()
+      .from(members)
+      .where(eq(members.email, normalizedValue))
+      .limit(1);
+
+    if (newMember) {
+      await recalculateMembershipForMember(newMember.id);
+    }
+
+    // Recalculate for the OLD email's member (they may have lost an attendance)
+    const [oldMember] = await db
+      .select()
+      .from(members)
+      .where(eq(members.email, currentAttendee.email))
+      .limit(1);
+
+    if (oldMember) {
+      await recalculateMembershipForMember(oldMember.id);
+    }
+  }
 
   revalidatePath("/");
 

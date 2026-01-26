@@ -199,6 +199,9 @@ export interface GroupedOrder {
 
   // Original event ID (all tickets in group have same eventId)
   eventId: string;
+
+  // Aggregated ticket types (for filtering/display)
+  ticketTypes: string[];
 }
 
 /**
@@ -280,6 +283,13 @@ export function groupAttendeesByOrder(attendees: Attendee[]): GroupedOrder[] {
     const bookerLastName = first.bookerLastName || first.lastName;
     const bookerEmail = first.bookerEmail || first.email;
 
+    // Collect unique ticket types
+    const ticketTypes = [...new Set(
+      tickets
+        .map(t => t.ticketType)
+        .filter((t): t is string => t !== null && t !== undefined)
+    )];
+
     result.push({
       id: key,
       bookerFirstName,
@@ -296,6 +306,7 @@ export function groupAttendeesByOrder(attendees: Attendee[]): GroupedOrder[] {
       woocommerceOrderId: first.woocommerceOrderId,
       mostRecentCheckIn,
       eventId: first.eventId,
+      ticketTypes,
     });
   }
 
