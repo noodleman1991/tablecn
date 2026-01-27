@@ -176,7 +176,7 @@ export function getMembersTableColumns(
       id: "lastEventDate",
       accessorKey: "lastEventDate",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} label="Last Event" />
+        <DataTableColumnHeader column={column} label="Last Qualifying Event" />
       ),
       cell: ({ row }) => {
         const date = row.getValue("lastEventDate") as Date | null;
@@ -184,7 +184,7 @@ export function getMembersTableColumns(
       },
       enableHiding: true,
       meta: {
-        label: "Last Event",
+        label: "Last Qualifying Event",
         className: "hidden lg:table-cell",
       } as any,
     },
