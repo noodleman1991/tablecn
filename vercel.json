@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/cleanup-cache",
       "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/weekly-membership-sync",
+      "schedule": "0 6 * * 0"
     }
   ]
 }

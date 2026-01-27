@@ -64,7 +64,22 @@ export async function recalculateMembershipForMember(memberId: string) {
   // Helper function to check if event is a social event (not counted toward membership)
   const isSocialEvent = (eventName: string): boolean => {
     const lowerName = eventName.toLowerCase();
-    return lowerName.includes("walk") || lowerName.includes("party") || lowerName.includes("drinks");
+
+    // Existing exclusions
+    if (lowerName.includes("walk") || lowerName.includes("party") || lowerName.includes("drinks")) {
+      return true;
+    }
+
+    // Seasonal celebrations (season + celebration together)
+    const seasons = ["winter", "spring", "summer", "autumn", "fall", "solstice", "equinox"];
+    const hasSeasonWord = seasons.some(season => lowerName.includes(season));
+    const hasCelebration = lowerName.includes("celebration");
+
+    if (hasSeasonWord && hasCelebration) {
+      return true;
+    }
+
+    return false;
   };
 
   // Filter out social events before counting

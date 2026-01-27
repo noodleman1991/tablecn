@@ -134,7 +134,7 @@ export function CheckInTable({ attendees, onMutationSuccess }: CheckInTableProps
     data: processedOrders,
     columns,
     initialState: {
-      pagination: { pageIndex: 0, pageSize: 20 },
+      pagination: { pageIndex: 0, pageSize: 50 },
       sorting: [{ id: "bookerLastName", desc: false }], // Sort by booker last name
       columnVisibility: {
         // Show source column by default, can be toggled in View menu
