@@ -43,3 +43,6 @@ yarn-error.log*
 *.tsbuildinfo
 *.csv
 skills.md
+
+# manual fix scripts (one-time data fixes, not part of the app)
+/scripts/
