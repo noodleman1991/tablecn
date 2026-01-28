@@ -111,6 +111,14 @@ async function loopsApiRequest(
 
 /**
  * Format member data for Loops API
+ *
+ * NOTE: We set `subscribed: true` because Loops requires contacts to be
+ * subscribed before they can be added to mailing lists. Per Loops docs:
+ * "You cannot add contacts to mailing lists if they are unsubscribed."
+ *
+ * We do NOT set `source` to preserve the contact's original source
+ * (e.g., "CSV Import", "Newsletter Signup Form"). This ensures newsletter
+ * subscribers who become community members remain in the weekly newsletter segment.
  */
 function formatMemberForLoops(member: Member) {
   return {
@@ -121,7 +129,8 @@ function formatMemberForLoops(member: Member) {
     lastEventDate: member.lastEventDate?.toISOString() || null,
     membershipExpiresAt: member.membershipExpiresAt?.toISOString() || null,
     manuallyAdded: member.manuallyAdded,
-    source: "community_member",
+    subscribed: true, // Required for mailing list membership
+    // source: intentionally not set - preserve original source
     // Add to "Active Community Members" list
     mailingLists: {
       [env.LOOPS_ACTIVE_MEMBERS_LIST_ID]: true,
@@ -312,6 +321,114 @@ export async function getLoopsSyncStats(since?: Date) {
     synced: logs.filter(l => l.operation === "sync" && l.status === "success").length,
     removed: logs.filter(l => l.operation === "remove" && l.status === "success").length,
   };
+
+  return stats;
+}
+
+/**
+ * Reconcile DB active members with Loops Active Community Members list
+ *
+ * This function ensures the DB (source of truth) and Loops stay in sync:
+ * - For each active member in DB: ensure they're in the Active Community Members list
+ * - For each inactive member in DB: ensure they're NOT in the list
+ *
+ * This should be called during the weekly cron to catch any sync gaps
+ * (e.g., API failures, timing issues, etc.)
+ *
+ * @param members - All members from the database
+ * @returns Statistics about what was checked and fixed
+ */
+export async function reconcileLoopsMembership(members: Member[]): Promise<{
+  checked: number;
+  fixed: number;
+  errors: number;
+  details: { email: string; action: string }[];
+}> {
+  const stats = {
+    checked: 0,
+    fixed: 0,
+    errors: 0,
+    details: [] as { email: string; action: string }[],
+  };
+
+  console.log(`[Loops Reconcile] Starting reconciliation for ${members.length} members...`);
+
+  for (const member of members) {
+    try {
+      // Check contact in Loops
+      const response = await loopsApiRequest(
+        `/contacts/find?email=${encodeURIComponent(member.email)}`,
+        "GET"
+      );
+
+      if (!response.ok) {
+        // Contact might not exist in Loops at all
+        if (response.status === 404 || response.status === 400) {
+          // If member is active but not in Loops, sync them
+          if (member.isActiveMember) {
+            await syncMemberToLoops(member);
+            stats.fixed++;
+            stats.details.push({ email: member.email, action: "created_and_added_to_list" });
+          }
+        } else {
+          stats.errors++;
+          console.error(`[Loops Reconcile] Error finding ${member.email}: HTTP ${response.status}`);
+        }
+        continue;
+      }
+
+      const contacts = await response.json() as Array<{
+        mailingLists?: Record<string, boolean>;
+        subscribed?: boolean;
+      }>;
+      const loopsContact = contacts[0];
+      stats.checked++;
+
+      if (member.isActiveMember) {
+        // Active in DB - should be in list with subscribed=true
+        const inList = loopsContact?.mailingLists?.[env.LOOPS_ACTIVE_MEMBERS_LIST_ID] === true;
+        const isSubscribed = loopsContact?.subscribed === true;
+
+        if (!inList || !isSubscribed) {
+          // FIX: Sync to add to list and ensure subscribed=true
+          await syncMemberToLoops(member);
+          stats.fixed++;
+          stats.details.push({
+            email: member.email,
+            action: !inList ? "added_to_list" : "set_subscribed_true",
+          });
+        }
+      } else {
+        // Inactive in DB - should NOT be in list
+        const inList = loopsContact?.mailingLists?.[env.LOOPS_ACTIVE_MEMBERS_LIST_ID] === true;
+
+        if (inList) {
+          // FIX: Remove from list
+          await removeMemberFromLoops(member.email, member.id);
+          stats.fixed++;
+          stats.details.push({ email: member.email, action: "removed_from_list" });
+        }
+      }
+
+      // Rate limiting - small delay between requests to respect 10 req/sec limit
+      await new Promise((r) => setTimeout(r, 110));
+    } catch (error) {
+      stats.errors++;
+      console.error(
+        `[Loops Reconcile] Error checking ${member.email}:`,
+        error instanceof Error ? error.message : error
+      );
+    }
+  }
+
+  console.log(`[Loops Reconcile] Complete! Checked: ${stats.checked}, Fixed: ${stats.fixed}, Errors: ${stats.errors}`);
+
+  if (stats.details.length > 0) {
+    console.log(`[Loops Reconcile] Fixed contacts:`);
+    for (const detail of stats.details) {
+      console.log(`  - ${detail.email}: ${detail.action}`);
+    }
+  }
 
   return stats;
 }
