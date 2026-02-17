@@ -98,18 +98,21 @@ function extractTicketAttendees(
     // - Second field tends to be last name
     // - Third field tends to be email
     // - Fourth field (if exists) is membership number
-    const fieldValues = Object.values(fields);
-    const fieldEntries = Object.entries(fields);
+    // Sort entries by key for deterministic ordering (alphabetical, matching original intent)
+    // WooCommerce hash keys for a given field are consistent across all tickets of the same product
+    const sortedEntries = Object.entries(fields).sort(([a], [b]) => a.localeCompare(b));
 
     // Find email field (contains @ symbol) and normalize to lowercase
-    const emailEntry = fieldEntries.find(([_, value]) =>
+    const emailEntry = sortedEntries.find(([_, value]) =>
       typeof value === 'string' && value.includes('@')
     );
     const email = emailEntry ? emailEntry[1].toLowerCase() : '';
 
     // Find first and last name (non-email, non-empty fields)
     // Also filter out corrupted literal values like "first name" or "family name"
-    const nameFields = fieldValues.filter((v: string) => {
+    const nameFields = sortedEntries
+      .map(([_, v]) => v)
+      .filter((v: string) => {
       if (!v || typeof v !== 'string') return false;
       if (v.includes('@')) return false;
       if (v.length >= 50) return false;
