@@ -9,6 +9,7 @@ import { invalidateCache } from "@/lib/cache-utils";
 import {
   shouldNeverMerge,
   isMembersOnlyProduct,
+  isAdditionalBookingLinkProduct,
 } from "@/lib/event-patterns";
 
 /**
@@ -71,6 +72,32 @@ export interface BatchMergeResult {
   }>;
 }
 
+const ADDITIONAL_BOOKING_SIMILARITY_THRESHOLD = 0.9;
+
+/**
+ * Compute normalized string similarity (0.0–1.0) using Levenshtein distance.
+ * A threshold of 0.9 means for a 30-char base name, up to 3 characters can differ.
+ */
+function stringSimilarity(a: string, b: string): number {
+  if (a === b) return 1.0;
+  if (!a.length || !b.length) return 0.0;
+  const maxLen = Math.max(a.length, b.length);
+  // Two-row Levenshtein
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const curr = [i];
+    for (let j = 1; j <= b.length; j++) {
+      curr[j] = Math.min(
+        curr[j - 1]! + 1,
+        prev[j]! + 1,
+        prev[j - 1]! + (a[i - 1] === b[j - 1] ? 0 : 1)
+      );
+    }
+    prev = curr;
+  }
+  return 1 - prev[b.length]! / maxLen;
+}
+
 /**
  * Extract first N words from a string
  */
@@ -85,6 +112,12 @@ function extractFirstNWords(name: string, n: number): string {
 function extractBaseName(name: string): string {
   let baseName = name;
 
+  // Remove additional/extra booking/payment link and private booking suffixes
+  baseName = baseName
+    .replace(/\s*-?\s*additional\s+(?:bookings?|payments?)\s+link/i, "")
+    .replace(/\s*-?\s*extra\s+bookings?\s+link/i, "")
+    .replace(/\s*-?\s*private\s+bookings?/i, "");
+
   // Remove members-only suffixes
   baseName = baseName
     .replace(/\s*-?\s*community\s*member.*$/i, "")
@@ -98,12 +131,11 @@ function extractBaseName(name: string): string {
 }
 
 /**
- * Determine if two events should be merged
- * ONLY merge when:
- * 1. Same date
- * 2. One is a members-only variant
- * 3. Neither is in the "never merge" category
- * 4. Base names are similar
+ * Determine if two events should be merged.
+ * Two merge paths are checked sequentially:
+ * 1. Members-only path — requires exactly one event to be members-only, uses prefix/exact matching
+ * 2. Additional booking link path — requires exactly one event to have "- additional booking link",
+ *    uses 90% Levenshtein similarity on base names
  */
 function shouldMergeEvents(
   event1: { name: string; eventDate: Date },
@@ -124,44 +156,56 @@ function shouldMergeEvents(
     return { shouldMerge: false, reason: "Different dates" };
   }
 
-  // Check if at least one is a members-only variant
+  // --- Path 1: Members-only merge ---
   const e1Members = isMembersOnlyProduct(event1.name);
   const e2Members = isMembersOnlyProduct(event2.name);
 
-  if (!e1Members && !e2Members) {
-    return {
-      shouldMerge: false,
-      reason: "Neither event is a members-only variant",
-    };
-  }
+  if ((e1Members || e2Members) && !(e1Members && e2Members)) {
+    const baseName1 = extractBaseName(event1.name).toLowerCase();
+    const baseName2 = extractBaseName(event2.name).toLowerCase();
 
-  if (e1Members && e2Members) {
-    return {
-      shouldMerge: false,
-      reason: "Both events are members-only variants (shouldn't happen)",
-    };
-  }
+    const similar =
+      baseName1 === baseName2 ||
+      baseName1.startsWith(baseName2) ||
+      baseName2.startsWith(baseName1);
 
-  // Check if base names are similar
-  const baseName1 = extractBaseName(event1.name).toLowerCase();
-  const baseName2 = extractBaseName(event2.name).toLowerCase();
-
-  // Compare base names - allow for minor variations
-  const similar =
-    baseName1 === baseName2 ||
-    baseName1.startsWith(baseName2) ||
-    baseName2.startsWith(baseName1);
-
-  if (!similar) {
+    if (similar) {
+      return {
+        shouldMerge: true,
+        reason: `Members-only variant merge: "${extractBaseName(event1.name)}"`,
+      };
+    }
     return {
       shouldMerge: false,
       reason: `Base names don't match: "${baseName1}" vs "${baseName2}"`,
     };
   }
 
+  // --- Path 2: Additional booking link merge ---
+  const e1Additional = isAdditionalBookingLinkProduct(event1.name);
+  const e2Additional = isAdditionalBookingLinkProduct(event2.name);
+
+  if ((e1Additional || e2Additional) && !(e1Additional && e2Additional)) {
+    const baseName1 = extractBaseName(event1.name).toLowerCase();
+    const baseName2 = extractBaseName(event2.name).toLowerCase();
+
+    const similarity = stringSimilarity(baseName1, baseName2);
+
+    if (similarity >= ADDITIONAL_BOOKING_SIMILARITY_THRESHOLD) {
+      return {
+        shouldMerge: true,
+        reason: `Additional booking link merge (${(similarity * 100).toFixed(0)}% similar): "${extractBaseName(event1.name)}"`,
+      };
+    }
+    return {
+      shouldMerge: false,
+      reason: `Base names not similar enough (${(similarity * 100).toFixed(0)}%): "${baseName1}" vs "${baseName2}"`,
+    };
+  }
+
   return {
-    shouldMerge: true,
-    reason: `Members-only variant merge: "${extractBaseName(event1.name)}"`,
+    shouldMerge: false,
+    reason: "No merge path matched (neither members-only nor additional booking link pair)",
   };
 }
 
@@ -183,8 +227,10 @@ function removeDateFromName(name: string): string {
  * This prevents the corruption from combining different event names
  */
 function createMergedEventName(events: Array<Event & { attendeeCount: number }>, eventDate: Date): string {
-  // Find the regular (non-members-only) event - this is the canonical name
-  const regularEvent = events.find(e => !isMembersOnlyProduct(e.name));
+  // Find the regular event (not members-only, not additional booking link) - this is the canonical name
+  const regularEvent = events.find(
+    e => !isMembersOnlyProduct(e.name) && !isAdditionalBookingLinkProduct(e.name)
+  );
 
   if (!regularEvent) {
     // Fallback: use the event with most attendees
@@ -284,7 +330,7 @@ export async function findDuplicateEvents(): Promise<DuplicateEventGroup[]> {
   for (const [dateKey, dateEvents] of eventsByDate) {
     if (dateEvents.length < 2) continue;
 
-    // Find members-only events and their potential parent events
+    // --- Pass 1: Members-only pairing ---
     const membersOnlyEvents = dateEvents.filter(e => isMembersOnlyProduct(e.name));
     const regularEvents = dateEvents.filter(e => !isMembersOnlyProduct(e.name));
 
@@ -316,6 +362,46 @@ export async function findDuplicateEvents(): Promise<DuplicateEventGroup[]> {
           console.log(`[merge-events] ❌ Skipping potential pair:`);
           console.log(`[merge-events]    Event 1: "${regularEvent.name}"`);
           console.log(`[merge-events]    Event 2: "${membersEvent.name}"`);
+          console.log(`[merge-events]    Reason: ${reason}`);
+        }
+      }
+    }
+
+    // --- Pass 2: Additional booking link pairing ---
+    const additionalBookingEvents = dateEvents.filter(
+      e => !processedIds.has(e.id) && isAdditionalBookingLinkProduct(e.name)
+    );
+    const remainingRegularEvents = dateEvents.filter(
+      e => !processedIds.has(e.id) && !isAdditionalBookingLinkProduct(e.name)
+    );
+
+    for (const additionalEvent of additionalBookingEvents) {
+      if (processedIds.has(additionalEvent.id)) continue;
+
+      for (const regularEvent of remainingRegularEvents) {
+        if (processedIds.has(regularEvent.id)) continue;
+
+        const { shouldMerge, reason } = shouldMergeEvents(regularEvent, additionalEvent);
+
+        if (shouldMerge) {
+          console.log(`[merge-events] ✅ Merge candidate found:`);
+          console.log(`[merge-events]    Regular: "${regularEvent.name}"`);
+          console.log(`[merge-events]    Additional: "${additionalEvent.name}"`);
+          console.log(`[merge-events]    Reason: ${reason}`);
+
+          mergeGroups.push({
+            date: regularEvent.eventDate,
+            events: [regularEvent, additionalEvent],
+            sharedPrefix: extractBaseName(regularEvent.name),
+          });
+
+          processedIds.add(additionalEvent.id);
+          processedIds.add(regularEvent.id);
+          break; // Found match, move to next additional booking event
+        } else {
+          console.log(`[merge-events] ❌ Skipping potential pair:`);
+          console.log(`[merge-events]    Event 1: "${regularEvent.name}"`);
+          console.log(`[merge-events]    Event 2: "${additionalEvent.name}"`);
           console.log(`[merge-events]    Reason: ${reason}`);
         }
       }
