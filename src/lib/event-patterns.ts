@@ -53,7 +53,28 @@ export const MEMBERS_ONLY_PATTERNS = [
   /members?\s*link/i, // "member link", "members link"
   /community\s*member/i, // "community member"
   /-\s*members$/i, // ends with "- members"
+  /members\s*-/i, // "members -" (e.g. "members - event name")
 ];
+
+/**
+ * ADDITIONAL_BOOKING_LINK_PATTERNS
+ *
+ * Product name patterns that indicate an additional booking/payment link variant.
+ * WooCommerce sometimes creates separate products when the main product sells out.
+ */
+export const ADDITIONAL_BOOKING_LINK_PATTERNS = [
+  /\s*-?\s*additional bookings? link/i, // "- additional booking link" / "- additional bookings link"
+  /\s*-?\s*additional payments? link/i, // "- additional payment link" / "- additional payments link"
+  /\s*-?\s*extra bookings? link/i, // "- extra booking link" / "- Extra Booking Link"
+  /\s*-?\s*private bookings?/i, // "- private booking" / "- Private Booking"
+];
+
+/**
+ * Check if a product/event name indicates it's an additional booking link variant
+ */
+export function isAdditionalBookingLinkProduct(name: string): boolean {
+  return ADDITIONAL_BOOKING_LINK_PATTERNS.some((pattern) => pattern.test(name));
+}
 
 /**
  * Check if an event name matches any NEVER_MERGE pattern

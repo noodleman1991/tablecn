@@ -9,23 +9,7 @@ import {
 } from "@/lib/woocommerce";
 import { eq } from "drizzle-orm";
 import { mergeDuplicateEvents } from "@/lib/merge-events";
-
-// Patterns that indicate a members-only event product
-const MEMBERS_ONLY_PATTERNS = [
-  "members only",
-  "members link",
-  "member only",
-  "- members",
-  "members -",
-];
-
-/**
- * Check if a product name indicates it's a members-only event
- */
-function isMembersOnlyProduct(productName: string): boolean {
-  const lowerName = productName.toLowerCase();
-  return MEMBERS_ONLY_PATTERNS.some(pattern => lowerName.includes(pattern));
-}
+import { isMembersOnlyProduct } from "@/lib/event-patterns";
 
 /**
  * Cron job to auto-discover events from WooCommerce
