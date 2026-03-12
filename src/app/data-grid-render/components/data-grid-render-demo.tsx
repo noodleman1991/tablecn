@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { useDataGrid } from "@/hooks/use-data-grid";
 import { getFilterFn } from "@/lib/data-grid-filters";
-import type { UpdateCell } from "@/types/data-grid";
+import type { CellUpdate } from "@/types/data-grid";
 
 interface Person {
   id: string;
@@ -89,7 +89,7 @@ export function DataGridRenderDemo() {
         header: ({ table }) => (
           <Checkbox
             aria-label="Select all"
-            className="after:-inset-2.5 relative transition-[shadow,border] after:absolute after:content-[''] hover:border-primary/40"
+            className="relative transition-[shadow,border] after:absolute after:-inset-2.5 after:content-[''] hover:border-primary/40"
             checked={
               table.getIsAllPageRowsSelected() ||
               (table.getIsSomePageRowsSelected() && "indeterminate")
@@ -102,12 +102,12 @@ export function DataGridRenderDemo() {
         cell: ({ row, table }) => (
           <Checkbox
             aria-label="Select row"
-            className="after:-inset-2.5 relative transition-[shadow,border] after:absolute after:content-[''] hover:border-primary/40"
+            className="relative transition-[shadow,border] after:absolute after:-inset-2.5 after:content-[''] hover:border-primary/40"
             checked={row.getIsSelected()}
             onCheckedChange={(value) => {
               const onRowSelect = table.options.meta?.onRowSelect;
               if (onRowSelect) {
-                onRowSelect(row.index, !!value, false);
+                onRowSelect(row.id, !!value, false);
               } else {
                 row.toggleSelected(!!value);
               }
@@ -117,7 +117,7 @@ export function DataGridRenderDemo() {
                 event.preventDefault();
                 const onRowSelect = table.options.meta?.onRowSelect;
                 if (onRowSelect) {
-                  onRowSelect(row.index, !row.getIsSelected(), true);
+                  onRowSelect(row.id, !row.getIsSelected(), true);
                 }
               }
             }}
@@ -237,7 +237,9 @@ export function DataGridRenderDemo() {
             "age",
             "salary",
           ] as const;
-          const updates: UpdateCell[] = [];
+
+          const updates: CellUpdate[] = [];
+
           for (let i = 0; i < count; i++) {
             const rowIndex = Math.floor(i / columnsToFill.length);
             const colIndex = i % columnsToFill.length;
@@ -319,7 +321,7 @@ export function DataGridRenderDemo() {
             col: (typeof columnsToFill)[number],
           ) => string | number,
         ) {
-          const updates: UpdateCell[] = [];
+          const updates: CellUpdate[] = [];
           for (let i = startCell; i < endCell; i++) {
             const rowIndex = Math.floor(i / columnsToFill.length);
             const colIndex = i % columnsToFill.length;

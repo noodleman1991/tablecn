@@ -1,6 +1,26 @@
 import type { Column, Table } from "@tanstack/react-table";
+import {
+  BaselineIcon,
+  CalendarIcon,
+  CheckSquareIcon,
+  File,
+  FileArchive,
+  FileAudio,
+  FileIcon,
+  FileImage,
+  FileSpreadsheet,
+  FileText,
+  FileVideo,
+  HashIcon,
+  LinkIcon,
+  ListChecksIcon,
+  ListIcon,
+  Presentation,
+  TextInitialIcon,
+} from "lucide-react";
 import type * as React from "react";
 import type {
+  CellOpts,
   CellPosition,
   Direction,
   FileCellData,
@@ -79,12 +99,43 @@ export function getLineCount(rowHeight: RowHeightValue): number {
   return lineCountMap[rowHeight];
 }
 
-export function getCommonPinningStyles<TData>(params: {
+export function getColumnBorderVisibility<TData>(params: {
+  column: Column<TData>;
+  nextColumn?: Column<TData>;
+  isLastColumn: boolean;
+}): {
+  showEndBorder: boolean;
+  showStartBorder: boolean;
+} {
+  const { column, nextColumn, isLastColumn } = params;
+
+  const isPinned = column.getIsPinned();
+  const isFirstRightPinnedColumn =
+    isPinned === "right" && column.getIsFirstColumn("right");
+  const isLastRightPinnedColumn =
+    isPinned === "right" && column.getIsLastColumn("right");
+
+  const nextIsPinned = nextColumn?.getIsPinned();
+  const isBeforeRightPinned =
+    nextIsPinned === "right" && nextColumn?.getIsFirstColumn("right");
+
+  const showEndBorder =
+    !isBeforeRightPinned && (isLastColumn || !isLastRightPinnedColumn);
+
+  const showStartBorder = isFirstRightPinnedColumn;
+
+  return {
+    showEndBorder,
+    showStartBorder,
+  };
+}
+
+export function getColumnPinningStyle<TData>(params: {
   column: Column<TData>;
   withBorder?: boolean;
   dir?: Direction;
 }): React.CSSProperties {
-  const { column, withBorder = false, dir = "ltr" } = params;
+  const { column, dir = "ltr", withBorder = false } = params;
 
   const isPinned = column.getIsPinned();
   const isLastLeftPinnedColumn =
@@ -205,10 +256,246 @@ export function scrollCellIntoView<TData>(params: {
   container.scrollLeft += scrollDelta;
 }
 
+function countTabs(s: string): number {
+  let n = 0;
+  for (let i = 0; i < s.length; i++) if (s[i] === "\t") n++;
+  return n;
+}
+
+export function parseTsv(
+  text: string,
+  fallbackColumnCount: number,
+): string[][] {
+  if (text.startsWith('"') || text.includes('\t"')) {
+    const rows: string[][] = [];
+    let currentRow: string[] = [];
+    let currentField = "";
+    let inQuotes = false;
+    let i = 0;
+
+    while (i < text.length) {
+      const char = text[i];
+      const nextChar = text[i + 1];
+
+      if (inQuotes) {
+        if (char === '"' && nextChar === '"') {
+          currentField += '"';
+          i += 2;
+        } else if (char === '"') {
+          inQuotes = false;
+          i++;
+        } else {
+          currentField += char;
+          i++;
+        }
+      } else {
+        if (char === '"' && currentField === "") {
+          inQuotes = true;
+          i++;
+        } else if (char === "\t") {
+          currentRow.push(currentField);
+          currentField = "";
+          i++;
+        } else if (char === "\n") {
+          currentRow.push(currentField);
+          if (currentRow.length > 1 || currentRow.some((f) => f.length > 0)) {
+            rows.push(currentRow);
+          }
+          currentRow = [];
+          currentField = "";
+          i++;
+        } else if (char === "\r" && nextChar === "\n") {
+          currentRow.push(currentField);
+          if (currentRow.length > 1 || currentRow.some((f) => f.length > 0)) {
+            rows.push(currentRow);
+          }
+          currentRow = [];
+          currentField = "";
+          i += 2;
+        } else {
+          currentField += char;
+          i++;
+        }
+      }
+    }
+
+    currentRow.push(currentField);
+    if (currentRow.length > 1 || currentRow.some((f) => f.length > 0)) {
+      rows.push(currentRow);
+    }
+
+    return rows;
+  }
+
+  const lines = text.split("\n");
+  let maxTabCount = 0;
+  for (const line of lines) {
+    const n = countTabs(line);
+    if (n > maxTabCount) maxTabCount = n;
+  }
+  const columnCount = maxTabCount > 0 ? maxTabCount + 1 : fallbackColumnCount;
+  if (columnCount <= 0) return [];
+
+  const expectedTabCount = columnCount - 1;
+  const rows: string[][] = [];
+  let buf = "";
+  let bufTabCount = 0;
+
+  for (const line of lines) {
+    const tc = countTabs(line);
+
+    if (tc === expectedTabCount) {
+      if (buf && bufTabCount === expectedTabCount) rows.push(buf.split("\t"));
+      buf = "";
+      bufTabCount = 0;
+      rows.push(line.split("\t"));
+    } else {
+      buf = buf ? `${buf}\n${line}` : line;
+      bufTabCount += tc;
+      if (bufTabCount === expectedTabCount) {
+        rows.push(buf.split("\t"));
+        buf = "";
+        bufTabCount = 0;
+      }
+    }
+  }
+
+  if (buf && bufTabCount === expectedTabCount) rows.push(buf.split("\t"));
+
+  return rows.length > 0
+    ? rows
+    : lines.filter((l) => l.length > 0).map((l) => l.split("\t"));
+}
+
 export function getIsInPopover(element: unknown): boolean {
+  if (!(element instanceof Element)) return false;
+
   return (
-    element instanceof Element &&
-    (element.closest("[data-grid-cell-editor]") ||
-      element.closest("[data-grid-popover]")) !== null
+    element.closest("[data-grid-cell-editor]") !== null ||
+    element.closest("[data-grid-popover]") !== null ||
+    element.closest("[data-slot='dropdown-menu-content']") !== null ||
+    element.closest("[data-slot='popover-content']") !== null
   );
+}
+
+export function getColumnVariant(variant?: CellOpts["variant"]): {
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  label: string;
+} | null {
+  switch (variant) {
+    case "short-text":
+      return { label: "Short text", icon: BaselineIcon };
+    case "long-text":
+      return { label: "Long text", icon: TextInitialIcon };
+    case "number":
+      return { label: "Number", icon: HashIcon };
+    case "url":
+      return { label: "URL", icon: LinkIcon };
+    case "checkbox":
+      return { label: "Checkbox", icon: CheckSquareIcon };
+    case "select":
+      return { label: "Select", icon: ListIcon };
+    case "multi-select":
+      return { label: "Multi-select", icon: ListChecksIcon };
+    case "date":
+      return { label: "Date", icon: CalendarIcon };
+    case "file":
+      return { label: "File", icon: FileIcon };
+    default:
+      return null;
+  }
+}
+
+export function getEmptyCellValue(
+  variant: CellOpts["variant"] | undefined,
+): unknown {
+  if (variant === "multi-select" || variant === "file") return [];
+  if (variant === "number" || variant === "date") return null;
+  if (variant === "checkbox") return false;
+  return "";
+}
+
+export function getUrlHref(urlString: string): string {
+  if (!urlString || urlString.trim() === "") return "";
+
+  const trimmed = urlString.trim();
+
+  // Reject dangerous protocols (extra safety, though our http:// prefix would neutralize them)
+  if (/^(javascript|data|vbscript|file):/i.test(trimmed)) {
+    return "";
+  }
+
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return trimmed;
+  }
+
+  return `http://${trimmed}`;
+}
+
+export function parseLocalDate(dateStr: unknown): Date | null {
+  if (!dateStr) return null;
+  if (dateStr instanceof Date) return dateStr;
+  if (typeof dateStr !== "string") return null;
+  const [year, month, day] = dateStr.split("-").map(Number);
+  if (!year || !month || !day) return null;
+  const date = new Date(year, month - 1, day);
+  // Verify date wasn't auto-corrected (e.g. Feb 30 -> Mar 1)
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+  return date;
+}
+
+export function formatDateToString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+export function formatDateForDisplay(dateStr: unknown): string {
+  if (!dateStr) return "";
+  const date = parseLocalDate(dateStr);
+  if (!date) return typeof dateStr === "string" ? dateStr : "";
+  return date.toLocaleDateString();
+}
+
+export function formatFileSize(bytes: number): string {
+  if (bytes <= 0 || !Number.isFinite(bytes)) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.min(
+    sizes.length - 1,
+    Math.floor(Math.log(bytes) / Math.log(k)),
+  );
+  return `${Number.parseFloat((bytes / k ** i).toFixed(1))} ${sizes[i]}`;
+}
+
+export function getFileIcon(
+  type: string,
+): React.ComponentType<React.SVGProps<SVGSVGElement>> {
+  if (type.startsWith("image/")) return FileImage;
+  if (type.startsWith("video/")) return FileVideo;
+  if (type.startsWith("audio/")) return FileAudio;
+  if (type.includes("pdf")) return FileText;
+  if (type.includes("zip") || type.includes("rar")) return FileArchive;
+  if (
+    type.includes("word") ||
+    type.includes("document") ||
+    type.includes("doc")
+  )
+    return FileText;
+  if (type.includes("sheet") || type.includes("excel") || type.includes("xls"))
+    return FileSpreadsheet;
+  if (
+    type.includes("presentation") ||
+    type.includes("powerpoint") ||
+    type.includes("ppt")
+  )
+    return Presentation;
+  return File;
 }

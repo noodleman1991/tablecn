@@ -8,20 +8,11 @@ import type {
   Table,
 } from "@tanstack/react-table";
 import {
-  BaselineIcon,
-  CalendarIcon,
-  CheckSquareIcon,
   ChevronDownIcon,
   ChevronUpIcon,
   EyeOffIcon,
-  FileIcon,
-  HashIcon,
-  LinkIcon,
-  ListChecksIcon,
-  ListIcon,
   PinIcon,
   PinOffIcon,
-  TextInitialIcon,
   XIcon,
 } from "lucide-react";
 import * as React from "react";
@@ -39,36 +30,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { getColumnVariant } from "@/lib/data-grid";
 import { cn } from "@/lib/utils";
-import type { CellOpts } from "@/types/data-grid";
-
-function getColumnVariant(variant?: CellOpts["variant"]): {
-  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-  label: string;
-} | null {
-  switch (variant) {
-    case "short-text":
-      return { icon: BaselineIcon, label: "Short text" };
-    case "long-text":
-      return { icon: TextInitialIcon, label: "Long text" };
-    case "number":
-      return { icon: HashIcon, label: "Number" };
-    case "url":
-      return { icon: LinkIcon, label: "URL" };
-    case "checkbox":
-      return { icon: CheckSquareIcon, label: "Checkbox" };
-    case "select":
-      return { icon: ListIcon, label: "Select" };
-    case "multi-select":
-      return { icon: ListChecksIcon, label: "Multi-select" };
-    case "date":
-      return { icon: CalendarIcon, label: "Date" };
-    case "file":
-      return { icon: FileIcon, label: "File" };
-    default:
-      return null;
-  }
-}
 
 interface DataGridColumnHeaderProps<TData, TValue>
   extends React.ComponentProps<typeof DropdownMenuTrigger> {
@@ -156,7 +119,7 @@ export function DataGridColumnHeader<TData, TValue>({
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger
           className={cn(
             "flex size-full items-center justify-between gap-2 p-2 text-sm hover:bg-accent/40 data-[state=open]:bg-accent/40 [&_svg]:size-4",
@@ -187,7 +150,7 @@ export function DataGridColumnHeader<TData, TValue>({
               <DropdownMenuCheckboxItem
                 className="relative ltr:pr-8 ltr:pl-2 rtl:pr-2 rtl:pl-8 [&>span:first-child]:ltr:right-2 [&>span:first-child]:ltr:left-auto [&>span:first-child]:rtl:right-auto [&>span:first-child]:rtl:left-2 [&_svg]:text-muted-foreground"
                 checked={column.getIsSorted() === "asc"}
-                onClick={() => onSortingChange("asc")}
+                onSelect={() => onSortingChange("asc")}
               >
                 <ChevronUpIcon />
                 Sort asc
@@ -195,13 +158,13 @@ export function DataGridColumnHeader<TData, TValue>({
               <DropdownMenuCheckboxItem
                 className="relative ltr:pr-8 ltr:pl-2 rtl:pr-2 rtl:pl-8 [&>span:first-child]:ltr:right-2 [&>span:first-child]:ltr:left-auto [&>span:first-child]:rtl:right-auto [&>span:first-child]:rtl:left-2 [&_svg]:text-muted-foreground"
                 checked={column.getIsSorted() === "desc"}
-                onClick={() => onSortingChange("desc")}
+                onSelect={() => onSortingChange("desc")}
               >
                 <ChevronDownIcon />
                 Sort desc
               </DropdownMenuCheckboxItem>
               {column.getIsSorted() && (
-                <DropdownMenuItem onClick={onSortRemove}>
+                <DropdownMenuItem onSelect={onSortRemove}>
                   <XIcon />
                   Remove sort
                 </DropdownMenuItem>
@@ -215,7 +178,7 @@ export function DataGridColumnHeader<TData, TValue>({
               {isPinnedLeft ? (
                 <DropdownMenuItem
                   className="[&_svg]:text-muted-foreground"
-                  onClick={onUnpin}
+                  onSelect={onUnpin}
                 >
                   <PinOffIcon />
                   Unpin from left
@@ -223,7 +186,7 @@ export function DataGridColumnHeader<TData, TValue>({
               ) : (
                 <DropdownMenuItem
                   className="[&_svg]:text-muted-foreground"
-                  onClick={onLeftPin}
+                  onSelect={onLeftPin}
                 >
                   <PinIcon />
                   Pin to left
@@ -232,7 +195,7 @@ export function DataGridColumnHeader<TData, TValue>({
               {isPinnedRight ? (
                 <DropdownMenuItem
                   className="[&_svg]:text-muted-foreground"
-                  onClick={onUnpin}
+                  onSelect={onUnpin}
                 >
                   <PinOffIcon />
                   Unpin from right
@@ -240,7 +203,7 @@ export function DataGridColumnHeader<TData, TValue>({
               ) : (
                 <DropdownMenuItem
                   className="[&_svg]:text-muted-foreground"
-                  onClick={onRightPin}
+                  onSelect={onRightPin}
                 >
                   <PinIcon />
                   Pin to right
@@ -253,7 +216,7 @@ export function DataGridColumnHeader<TData, TValue>({
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="[&_svg]:text-muted-foreground"
-                onClick={() => column.toggleVisibility(false)}
+                onSelect={() => column.toggleVisibility(false)}
               >
                 <EyeOffIcon />
                 Hide column
@@ -314,7 +277,7 @@ function DataGridColumnResizerImpl<TData, TValue>({
       aria-valuemax={defaultColumnDef.maxSize}
       tabIndex={0}
       className={cn(
-        "after:-translate-x-1/2 -end-px absolute top-0 z-50 h-full w-0.5 cursor-ew-resize touch-none select-none bg-border transition-opacity after:absolute after:inset-y-0 after:start-1/2 after:h-full after:w-[18px] after:content-[''] hover:bg-primary focus:bg-primary focus:outline-none",
+        "absolute -end-px top-0 z-50 h-full w-0.5 cursor-ew-resize touch-none select-none bg-border transition-opacity after:absolute after:inset-y-0 after:start-1/2 after:h-full after:w-[18px] after:-translate-x-1/2 after:content-[''] hover:bg-primary focus:bg-primary focus:outline-none",
         header.column.getIsResizing()
           ? "bg-primary"
           : "opacity-0 hover:opacity-100",

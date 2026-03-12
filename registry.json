@@ -378,6 +378,10 @@
           "target": "src/components/data-grid/data-grid-search.tsx"
         },
         {
+          "path": "src/hooks/use-as-ref.ts",
+          "type": "registry:hook"
+        },
+        {
           "path": "src/hooks/use-badge-overflow.ts",
           "type": "registry:hook"
         },
@@ -394,6 +398,14 @@
           "type": "registry:hook"
         },
         {
+          "path": "src/hooks/use-isomorphic-layout-effect.ts",
+          "type": "registry:hook"
+        },
+        {
+          "path": "src/hooks/use-lazy-ref.ts",
+          "type": "registry:hook"
+        },
+        {
           "path": "src/lib/compose-refs.ts",
           "type": "registry:lib"
         },
@@ -405,6 +417,21 @@
           "path": "src/types/data-grid.ts",
           "type": "registry:file",
           "target": "src/types/data-grid.ts"
+        }
+      ]
+    },
+    {
+      "name": "data-grid-select-column",
+      "type": "registry:component",
+      "title": "Data Grid Select Column",
+      "description": "A reusable select column definition for the data grid with checkbox selection and shift-click support",
+      "registryDependencies": ["checkbox"],
+      "dependencies": ["@tanstack/react-table"],
+      "files": [
+        {
+          "path": "src/components/data-grid/data-grid-select-column.tsx",
+          "type": "registry:component",
+          "target": "src/components/data-grid/data-grid-select-column.tsx"
         }
       ]
     },
@@ -542,6 +569,43 @@
           "path": "src/types/data-grid.ts",
           "type": "registry:file",
           "target": "src/types/data-grid.ts"
+        }
+      ]
+    },
+    {
+      "name": "data-grid-skeleton",
+      "type": "registry:component",
+      "title": "Data Grid Skeleton",
+      "description": "A composable skeleton component for the data grid with toolbar and grid parts",
+      "registryDependencies": ["skeleton"],
+      "dependencies": [],
+      "files": [
+        {
+          "path": "src/components/data-grid/data-grid-skeleton.tsx",
+          "type": "registry:component",
+          "target": "src/components/data-grid/data-grid-skeleton.tsx"
+        }
+      ]
+    },
+    {
+      "name": "use-data-grid-undo-redo",
+      "type": "registry:hook",
+      "title": "Use Data Grid Undo Redo",
+      "description": "An undo/redo hook for the data grid with keyboard shortcuts and history management",
+      "registryDependencies": [],
+      "dependencies": ["sonner"],
+      "files": [
+        {
+          "path": "src/hooks/use-data-grid-undo-redo.ts",
+          "type": "registry:hook"
+        },
+        {
+          "path": "src/hooks/use-as-ref.ts",
+          "type": "registry:hook"
+        },
+        {
+          "path": "src/hooks/use-lazy-ref.ts",
+          "type": "registry:hook"
         }
       ]
     }

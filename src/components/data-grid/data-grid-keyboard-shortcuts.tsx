@@ -28,17 +28,31 @@ interface ShortcutGroup {
 
 interface DataGridKeyboardShortcutsProps {
   enableSearch?: boolean;
+  enableUndoRedo?: boolean;
+  enablePaste?: boolean;
+  enableRowAdd?: boolean;
+  enableRowsDelete?: boolean;
 }
 
 export const DataGridKeyboardShortcuts = React.memo(
   DataGridKeyboardShortcutsImpl,
   (prev, next) => {
-    return prev.enableSearch === next.enableSearch;
+    return (
+      prev.enableSearch === next.enableSearch &&
+      prev.enableUndoRedo === next.enableUndoRedo &&
+      prev.enablePaste === next.enablePaste &&
+      prev.enableRowAdd === next.enableRowAdd &&
+      prev.enableRowsDelete === next.enableRowsDelete
+    );
   },
 );
 
 function DataGridKeyboardShortcutsImpl({
   enableSearch = false,
+  enableUndoRedo = false,
+  enablePaste = false,
+  enableRowAdd = false,
+  enableRowsDelete = false,
 }: DataGridKeyboardShortcutsProps) {
   const dir = useDirection();
   const [open, setOpen] = React.useState(false);
@@ -202,10 +216,14 @@ function DataGridKeyboardShortcutsImpl({
             keys: ["Double Click"],
             description: "Start editing cell",
           },
-          {
-            keys: ["Shift", "Enter"],
-            description: "Insert row below",
-          },
+          ...(enableRowAdd
+            ? [
+                {
+                  keys: ["Shift", "Enter"],
+                  description: "Insert row below",
+                },
+              ]
+            : []),
           {
             keys: [modKey, "C"],
             description: "Copy selected cells",
@@ -214,10 +232,14 @@ function DataGridKeyboardShortcutsImpl({
             keys: [modKey, "X"],
             description: "Cut selected cells",
           },
-          {
-            keys: [modKey, "V"],
-            description: "Paste cells",
-          },
+          ...(enablePaste
+            ? [
+                {
+                  keys: [modKey, "V"],
+                  description: "Paste cells",
+                },
+              ]
+            : []),
           {
             keys: ["Delete"],
             description: "Clear selected cells",
@@ -226,10 +248,30 @@ function DataGridKeyboardShortcutsImpl({
             keys: ["Backspace"],
             description: "Clear selected cells",
           },
-          {
-            keys: [modKey, "Backspace"],
-            description: "Delete selected rows",
-          },
+          ...(enableRowsDelete
+            ? [
+                {
+                  keys: [modKey, "Backspace"],
+                  description: "Delete selected rows",
+                },
+                {
+                  keys: [modKey, "Delete"],
+                  description: "Delete selected rows",
+                },
+              ]
+            : []),
+          ...(enableUndoRedo
+            ? [
+                {
+                  keys: [modKey, "Z"],
+                  description: "Undo last action",
+                },
+                {
+                  keys: [modKey, "Shift", "Z"],
+                  description: "Redo last action",
+                },
+              ]
+            : []),
         ],
       },
       ...(enableSearch
@@ -301,7 +343,14 @@ function DataGridKeyboardShortcutsImpl({
         ],
       },
     ],
-    [modKey, enableSearch],
+    [
+      modKey,
+      enableSearch,
+      enableUndoRedo,
+      enablePaste,
+      enableRowAdd,
+      enableRowsDelete,
+    ],
   );
 
   const filteredGroups = React.useMemo(() => {
@@ -356,7 +405,7 @@ function DataGridKeyboardShortcutsImpl({
         </DialogHeader>
         <div className="px-6">
           <div className="relative">
-            <SearchIcon className="-translate-y-1/2 absolute start-3 top-1/2 size-3.5 text-muted-foreground" />
+            <SearchIcon className="absolute start-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               ref={inputRef}
               placeholder="Search shortcuts..."

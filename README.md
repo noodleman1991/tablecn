@@ -1,78 +1,113 @@
-# Event Check-In UI for WooCommerce
+# [tablecn](https://tablecn.com)
 
-A system that tracks events and attendance for the Kairos London community.
-It syncs ticket data from WooCommerce, handles check-ins at events, calculates
-who qualifies as an active community member, and keeps the email list in sync.
+This is a shadcn table component with server-side sorting, filtering, and pagination. It is bootstrapped with `create-t3-app`.
 
-## How It Works
+[![tablecn](./public/images/screenshot.png)](https://tablecn.com)
 
-### Events
-- Events are discovered automatically from WooCommerce products (hourly cron)
-- Each event maps to a WooCommerce product
-- Sometimes the same event has multiple products (members-only link,
-  additional booking link when the first sells out) — these get merged
-  into one event automatically
+[![Vercel OSS Program](https://vercel.com/oss/program-badge.svg)](https://vercel.com/oss)
 
-### Event Merging Rules
+## Documentation
 
-**Events that DO get merged (same date required):**
-- A regular product + its "members only" variant → merged
-- A regular product + an "additional booking link" → merged (90%+ name similarity)
-
-**Events that NEVER merge** (recurring series where each instance is different):
-- Sunday Reading Room
-- Friday Drinks
-- Book Club
-- Movie Nights
-- Sewing Club
-- Open Projects Night
-- Workshops
-- Screenings
-- Lunchtime Video
-
-### Attendance
-- Attendees are synced from WooCommerce orders per event
-- Each ticket purchaser becomes an attendee record
-- Check-in happens manually at the event (UI toggle)
-- Only checked-in attendees count toward membership
-
-### Community Membership Calculation
-Someone becomes an **active member** when:
-1. They've attended (checked in at) **3 or more events total** (all-time)
-2. **AND** at least 1 of those events was in the **last 9 months**
-
-Membership expires 9 months after their last qualifying event.
-
-**Events excluded from the count** (social/casual events):
-- Walks, parties, drinks
-- Seasonal celebrations (e.g. "Winter Celebration", "Summer Party")
-
-Members can also be added manually with a custom expiry date.
-
-### Email Sync
-Active member status syncs to Loops.so for the email newsletter list.
-Weekly full sync runs Sundays at 6am UTC.
+See the [documentation](https://diceui.com/docs/components/data-table) to get started.
 
 ## Tech Stack
-- Next.js (App Router)
-- PostgreSQL + Drizzle ORM
-- WooCommerce REST API (ticket/order source)
-- Loops.so (email marketing sync)
-- Stack.com (authentication)
-- Vercel (hosting + cron)
+
+- **Framework:** [Next.js](https://nextjs.org)
+- **Styling:** [Tailwind CSS](https://tailwindcss.com)
+- **UI Components:** [shadcn/ui](https://ui.shadcn.com)
+- **Table package:** [TanStack/react-table](https://tanstack.com/table/latest)
+- **Database:** [PlanetScale](https://planetscale.com)
+- **ORM:** [Drizzle ORM](https://orm.drizzle.team)
+- **Validation:** [Zod](https://zod.dev)
+
+## Features
+
+- [x] Server-side pagination, sorting, and filtering
+- [x] Customizable columns
+- [x] Auto generated filters from column definitions
+- [x] Dynamic `Data-Table-Toolbar` with search, filters, and actions
+- [x] `Notion/Airtable` like advanced filtering
+- [x] `Linear` like filter menu for command palette filtering
+- [x] Action bar on row selection
 
 ## Running Locally
-1. Clone and install: `pnpm install`
-2. Copy `.env.example` to `.env` and fill in credentials
-3. Start Postgres: `pnpm db:start` (Docker) or use your own
-4. Set up schema: `pnpm db:setup`
-5. Run: `pnpm dev`
 
-## Cron Jobs (Vercel)
-| Job | Schedule | What it does |
-|-----|----------|-------------|
-| discover-events | Hourly | Finds new events in WooCommerce, runs merge |
-| recalculate-memberships | Hourly | Recalculates membership for recently ended events |
-| send-email-reminders | Daily 9am UTC | Sends event reminders |
-| cleanup-cache | Every 6 hours | Clears stale cache entries |
-| weekly-membership-sync | Sundays 6am UTC | Full membership sync to Loops.so |
+### Quick Setup (with docker)
+
+1. **Clone the repository**
+
+   ```bash
+   git clone https://github.com/sadmann7/tablecn
+   cd tablecn
+   ```
+
+2. **Copy the environment variables**
+
+   ```bash
+   cp .env.example .env
+   ```
+
+3. **Run the setup**
+
+   ```bash
+   pnpm ollie
+   ```
+
+   This will install dependencies, start the Docker PostgreSQL instance, set up the database schema, and seed it with sample data.
+
+### Manual Setup
+
+1. **Clone the repository**
+
+   ```bash
+   git clone https://github.com/sadmann7/tablecn
+   cd tablecn
+   ```
+
+2. **Install dependencies**
+
+   ```bash
+   pnpm install
+   ```
+
+3. **Set up environment variables**
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Update the `.env` file with your database credentials.
+
+4. **Choose your database approach:**
+
+   **Option A: Use Docker PostgreSQL**
+
+   ```bash
+   # Start PostgreSQL container
+   pnpm db:start
+   
+   # Set up database schema and seed data
+   pnpm db:setup
+   
+   # Start development server
+   pnpm dev
+   ```
+
+   **Option B: Use existing PostgreSQL database**
+
+   ```bash
+   # Update .env with your database URL
+   # Then set up database schema and seed data
+   pnpm db:setup
+   
+   # Start development server
+   pnpm dev
+   ```
+
+## How do I deploy this?
+
+Follow the deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
+
+## Credits
+
+- [shadcn/ui](https://github.com/shadcn-ui/ui/tree/main/apps/v4/app/(app)/examples/tasks) - For the initial implementation of the data table.

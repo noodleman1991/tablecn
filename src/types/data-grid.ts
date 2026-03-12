@@ -49,7 +49,7 @@ export type CellOpts =
       multiple?: boolean;
     };
 
-export interface UpdateCell {
+export interface CellUpdate {
   rowIndex: number;
   columnId: string;
   value: unknown;
@@ -70,18 +70,14 @@ declare module "@tanstack/react-table" {
     editingCell?: CellPosition | null;
     selectionState?: SelectionState;
     searchOpen?: boolean;
-    readOnly?: boolean;
     getIsCellSelected?: (rowIndex: number, columnId: string) => boolean;
     getIsSearchMatch?: (rowIndex: number, columnId: string) => boolean;
     getIsActiveSearchMatch?: (rowIndex: number, columnId: string) => boolean;
+    getVisualRowIndex?: (rowId: string) => number | undefined;
     rowHeight?: RowHeightValue;
     onRowHeightChange?: (value: RowHeightValue) => void;
-    onRowSelect?: (
-      rowIndex: number,
-      checked: boolean,
-      shiftKey: boolean,
-    ) => void;
-    onDataUpdate?: (params: UpdateCell | Array<UpdateCell>) => void;
+    onRowSelect?: (rowId: string, checked: boolean, shiftKey: boolean) => void;
+    onDataUpdate?: (params: CellUpdate | Array<CellUpdate>) => void;
     onRowsDelete?: (rowIndices: number[]) => void | Promise<void>;
     onColumnClick?: (columnId: string) => void;
     onCellClick?: (
@@ -95,11 +91,7 @@ declare module "@tanstack/react-table" {
       columnId: string,
       event: React.MouseEvent,
     ) => void;
-    onCellMouseEnter?: (
-      rowIndex: number,
-      columnId: string,
-      event: React.MouseEvent,
-    ) => void;
+    onCellMouseEnter?: (rowIndex: number, columnId: string) => void;
     onCellMouseUp?: () => void;
     onCellContextMenu?: (
       rowIndex: number,
@@ -113,6 +105,8 @@ declare module "@tanstack/react-table" {
     }) => void;
     onCellsCopy?: () => void;
     onCellsCut?: () => void;
+    onCellsPaste?: (expand?: boolean) => void;
+    onSelectionClear?: () => void;
     onFilesUpload?: (params: {
       files: File[];
       rowIndex: number;
@@ -127,8 +121,7 @@ declare module "@tanstack/react-table" {
     onContextMenuOpenChange?: (open: boolean) => void;
     pasteDialog?: PasteDialogState;
     onPasteDialogOpenChange?: (open: boolean) => void;
-    onPasteWithExpansion?: () => void;
-    onPasteWithoutExpansion?: () => void;
+    readOnly?: boolean;
   }
 }
 
@@ -193,6 +186,7 @@ export interface DataGridCellProps<TData> {
   tableMeta: TableMeta<TData>;
   rowIndex: number;
   columnId: string;
+  rowHeight: RowHeightValue;
   isEditing: boolean;
   isFocused: boolean;
   isSelected: boolean;
@@ -226,7 +220,7 @@ export type NumberFilterOperator =
   | "lessThanOrEqual"
   | "greaterThan"
   | "greaterThanOrEqual"
-  | "between"
+  | "isBetween"
   | "isEmpty"
   | "isNotEmpty";
 
@@ -237,7 +231,7 @@ export type DateFilterOperator =
   | "after"
   | "onOrBefore"
   | "onOrAfter"
-  | "between"
+  | "isBetween"
   | "isEmpty"
   | "isNotEmpty";
 
