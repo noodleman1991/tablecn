@@ -41,7 +41,22 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+
+# Backups & data exports
+*.backup
+backups/
+backup-*.json
+
+# Logs
+*.log
+
+# Data exports
 *.csv
+
+# One-off scripts
+*.mjs
+
+# Local files
 skills.md
 
 # manual fix scripts (one-time data fixes, not part of the app)
