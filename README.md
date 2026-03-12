@@ -1,4 +1,4 @@
-# Kairos London — Event & Community Management
+# Event Check-In UI for WooCommerce
 
 A system that tracks events and attendance for the Kairos London community.
 It syncs ticket data from WooCommerce, handles check-ins at events, calculates
