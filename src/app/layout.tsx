@@ -53,7 +53,7 @@ export const metadata: Metadata = {
     images: [`${siteConfig.url}/og.jpg`],
   },
   icons: {
-    icon: "/icon.png",
+    icon: "/icon.svg",
   },
 };
 
