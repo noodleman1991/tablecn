@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 
 interface MemberMatchDialogProps {
   open: boolean;
@@ -23,6 +24,7 @@ interface MemberMatchDialogProps {
     firstName: string;
     lastName: string;
   }>;
+  swapDetected?: boolean;
 }
 
 export function MemberMatchDialog({
@@ -30,6 +32,7 @@ export function MemberMatchDialog({
   onOpenChange,
   attendeeId,
   possibleMatches,
+  swapDetected,
 }: MemberMatchDialogProps) {
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
@@ -57,6 +60,11 @@ export function MemberMatchDialog({
             This attendee's details match multiple community members. Please
             select the correct member to count this attendance for.
           </DialogDescription>
+          {swapDetected && (
+            <Badge variant="outline" className="mt-2 border-yellow-500 bg-yellow-50 text-yellow-800">
+              Possible name swap detected
+            </Badge>
+          )}
         </DialogHeader>
 
         <RadioGroup

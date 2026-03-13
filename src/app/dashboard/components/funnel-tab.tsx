@@ -84,7 +84,14 @@ export function FunnelTab({ period }: FunnelTabProps) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Funnel</CardTitle>
+        <div>
+          <CardTitle>Funnel</CardTitle>
+          <p className="text-sm text-muted-foreground mt-1">
+            {new Date(period.from).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+            {" – "}
+            {new Date(period.to).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+          </p>
+        </div>
         <div className="flex gap-1">
           <Button
             variant={viewMode === "event" ? "default" : "outline"}
@@ -118,7 +125,18 @@ export function FunnelTab({ period }: FunnelTabProps) {
                   <TableHead className="text-right">Date</TableHead>
                   <TableHead className="text-right">Orders</TableHead>
                   <TableHead className="text-right">Tickets</TableHead>
-                  <TableHead className="text-right">Valid</TableHead>
+                  <TableHead className="text-right">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="cursor-help underline decoration-dotted">Valid</span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs max-w-[200px]">Tickets with non-cancelled order status (excludes cancelled, refunded, and deleted orders).</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </TableHead>
                   <TableHead className="min-w-[160px]">Checked In</TableHead>
                   <TableHead className="text-right">Members</TableHead>
                   <TableHead className="text-right">Revenue</TableHead>
@@ -134,7 +152,7 @@ export function FunnelTab({ period }: FunnelTabProps) {
                 ) : (
                   eventData.map((row) => (
                     <TableRow key={row.eventId}>
-                      <TableCell className="font-medium max-w-[200px] truncate">
+                      <TableCell className="font-medium whitespace-normal">
                         {row.eventName}
                       </TableCell>
                       <TableCell className="text-right text-sm text-muted-foreground">
@@ -180,7 +198,18 @@ export function FunnelTab({ period }: FunnelTabProps) {
                   <TableHead className="text-right">Events</TableHead>
                   <TableHead className="text-right">Orders</TableHead>
                   <TableHead className="text-right">Tickets</TableHead>
-                  <TableHead className="text-right">Valid</TableHead>
+                  <TableHead className="text-right">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="cursor-help underline decoration-dotted">Valid</span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs max-w-[200px]">Tickets with non-cancelled order status (excludes cancelled, refunded, and deleted orders).</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </TableHead>
                   <TableHead className="min-w-[160px]">Checked In</TableHead>
                   <TableHead className="text-right">Members</TableHead>
                   <TableHead className="text-right">Revenue</TableHead>

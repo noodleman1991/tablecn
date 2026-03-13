@@ -15,11 +15,12 @@ import type { Member } from "@/db/schema";
 interface MemberActionsCellProps {
   member: Member;
   onStatusChange: (member: Member) => void;
+  onSwapName: (member: Member) => void;
   onDelete: (member: Member) => void;
 }
 
 export const MemberActionsCell = React.memo(
-  ({ member, onStatusChange, onDelete }: MemberActionsCellProps) => {
+  ({ member, onStatusChange, onSwapName, onDelete }: MemberActionsCellProps) => {
     const [isPending, startTransition] = React.useTransition();
 
     return (
@@ -41,6 +42,11 @@ export const MemberActionsCell = React.memo(
           >
             Change Status
           </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => startTransition(() => onSwapName(member))}
+          >
+            Swap First/Last Name
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => startTransition(() => onDelete(member))}
@@ -53,7 +59,6 @@ export const MemberActionsCell = React.memo(
     );
   },
   (prevProps, nextProps) => {
-    // Only re-render if this specific member's id changed
     return prevProps.member.id === nextProps.member.id;
   }
 );

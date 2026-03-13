@@ -287,6 +287,77 @@ export async function removeMemberFromLoops(
 }
 
 /**
+ * Send an event to Loops.so to trigger a Loop
+ *
+ * @param email - Contact email address
+ * @param eventName - Name of the event (must match Loop trigger in Loops dashboard)
+ * @param eventProperties - Optional event properties for personalization
+ * @returns success status and optional error message
+ */
+export async function sendLoopsEvent(
+  email: string,
+  eventName: string,
+  eventProperties?: Record<string, string | number | boolean>
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await loopsApiRequest("/events/send", "POST", {
+      email,
+      eventName,
+      eventProperties,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+
+    console.log(`[Loops] Successfully sent event "${eventName}" for ${email}`);
+    return { success: true };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[Loops] Failed to send event "${eventName}" for ${email}:`, errorMessage);
+    return { success: false, error: errorMessage };
+  }
+}
+
+/**
+ * Send a transactional email via Loops.so
+ *
+ * @param email - Recipient email address
+ * @param transactionalId - Template ID from Loops dashboard
+ * @param dataVariables - Variables for template personalization
+ * @param attachments - Optional file attachments
+ * @returns success status and optional error message
+ */
+export async function sendLoopsTransactionalEmail(
+  email: string,
+  transactionalId: string,
+  dataVariables?: Record<string, string>,
+  attachments?: Array<{ filename: string; contentType: string; data: string }>
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await loopsApiRequest("/transactional", "POST", {
+      email,
+      transactionalId,
+      dataVariables,
+      attachments,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+
+    console.log(`[Loops] Successfully sent transactional email to ${email}`);
+    return { success: true };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[Loops] Failed to send transactional email to ${email}:`, errorMessage);
+    return { success: false, error: errorMessage };
+  }
+}
+
+/**
  * Test Loops API connection
  *
  * @returns true if API key is valid

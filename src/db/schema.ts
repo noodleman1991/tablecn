@@ -75,6 +75,7 @@ export const attendees = pgTable("attendees", {
   bookerLastName: varchar("booker_last_name", { length: 128 }),   // Order purchaser's last name
   bookerEmail: varchar("booker_email", { length: 255 }),           // Order purchaser's email
   locallyModified: boolean("locally_modified").notNull().default(false),
+  orderTotal: real("order_total"),
   manuallyAdded: boolean("manually_added").notNull().default(false),
   checkedIn: boolean("checked_in").notNull().default(false),
   checkedInAt: timestamp("checked_in_at"),
@@ -135,10 +136,9 @@ export const emailLogs = pgTable("email_logs", {
   memberId: varchar("member_id", { length: 30 }).notNull(),
   emailType: varchar("email_type", {
     length: 50,
-    enum: ["membership_expiry_30_days"],
+    enum: ["membership_expiring_loop"],
   }).notNull(),
   sentAt: timestamp("sent_at").defaultNow().notNull(),
-  resendId: varchar("resend_id", { length: 255 }),
   status: varchar("status", {
     length: 30,
     enum: ["sent", "failed"],
@@ -194,3 +194,36 @@ export const loopsSyncLog = pgTable("loops_sync_log", {
 
 export type LoopsSyncLog = typeof loopsSyncLog.$inferSelect;
 export type NewLoopsSyncLog = typeof loopsSyncLog.$inferInsert;
+
+// Validation results table
+export const validationResults = pgTable("validation_results", {
+  id: varchar("id", { length: 30 })
+    .$defaultFn(() => generateId())
+    .primaryKey(),
+  runAt: timestamp("run_at").notNull(),
+  mode: varchar("mode", { length: 10 }).notNull(), // 'quick' | 'deep'
+  periodFrom: timestamp("period_from").notNull(),
+  periodTo: timestamp("period_to").notNull(),
+  results: jsonb("results").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type ValidationResult = typeof validationResults.$inferSelect;
+export type NewValidationResult = typeof validationResults.$inferInsert;
+
+// Product swap map table - tracks which WooCommerce products have swapped first/last name fields
+export const productSwapMap = pgTable("product_swap_map", {
+  productId: varchar("product_id", { length: 128 }).primaryKey(),
+  isSwapped: boolean("is_swapped").notNull().default(false),
+  detectionMethod: varchar("detection_method", { length: 20 })
+    .$type<"self_purchase" | "cross_reference" | "manual_override">()
+    .notNull(),
+  confidence: real("confidence").notNull().default(1.0),
+  detectedAt: timestamp("detected_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .default(sql`current_timestamp`)
+    .$onUpdate(() => new Date()),
+});
+
+export type ProductSwapMap = typeof productSwapMap.$inferSelect;
+export type NewProductSwapMap = typeof productSwapMap.$inferInsert;

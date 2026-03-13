@@ -13,6 +13,7 @@ import { MemberActionsCell } from "./member-actions-cell";
 interface MembersTableHandlers {
   onUpdateMember: (memberId: string, field: string, value: string) => Promise<void>;
   onStatusChange: (member: Member) => void;
+  onSwapName: (member: Member) => void;
   onDelete: (member: Member) => void;
 }
 
@@ -210,6 +211,7 @@ export function getMembersTableColumns(
         <MemberActionsCell
           member={row.original}
           onStatusChange={handlers.onStatusChange}
+          onSwapName={handlers.onSwapName}
           onDelete={handlers.onDelete}
         />
       ),

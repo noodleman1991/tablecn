@@ -11,10 +11,7 @@ const AttendanceTrendChart = dynamic(
   () => import("./charts/attendance-trend-chart").then((m) => m.AttendanceTrendChart),
   { ssr: false, loading: () => <Skeleton className="h-[300px] w-full" /> },
 );
-const CheckinRateChart = dynamic(
-  () => import("./charts/checkin-rate-chart").then((m) => m.CheckinRateChart),
-  { ssr: false, loading: () => <Skeleton className="h-[300px] w-full" /> },
-);
+
 const TicketTypeChart = dynamic(
   () => import("./charts/ticket-type-chart").then((m) => m.TicketTypeChart),
   { ssr: false, loading: () => <Skeleton className="h-[300px] w-full" /> },
@@ -85,15 +82,6 @@ export function AnalyticsTab({ period }: AnalyticsTabProps) {
         </CardHeader>
         <CardContent>
           <AttendanceTrendChart data={data.attendanceTrend} />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Check-in Rate</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <CheckinRateChart data={data.checkinRateTrend} />
         </CardContent>
       </Card>
 

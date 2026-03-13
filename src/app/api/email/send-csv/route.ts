@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Resend } from "resend";
 import { env } from "@/env";
 import { requireAuth } from "@/lib/auth";
-
-const resend = new Resend(env.RESEND_API_KEY);
+import { sendLoopsTransactionalEmail } from "@/lib/loops-sync";
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,33 +17,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!env.LOOPS_CSV_EXPORT_TRANSACTIONAL_ID) {
+      return NextResponse.json(
+        { error: "LOOPS_CSV_EXPORT_TRANSACTIONAL_ID is not configured" },
+        { status: 500 }
+      );
+    }
+
     // Convert CSV to base64 for attachment
     const csvBuffer = Buffer.from(csvContent, 'utf-8');
     const base64Csv = csvBuffer.toString('base64');
 
-    const { data, error } = await resend.emails.send({
-      from: "Events <noreply@kairos.london>",
-      to: recipientEmail || "events@kairos.london",
-      subject: `Community Members List - ${new Date().toLocaleDateString()}`,
-      html: `
-        <h2>Community Members List</h2>
-        <p>Please find the community members CSV file attached.</p>
-        <p>Generated on: ${new Date().toLocaleString()}</p>
-      `,
-      attachments: [
+    const result = await sendLoopsTransactionalEmail(
+      recipientEmail || "events@kairos.london",
+      env.LOOPS_CSV_EXPORT_TRANSACTIONAL_ID,
+      {
+        date: new Date().toLocaleDateString(),
+      },
+      [
         {
           filename,
-          content: base64Csv,
-          contentType: 'text/csv',
+          contentType: "text/csv",
+          data: base64Csv,
         },
       ],
-    });
+    );
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, emailId: data?.id });
+    return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },

@@ -27,6 +27,12 @@ export function SiteHeader() {
           >
             Community Members
           </Link>
+          <Link
+            href="/dashboard"
+            className="text-foreground/60 transition-colors hover:text-foreground"
+          >
+            Dashboard
+          </Link>
         </nav>
         <nav className="flex flex-1 items-center justify-end gap-2">
           <ModeToggle />

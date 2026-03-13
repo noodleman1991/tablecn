@@ -16,10 +16,9 @@ import type {
 const INVALID_STATUSES = ["cancelled", "refunded", "deleted"];
 
 function periodDates(period: PeriodFilter) {
-  return {
-    from: new Date(period.from).toISOString(),
-    to: new Date(period.to).toISOString(),
-  };
+  const from = period.from instanceof Date ? period.from : new Date(period.from);
+  const to = period.to instanceof Date ? period.to : new Date(period.to);
+  return { from, to };
 }
 
 // ─── Stats ────────────────────────────────────────────────────────────────────
@@ -52,7 +51,7 @@ export async function getDashboardStats(
     LEFT JOIN ${attendees} a ON a.event_id = pe.id
   `);
 
-  const row = statsRows.rows?.[0] ?? statsRows[0];
+  const row = statsRows[0];
   const eventsCount = parseInt(row?.events_count ?? "0");
   const ticketsCount = parseInt(row?.tickets_count ?? "0");
   const validTickets = parseInt(row?.valid_tickets ?? "0");
@@ -114,8 +113,6 @@ export async function getFunnelByEvent(
     ORDER BY e.event_date DESC
   `);
 
-  const rows = mainRows.rows ?? mainRows;
-
   // Ticket type breakdown
   const ticketRows = await db.execute<{
     event_id: string;
@@ -132,7 +129,7 @@ export async function getFunnelByEvent(
     GROUP BY a.event_id, a.ticket_type
   `);
   const ticketTypeMap = new Map<string, Record<string, number>>();
-  for (const tr of (ticketRows.rows ?? ticketRows) as any[]) {
+  for (const tr of ticketRows as any[]) {
     if (!ticketTypeMap.has(tr.event_id)) ticketTypeMap.set(tr.event_id, {});
     ticketTypeMap.get(tr.event_id)![tr.ticket_type] = parseInt(tr.cnt);
   }
@@ -153,11 +150,11 @@ export async function getFunnelByEvent(
     GROUP BY a.event_id
   `);
   const convMap = new Map<string, number>();
-  for (const cr of (convRows.rows ?? convRows) as any[]) {
+  for (const cr of convRows as any[]) {
     convMap.set(cr.event_id, parseInt(cr.cnt));
   }
 
-  return (rows as any[]).map((r) => {
+  return (mainRows as any[]).map((r) => {
     const validTickets = parseInt(r.valid_tickets);
     const checkedInCount = parseInt(r.checked_in_count);
     return {
@@ -207,8 +204,6 @@ export async function getFunnelByMonth(
     ORDER BY month DESC
   `);
 
-  const rows = mainRows.rows ?? mainRows;
-
   // Ticket type breakdown by month
   const ticketRows = await db.execute<{
     month: string;
@@ -228,7 +223,7 @@ export async function getFunnelByMonth(
     GROUP BY TO_CHAR(e.event_date, 'YYYY-MM'), a.ticket_type
   `);
   const ticketTypeMap = new Map<string, Record<string, number>>();
-  for (const tr of (ticketRows.rows ?? ticketRows) as any[]) {
+  for (const tr of ticketRows as any[]) {
     if (!ticketTypeMap.has(tr.month)) ticketTypeMap.set(tr.month, {});
     ticketTypeMap.get(tr.month)![tr.ticket_type] = parseInt(tr.cnt);
   }
@@ -251,11 +246,11 @@ export async function getFunnelByMonth(
     GROUP BY TO_CHAR(e.event_date, 'YYYY-MM')
   `);
   const convMap = new Map<string, number>();
-  for (const cr of (convRows.rows ?? convRows) as any[]) {
+  for (const cr of convRows as any[]) {
     convMap.set(cr.month, parseInt(cr.cnt));
   }
 
-  return (rows as any[]).map((r) => {
+  return (mainRows as any[]).map((r) => {
     const validTickets = parseInt(r.valid_tickets);
     const checkedInCount = parseInt(r.checked_in_count);
     return {
@@ -288,24 +283,6 @@ export async function getAnalyticsData(
   }>(sql`
     SELECT e.name, e.event_date::text,
       COUNT(a.id) FILTER (WHERE a.checked_in = true AND a.order_status NOT IN ('cancelled','refunded','deleted'))::text AS cnt
-    FROM ${events} e
-    LEFT JOIN ${attendees} a ON a.event_id = e.id
-    WHERE e.event_date >= ${from} AND e.event_date <= ${to}
-      AND e.merged_into_event_id IS NULL
-    GROUP BY e.id, e.name, e.event_date
-    ORDER BY e.event_date
-  `);
-
-  // Check-in rate trend
-  const checkinRateRows = await db.execute<{
-    name: string;
-    event_date: string;
-    valid: string;
-    checked: string;
-  }>(sql`
-    SELECT e.name, e.event_date::text,
-      COUNT(a.id) FILTER (WHERE a.order_status NOT IN ('cancelled','refunded','deleted'))::text AS valid,
-      COUNT(a.id) FILTER (WHERE a.checked_in = true AND a.order_status NOT IN ('cancelled','refunded','deleted'))::text AS checked
     FROM ${events} e
     LEFT JOIN ${attendees} a ON a.event_id = e.id
     WHERE e.event_date >= ${from} AND e.event_date <= ${to}
@@ -410,41 +387,30 @@ export async function getAnalyticsData(
     ORDER BY e.event_date
   `);
 
-  const asArr = (r: any) => r.rows ?? r;
-
   return {
-    attendanceTrend: (asArr(attendanceTrendRows) as any[]).map((r) => ({
+    attendanceTrend: (attendanceTrendRows as any[]).map((r) => ({
       eventName: r.name,
       date: r.event_date.split("T")[0] ?? r.event_date,
       count: parseInt(r.cnt),
     })),
-    checkinRateTrend: (asArr(checkinRateRows) as any[]).map((r) => {
-      const valid = parseInt(r.valid);
-      const checked = parseInt(r.checked);
-      return {
-        eventName: r.name,
-        date: r.event_date.split("T")[0] ?? r.event_date,
-        rate: valid > 0 ? Math.round((checked / valid) * 100) : 0,
-      };
-    }),
-    ticketTypeDistribution: (asArr(ticketTypeRows) as any[]).map((r) => ({
+    ticketTypeDistribution: (ticketTypeRows as any[]).map((r) => ({
       type: r.ticket_type,
       count: parseInt(r.cnt),
     })),
-    revenueTrend: (asArr(revenueTrendRows) as any[]).map((r) => ({
+    revenueTrend: (revenueTrendRows as any[]).map((r) => ({
       month: r.month,
       revenue: parseFloat(r.revenue),
     })),
-    topEvents: (asArr(topEventsRows) as any[]).map((r) => ({
+    topEvents: (topEventsRows as any[]).map((r) => ({
       eventName: r.name,
       count: parseInt(r.cnt),
     })),
-    topBuyers: (asArr(topBuyersRows) as any[]).map((r) => ({
+    topBuyers: (topBuyersRows as any[]).map((r) => ({
       email: r.email,
       name: r.name,
       count: parseInt(r.cnt),
     })),
-    newVsReturning: (asArr(newVsReturningRows) as any[]).map((r) => ({
+    newVsReturning: (newVsReturningRows as any[]).map((r) => ({
       eventName: r.name,
       date: r.event_date.split("T")[0] ?? r.event_date,
       newCount: parseInt(r.new_count),
@@ -470,7 +436,7 @@ export async function runQuickValidation(
       AND e.event_date >= ${from} AND e.event_date <= ${to}
       AND NOT EXISTS (SELECT 1 FROM ${attendees} a WHERE a.event_id = e.id)
   `);
-  const missingOrders = (missingOrderRows.rows ?? missingOrderRows) as any[];
+  const missingOrders = missingOrderRows as any[];
   checks.push({
     name: "Order Capture",
     status: missingOrders.length === 0 ? "pass" : "fail",
@@ -498,7 +464,7 @@ export async function runQuickValidation(
     GROUP BY a.event_id, e.name
     HAVING COUNT(*) FILTER (WHERE a.ticket_id LIKE '%-fallback-%') > 0
   `);
-  const fbArr = (fallbackRows.rows ?? fallbackRows) as any[];
+  const fbArr = fallbackRows as any[];
   const highFallback = fbArr.filter((r) => {
     const rate = parseInt(r.fallback_count) / parseInt(r.total);
     return rate > 0.2;
@@ -527,7 +493,7 @@ export async function runQuickValidation(
       AND e.merged_into_event_id IS NULL
       AND NOT EXISTS (SELECT 1 FROM ${members} m WHERE LOWER(m.email) = LOWER(a.email))
   `);
-  const gaps = (memberGapRows.rows ?? memberGapRows) as any[];
+  const gaps = memberGapRows as any[];
   checks.push({
     name: "Check-in to Members",
     status: gaps.length === 0 ? "pass" : "fail",
@@ -560,7 +526,7 @@ export async function runQuickValidation(
         AND a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted')
     `);
-    const countable = ((attended.rows ?? attended) as any[]).filter(
+    const countable = (attended as any[]).filter(
       (r) => !isSocialEvent(r.name),
     ).length;
     if (countable !== member.totalEventsAttended) {
@@ -602,7 +568,7 @@ export async function runQuickValidation(
         AND a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted')
     `);
-    const countableAll = ((allAttended.rows ?? allAttended) as any[]).filter(
+    const countableAll = (allAttended as any[]).filter(
       (r) => !isSocialEvent(r.name),
     ).length;
 
@@ -615,7 +581,7 @@ export async function runQuickValidation(
         AND a.order_status NOT IN ('cancelled','refunded','deleted')
         AND e.event_date >= ${nineMonthsAgo}
     `);
-    const countableRecent = ((recentAttended.rows ?? recentAttended) as any[]).filter(
+    const countableRecent = (recentAttended as any[]).filter(
       (r) => !isSocialEvent(r.name),
     ).length;
 
@@ -661,7 +627,7 @@ export async function runQuickValidation(
       (SELECT COUNT(*)::text FROM ${members} m
        WHERE NOT EXISTS (SELECT 1 FROM ${attendees} a WHERE LOWER(a.email) = LOWER(m.email))) AS orphan_members
   `);
-  const qr = (qualityRows.rows ?? qualityRows)[0] as any;
+  const qr = qualityRows[0] as any;
   const emptyEmail = parseInt(qr?.empty_email ?? "0");
   const emptyName = parseInt(qr?.empty_name ?? "0");
   const orphanMembers = parseInt(qr?.orphan_members ?? "0");
@@ -825,7 +791,7 @@ export async function runDeepValidation(
           AND order_status NOT IN ('cancelled','refunded','deleted')
       `);
       const dbTotal = parseFloat(
-        ((dbResult.rows ?? dbResult)[0] as any)?.total ?? "0",
+        (dbResult[0] as any)?.total ?? "0",
       );
 
       if (wcTotal > 0 && Math.abs(wcTotal - dbTotal) / wcTotal > 0.01) {

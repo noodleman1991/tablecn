@@ -1,10 +1,8 @@
 {
-  "version": "5",
-  "dialect": "pg",
-  "id": "ca108565-5b04-4cc9-a86c-6e3127824765",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
   "tables": {
-    "tasks": {
+    "public.tasks": {
       "name": "tasks",
       "schema": "",
       "columns": {
@@ -41,26 +39,32 @@
       },
       "indexes": {},
       "foreignKeys": {},
-      "compositePrimaryKeys": {}
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false,
+      "checkConstraints": {}
     }
   },
   "enums": {
-    "priority": {
+    "public.priority": {
       "name": "priority",
-      "values": {
-        "low": "low",
-        "medium": "medium",
-        "high": "high"
-      }
+      "schema": "public",
+      "values": [
+        "low",
+        "medium",
+        "high"
+      ]
     },
-    "status": {
+    "public.status": {
       "name": "status",
-      "values": {
-        "todo": "todo",
-        "in-progress": "in-progress",
-        "done": "done",
-        "canceled": "canceled"
-      }
+      "schema": "public",
+      "values": [
+        "todo",
+        "in-progress",
+        "done",
+        "canceled"
+      ]
     }
   },
   "schemas": {},
@@ -68,5 +72,11 @@
     "schemas": {},
     "tables": {},
     "columns": {}
-  }
+  },
+  "id": "ca108565-5b04-4cc9-a86c-6e3127824765",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "sequences": {},
+  "policies": {},
+  "views": {},
+  "roles": {}
 }

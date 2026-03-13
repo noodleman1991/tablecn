@@ -7,17 +7,19 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { Attendee } from "@/db/schema";
 
 interface AttendeeActionsCellProps {
   attendee: Attendee;
+  onSwapName?: (attendee: Attendee) => void;
   onDelete: (attendee: Attendee) => void;
 }
 
 export const AttendeeActionsCell = React.memo(
-  ({ attendee, onDelete }: AttendeeActionsCellProps) => {
+  ({ attendee, onSwapName, onDelete }: AttendeeActionsCellProps) => {
     const [isPending, startTransition] = React.useTransition();
 
     return (
@@ -34,6 +36,16 @@ export const AttendeeActionsCell = React.memo(
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          {onSwapName && (
+            <>
+              <DropdownMenuItem
+                onClick={() => startTransition(() => onSwapName(attendee))}
+              >
+                Swap First/Last Name
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
+          )}
           <DropdownMenuItem
             onClick={() => startTransition(() => onDelete(attendee))}
             className="text-destructive focus:text-destructive"
@@ -45,7 +57,6 @@ export const AttendeeActionsCell = React.memo(
     );
   },
   (prevProps, nextProps) => {
-    // Only re-render if this specific attendee's id changed
     return prevProps.attendee.id === nextProps.attendee.id;
   }
 );

@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { Attendee } from "@/db/schema";
-import { checkInAttendee, undoCheckIn, updateAttendeeDetails } from "@/app/actions";
+import { checkInAttendee, undoCheckIn, updateAttendeeDetails, swapAttendeeName } from "@/app/actions";
 import { AttendeeActionsCell } from "./attendee-actions-cell";
 import type { GroupedOrder } from "@/lib/attendee-grouping";
 import { getCheckInStatusDisplay, isActuallyGrouped } from "@/lib/attendee-grouping";
@@ -387,6 +387,7 @@ function EditableGroupedCell_OLD({
 
 interface CheckInTableHandlers {
   onDelete: (attendee: Attendee) => void;
+  onSwapName: (attendee: Attendee) => void;
   expandedRows: Set<string>;
   toggleRow: (id: string) => void;
   onMutationSuccess?: (eventId: string) => void;
@@ -487,12 +488,14 @@ function TicketSubRow({
   index,
   total,
   onDelete,
+  onSwapName,
   onMutationSuccess,
 }: {
   ticket: Attendee;
   index: number;
   total: number;
   onDelete: (attendee: Attendee) => void;
+  onSwapName: (attendee: Attendee) => void;
   onMutationSuccess?: (eventId: string) => void;
 }) {
   const inactive = isInactiveTicket(ticket);
@@ -633,7 +636,7 @@ function TicketSubRow({
         )}
       </td>
       <td className="p-2">
-        <AttendeeActionsCell attendee={ticket} onDelete={onDelete} />
+        <AttendeeActionsCell attendee={ticket} onSwapName={onSwapName} onDelete={onDelete} />
       </td>
     </tr>
   );
@@ -1027,6 +1030,7 @@ export function getCheckInTableColumns(
         return (
           <AttendeeActionsCell
             attendee={grouped.tickets[0]!}
+            onSwapName={handlers.onSwapName}
             onDelete={handlers.onDelete}
           />
         );
@@ -1142,6 +1146,7 @@ export function renderSubRow(
       index={index}
       total={order.ticketCount}
       onDelete={handlers.onDelete}
+      onSwapName={handlers.onSwapName}
       onMutationSuccess={handlers.onMutationSuccess}
     />
   ));

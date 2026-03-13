@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { members, emailLogs } from "@/db/schema";
 import { env } from "@/env";
-import { sendMembershipExpiryReminder } from "@/lib/resend";
+import { sendLoopsEvent } from "@/lib/loops-sync";
 import { and, eq, gte, lte, isNotNull } from "drizzle-orm";
 
 /**
- * Cron job to send email reminders for expiring memberships
+ * Cron job to send Loops events for expiring memberships
  * Runs daily at 9 AM and finds members whose membership expires in 30 days
+ * Triggers the "membership_expiring" Loop which handles the full reminder sequence
+ * (30-day, 7-day, and expired notifications)
  *
  * Vercel Cron: https://vercel.com/docs/cron-jobs
  * Configured in vercel.json to run daily at 9 AM
@@ -59,7 +61,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         success: true,
         message: "No members with expiring memberships",
-        emailsSent: 0,
+        eventsSent: 0,
       });
     }
 
@@ -67,16 +69,16 @@ export async function GET(request: NextRequest) {
     let failedCount = 0;
     const results = [];
 
-    // Send email to each member
+    // Send Loops event for each member
     for (const member of expiringMembers) {
-      // Check if we've already sent a reminder for this expiry period
+      // Check if we've already triggered the Loop for this expiry period
       const existingLog = await db
         .select()
         .from(emailLogs)
         .where(
           and(
             eq(emailLogs.memberId, member.id),
-            eq(emailLogs.emailType, "membership_expiry_30_days"),
+            eq(emailLogs.emailType, "membership_expiring_loop"),
             gte(emailLogs.sentAt, thirtyDaysFromNow),
           ),
         )
@@ -84,7 +86,7 @@ export async function GET(request: NextRequest) {
 
       if (existingLog.length > 0) {
         console.log(
-          `[send-email-reminders] Already sent reminder to ${member.email}, skipping`,
+          `[send-email-reminders] Already triggered Loop for ${member.email}, skipping`,
         );
         results.push({
           email: member.email,
@@ -94,19 +96,21 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
-      // Send email
-      const result = await sendMembershipExpiryReminder(
+      // Send Loops event to trigger the membership_expiring Loop
+      const result = await sendLoopsEvent(
         member.email,
-        member.firstName,
-        new Date(member.membershipExpiresAt!),
+        "membership_expiring",
+        {
+          daysUntilExpiry: 30,
+          expiryDate: member.membershipExpiresAt!.toISOString(),
+        },
       );
 
       if (result.success) {
-        // Log successful email
+        // Log successful event
         await db.insert(emailLogs).values({
           memberId: member.id,
-          emailType: "membership_expiry_30_days",
-          resendId: result.resendId,
+          emailType: "membership_expiring_loop",
           status: "sent",
         });
 
@@ -114,13 +118,12 @@ export async function GET(request: NextRequest) {
         results.push({
           email: member.email,
           status: "sent",
-          resendId: result.resendId,
         });
       } else {
-        // Log failed email
+        // Log failed event
         await db.insert(emailLogs).values({
           memberId: member.id,
-          emailType: "membership_expiry_30_days",
+          emailType: "membership_expiring_loop",
           status: "failed",
         });
 
@@ -140,8 +143,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       totalMembers: expiringMembers.length,
-      emailsSent: successCount,
-      emailsFailed: failedCount,
+      eventsSent: successCount,
+      eventsFailed: failedCount,
       results,
     });
   } catch (error) {

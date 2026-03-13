@@ -24,8 +24,7 @@ export function TopEventsChart({ data }: Props) {
           type="category"
           dataKey="eventName"
           tick={{ fontSize: 10 }}
-          width={150}
-          tickFormatter={(v) => (v.length > 25 ? `${v.slice(0, 22)}...` : v)}
+          width={200}
         />
         <Tooltip
           content={({ active, payload }) => {

@@ -1,6 +1,6 @@
 export interface PeriodFilter {
-  from: Date;
-  to: Date;
+  from: Date | string;
+  to: Date | string;
 }
 
 export interface DashboardStats {
@@ -42,7 +42,7 @@ export interface FunnelMonthRow {
 
 export interface AnalyticsData {
   attendanceTrend: Array<{ eventName: string; date: string; count: number }>;
-  checkinRateTrend: Array<{ eventName: string; date: string; rate: number }>;
+
   ticketTypeDistribution: Array<{ type: string; count: number }>;
   revenueTrend: Array<{ month: string; revenue: number }>;
   topEvents: Array<{ eventName: string; count: number }>;

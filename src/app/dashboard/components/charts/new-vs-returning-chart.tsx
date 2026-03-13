@@ -51,14 +51,12 @@ export function NewVsReturningChart({ data }: Props) {
         <Legend />
         <Bar
           dataKey="newCount"
-          stackId="a"
           fill="var(--color-newCount)"
-          radius={[0, 0, 0, 0]}
+          radius={[4, 4, 0, 0]}
           name="New"
         />
         <Bar
           dataKey="returningCount"
-          stackId="a"
           fill="var(--color-returningCount)"
           radius={[4, 4, 0, 0]}
           name="Returning"

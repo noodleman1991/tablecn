@@ -1,8 +1,8 @@
 import "server-only";
 
 import { db } from "@/db";
-import { attendees, events, members, type Attendee, type OrderStatus } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { attendees, events, members, productSwapMap, type Attendee, type OrderStatus } from "@/db/schema";
+import { eq, and, inArray } from "drizzle-orm";
 import { getOrdersForProductCached } from "./woocommerce";
 import { getCacheAge, setCachedData, getCachedData } from "./cache-utils";
 import { toZonedTime, fromZonedTime } from "date-fns-tz";
@@ -72,10 +72,16 @@ function getTicketTypeFromLineItem(lineItem: any): string | null {
 /**
  * Helper: Extract per-ticket attendee info from WooCommerce order
  * Handles the actual _ticket_data structure used by WooCommerce ticketing plugin
+ *
+ * @param swapCache - Per-product cache tracking whether name fields are swapped.
+ *   Some WooCommerce ticket products have hash keys where alphabetical ordering
+ *   puts last name before first name. We detect this by checking self-purchase
+ *   tickets (where ticket email === billing email) and comparing against billing name.
  */
 function extractTicketAttendees(
   order: any,
-  lineItem: any
+  lineItem: any,
+  swapCache?: Map<string, boolean>
 ): Array<{ firstName: string; lastName: string; email: string; ticketId: string; uid: string; bookerFirstName: string; bookerLastName: string; bookerEmail: string; ticketType: string | null }> {
   const attendees = [];
 
@@ -125,8 +131,37 @@ function extractTicketAttendees(
       return true;
     });
 
-    const firstName = nameFields[0] || '';
-    const lastName = nameFields[1] || '';
+    // Swap detection: check if this product's hash key ordering puts lastName before firstName
+    const productId = lineItem.product_id?.toString() || '';
+    let isSwapped = false;
+
+    if (swapCache && productId) {
+      if (swapCache.has(productId)) {
+        // Use cached result
+        isSwapped = swapCache.get(productId)!;
+      } else if (nameFields.length >= 2) {
+        // Detect swap using self-purchase tickets (ticket email === billing email)
+        const billingEmail = order.billing?.email?.toLowerCase() || '';
+        const billingFirst = (order.billing?.first_name || '').trim().toLowerCase();
+        const billingLast = (order.billing?.last_name || '').trim().toLowerCase();
+
+        if (email && billingEmail && email === billingEmail && billingFirst && billingLast) {
+          const field0 = nameFields[0]!.trim().toLowerCase();
+          const field1 = nameFields[1]!.trim().toLowerCase();
+
+          if (field0 === billingLast && field1 === billingFirst) {
+            // Fields are swapped: field[0] is actually lastName, field[1] is firstName
+            isSwapped = true;
+            console.log(`[sync-attendees] Detected name swap for product ${productId}: "${nameFields[0]}" matches billing last name, "${nameFields[1]}" matches billing first name`);
+          }
+          // Cache the result for this product
+          swapCache.set(productId, isSwapped);
+        }
+      }
+    }
+
+    const firstName = isSwapped ? (nameFields[1] || '') : (nameFields[0] || '');
+    const lastName = isSwapped ? (nameFields[0] || '') : (nameFields[1] || '');
 
     // Find the actual WooCommerce ticket ID
     const ticketIdKey = `_ticket_id_for_${uid}`;
@@ -184,7 +219,8 @@ function extractTicketAttendees(
  */
 export async function syncAttendeesForEvent(
   eventId: string,
-  forceRefresh: boolean = false
+  forceRefresh: boolean = false,
+  bypassCutoff: boolean = false
 ) {
   // Get the event
   const event = await db
@@ -219,7 +255,8 @@ export async function syncAttendeesForEvent(
   const nowUTC = new Date();
 
   // If we're past the cutoff (23:00 London time on event day), skip WooCommerce sync
-  if (nowUTC > cutoffUTC) {
+  // Unless bypassCutoff is true (used for re-syncing past events)
+  if (nowUTC > cutoffUTC && !bypassCutoff) {
     console.log(
       `[sync-attendees] Event ${eventData.name} has passed 23:00 London cutoff (cutoff: ${cutoffUTC.toISOString()}), using database records`,
     );
@@ -227,6 +264,12 @@ export async function syncAttendeesForEvent(
       synced: false,
       reason: "past_cutoff",
     };
+  }
+
+  if (bypassCutoff && nowUTC > cutoffUTC) {
+    console.log(
+      `[sync-attendees] Bypassing cutoff for ${eventData.name} (re-sync requested)`,
+    );
   }
 
   // Event is today or in the future, sync from WooCommerce
@@ -342,6 +385,19 @@ export async function syncAttendeesForEvent(
   let createdCount = 0;
   let updatedCount = 0;
 
+  // Swap detection cache: tracks per product whether name field ordering is swapped
+  // Pre-populate from database so persisted detections survive across syncs
+  const swapCache = new Map<string, boolean>();
+  const existingSwaps = await db
+    .select()
+    .from(productSwapMap)
+    .where(inArray(productSwapMap.productId, allProductIds));
+  for (const swap of existingSwaps) {
+    swapCache.set(swap.productId, swap.isSwapped);
+  }
+  // Track which product IDs were already known before this sync
+  const previouslyKnownSwaps = new Set(existingSwaps.map(s => s.productId));
+
   // Process each order (now with source product tracking)
   for (const { order, sourceProductId, isMembersOnlyProduct: isMembersProduct } of allOrdersWithSource) {
     // Process line items to get tickets per product
@@ -368,10 +424,14 @@ export async function syncAttendeesForEvent(
     // Parse order date
     const orderDate = order.date_created ? new Date(order.date_created) : undefined;
 
+    // Compute per-ticket order total (split evenly across all tickets in the order)
+    const ticketCount = relevantLineItems.reduce((sum: number, li: any) => sum + (parseInt(li.quantity) || 1), 0);
+    const orderTotal = parseFloat(order.total || '0') / ticketCount;
+
     // Process each line item
     for (const lineItem of relevantLineItems) {
       // Extract all tickets from this line item
-      const ticketsFromLineItem = extractTicketAttendees(order, lineItem);
+      const ticketsFromLineItem = extractTicketAttendees(order, lineItem, swapCache);
 
       // Create/update attendee for each ticket
       for (const ticket of ticketsFromLineItem) {
@@ -441,6 +501,7 @@ export async function syncAttendeesForEvent(
               bookerLastName: ticket.bookerLastName,
               bookerEmail: ticket.bookerEmail,
               ticketType: ticket.ticketType, // Track ticket type (Standard, Under 30, etc.)
+              orderTotal, // Per-ticket share of order total
               // NOT updating: checkedIn, checkedInAt, locallyModified, manuallyAdded
             })
             .where(eq(attendees.id, existingAttendee.id));
@@ -463,6 +524,7 @@ export async function syncAttendeesForEvent(
             bookerLastName: ticket.bookerLastName,
             bookerEmail: ticket.bookerEmail,
             ticketType: ticket.ticketType, // Track ticket type (Standard, Under 30, etc.)
+            orderTotal, // Per-ticket share of order total
             manuallyAdded: false,
             locallyModified: false,
             checkedIn: false,
@@ -473,6 +535,161 @@ export async function syncAttendeesForEvent(
 
         // Ensure member record exists
         await upsertMember(ticket.email, ticket.firstName, ticket.lastName);
+      }
+    }
+  }
+
+  // Persist any newly discovered swaps to the database
+  const newlyDetectedSwaps: string[] = [];
+  for (const [productId, isSwapped] of swapCache) {
+    if (!previouslyKnownSwaps.has(productId)) {
+      await db
+        .insert(productSwapMap)
+        .values({
+          productId,
+          isSwapped,
+          detectionMethod: "self_purchase",
+          confidence: 1.0,
+        })
+        .onConflictDoUpdate({
+          target: productSwapMap.productId,
+          set: {
+            isSwapped,
+            detectionMethod: "self_purchase",
+            confidence: 1.0,
+          },
+        });
+      if (isSwapped) {
+        newlyDetectedSwaps.push(productId);
+      }
+    }
+  }
+
+  // Cross-reference heuristic: for products not yet in swapCache, check if
+  // attendee names match members better when swapped
+  const uncheckProductIds = allProductIds.filter(id => !swapCache.has(id));
+  for (const productId of uncheckProductIds) {
+    const productAttendees = await db
+      .select()
+      .from(attendees)
+      .where(
+        and(
+          eq(attendees.eventId, eventId),
+          eq(attendees.sourceProductId, productId),
+        )
+      );
+
+    if (productAttendees.length < 2) continue;
+
+    let normalMatchCount = 0;
+    let swappedMatchCount = 0;
+
+    for (const att of productAttendees) {
+      if (!att.firstName || !att.lastName) continue;
+
+      // Check normal match against members table
+      const normalMatch = await db
+        .select({ id: members.id })
+        .from(members)
+        .where(
+          and(
+            eq(members.email, att.email),
+            eq(members.firstName, att.firstName),
+            eq(members.lastName, att.lastName),
+          )
+        )
+        .limit(1);
+      if (normalMatch.length > 0) normalMatchCount++;
+
+      // Check swapped match
+      const swappedMatch = await db
+        .select({ id: members.id })
+        .from(members)
+        .where(
+          and(
+            eq(members.email, att.email),
+            eq(members.firstName, att.lastName),
+            eq(members.lastName, att.firstName),
+          )
+        )
+        .limit(1);
+      if (swappedMatch.length > 0) swappedMatchCount++;
+    }
+
+    if (swappedMatchCount > normalMatchCount && swappedMatchCount >= 2) {
+      const confidence = swappedMatchCount / (swappedMatchCount + normalMatchCount);
+      console.log(
+        `[sync-attendees] Cross-reference detected swap for product ${productId}: ` +
+        `${swappedMatchCount} swapped matches vs ${normalMatchCount} normal (confidence: ${confidence.toFixed(2)})`
+      );
+
+      swapCache.set(productId, true);
+      await db
+        .insert(productSwapMap)
+        .values({
+          productId,
+          isSwapped: true,
+          detectionMethod: "cross_reference",
+          confidence,
+        })
+        .onConflictDoUpdate({
+          target: productSwapMap.productId,
+          set: {
+            isSwapped: true,
+            detectionMethod: "cross_reference",
+            confidence,
+          },
+        });
+      newlyDetectedSwaps.push(productId);
+    }
+  }
+
+  // Retroactive correction: when a swap is newly detected, fix existing attendees
+  for (const productId of newlyDetectedSwaps) {
+    console.log(`[sync-attendees] Retroactively correcting names for product ${productId}`);
+    const toCorrect = await db
+      .select()
+      .from(attendees)
+      .where(
+        and(
+          eq(attendees.sourceProductId, productId),
+          eq(attendees.locallyModified, false),
+        )
+      );
+
+    for (const att of toCorrect) {
+      if (!att.firstName && !att.lastName) continue;
+
+      // Swap the names in the attendee record
+      await db
+        .update(attendees)
+        .set({
+          firstName: att.lastName,
+          lastName: att.firstName,
+        })
+        .where(eq(attendees.id, att.id));
+
+      // Also update corresponding member record if the name matches pre-swap values
+      if (att.email) {
+        const [member] = await db
+          .select()
+          .from(members)
+          .where(eq(members.email, att.email))
+          .limit(1);
+
+        if (
+          member &&
+          member.firstName === att.firstName &&
+          member.lastName === att.lastName
+        ) {
+          await db
+            .update(members)
+            .set({
+              firstName: att.lastName,
+              lastName: att.firstName,
+            })
+            .where(eq(members.id, member.id));
+        }
       }
     }
   }

@@ -38,8 +38,7 @@ export function TicketTypeChart({ data }: Props) {
           cy="50%"
           innerRadius={60}
           outerRadius={100}
-          label={({ type, count }) => `${type}: ${count}`}
-          labelLine={false}
+
         >
           {data.map((_, i) => (
             <Cell key={i} fill={COLORS[i % COLORS.length]} />
@@ -57,6 +56,7 @@ export function TicketTypeChart({ data }: Props) {
             );
           }}
         />
+        <Legend />
       </PieChart>
     </ChartContainer>
   );

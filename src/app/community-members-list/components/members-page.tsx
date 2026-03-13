@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Download, Mail } from "lucide-react";
+import { Download, Mail, RefreshCw } from "lucide-react";
 import type { Member } from "@/db/schema";
 import {
   exportMembersToCSV,
@@ -14,6 +14,7 @@ import {
 import { toast } from "sonner";
 import { MembersTable } from "./members-table";
 import { AddManualMemberDialog } from "./add-manual-member-dialog";
+import { resyncAllEvents } from "@/app/actions";
 
 interface MembersPageProps {
   members: Member[];
@@ -22,6 +23,7 @@ interface MembersPageProps {
 export function MembersPage({ members }: MembersPageProps) {
   const [isDownloading, setIsDownloading] = React.useState(false);
   const [isEmailing, setIsEmailing] = React.useState(false);
+  const [isResyncing, setIsResyncing] = React.useState(false);
 
   const activeMembers = members.filter((m) => m.isActiveMember).length;
   const totalMembers = members.length;
@@ -37,6 +39,22 @@ export function MembersPage({ members }: MembersPageProps) {
       toast.error("Failed to download CSV");
     } finally {
       setIsDownloading(false);
+    }
+  };
+
+  const handleResyncAll = async () => {
+    setIsResyncing(true);
+    try {
+      const result = await resyncAllEvents();
+      toast.success(
+        `Re-sync complete: ${result.synced} synced, ${result.skipped} skipped out of ${result.totalEvents} events`
+      );
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to re-sync events"
+      );
+    } finally {
+      setIsResyncing(false);
     }
   };
 
@@ -107,6 +125,17 @@ export function MembersPage({ members }: MembersPageProps) {
           <CardTitle>Members List</CardTitle>
           <div className="flex flex-col gap-2 sm:flex-row">
             <AddManualMemberDialog />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleResyncAll}
+              disabled={isResyncing}
+              className="min-h-[44px] w-full sm:w-auto gap-2"
+            >
+              <RefreshCw className={`size-4 ${isResyncing ? "animate-spin" : ""}`} />
+              <span className="sm:hidden">Re-sync</span>
+              <span className="hidden sm:inline">{isResyncing ? "Re-syncing..." : "Re-sync All Events"}</span>
+            </Button>
             <Button
               variant="outline"
               size="sm"

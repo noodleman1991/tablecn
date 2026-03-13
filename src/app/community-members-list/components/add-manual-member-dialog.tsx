@@ -16,11 +16,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { UserPlus } from "lucide-react";
 import { toast } from "sonner";
-import { createManualMember } from "@/app/actions";
+import { createManualMember, checkSwappedNameMatch } from "@/app/actions";
 
 export function AddManualMemberDialog() {
   const [open, setOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [swapWarning, setSwapWarning] = React.useState<Array<{ id: string; email: string; firstName: string; lastName: string }> | null>(null);
 
   const [formData, setFormData] = React.useState({
     email: "",
@@ -30,42 +31,65 @@ export function AddManualMemberDialog() {
     manualExpiresAt: "",
   });
 
+  const doCreate = async () => {
+    const manualExpiresAt = formData.manualExpiresAt
+      ? new Date(formData.manualExpiresAt)
+      : undefined;
+
+    await createManualMember({
+      email: formData.email,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      notes: formData.notes || undefined,
+      manualExpiresAt,
+    });
+
+    toast.success("Member added successfully");
+
+    setFormData({
+      email: "",
+      firstName: "",
+      lastName: "",
+      notes: "",
+      manualExpiresAt: "",
+    });
+    setSwapWarning(null);
+    setOpen(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      // Validate required fields
       if (!formData.email || !formData.firstName || !formData.lastName) {
         toast.error("Email, first name, and last name are required");
         return;
       }
 
-      // Convert date string to Date object if provided
-      const manualExpiresAt = formData.manualExpiresAt
-        ? new Date(formData.manualExpiresAt)
-        : undefined;
+      // Check for swapped name matches (unless already dismissed)
+      if (!swapWarning) {
+        const { matches } = await checkSwappedNameMatch(formData.firstName, formData.lastName);
+        if (matches.length > 0) {
+          setSwapWarning(matches);
+          return;
+        }
+      }
 
-      await createManualMember({
-        email: formData.email,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        notes: formData.notes || undefined,
-        manualExpiresAt,
-      });
+      await doCreate();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to add member"
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-      toast.success("Member added successfully");
-
-      // Reset form
-      setFormData({
-        email: "",
-        firstName: "",
-        lastName: "",
-        notes: "",
-        manualExpiresAt: "",
-      });
-
-      setOpen(false);
+  const handleCreateAnyway = async () => {
+    setIsSubmitting(true);
+    try {
+      await doCreate();
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to add member"
@@ -177,11 +201,38 @@ export function AddManualMemberDialog() {
             </div>
           </div>
 
+          {swapWarning && swapWarning.length > 0 && (
+            <div className="rounded-md border border-yellow-500 bg-yellow-50 p-3 text-sm">
+              <p className="font-medium text-yellow-800 mb-2">
+                Possible name swap detected
+              </p>
+              <p className="text-yellow-700 mb-2">
+                Existing member(s) found with first/last name reversed:
+              </p>
+              <ul className="list-disc list-inside text-yellow-700 mb-3">
+                {swapWarning.map((m) => (
+                  <li key={m.id}>
+                    {m.firstName} {m.lastName} ({m.email})
+                  </li>
+                ))}
+              </ul>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleCreateAnyway}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Adding..." : "Create Anyway"}
+              </Button>
+            </div>
+          )}
+
           <DialogFooter>
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
+              onClick={() => { setOpen(false); setSwapWarning(null); }}
               disabled={isSubmitting}
             >
               Cancel

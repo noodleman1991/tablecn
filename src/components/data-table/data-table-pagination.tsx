@@ -53,12 +53,14 @@ export function DataTablePagination<TData>({
             }}
           >
             <SelectTrigger className="h-8 w-18 data-size:h-8">
-              <SelectValue placeholder={table.getState().pagination.pageSize} />
+              <SelectValue>
+                {table.getState().pagination.pageSize >= 9999 ? "All" : table.getState().pagination.pageSize}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent side="top">
               {pageSizeOptions.map((pageSize) => (
                 <SelectItem key={pageSize} value={`${pageSize}`}>
-                  {pageSize}
+                  {pageSize >= 9999 ? "All" : pageSize}
                 </SelectItem>
               ))}
             </SelectContent>

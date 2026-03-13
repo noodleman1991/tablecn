@@ -6,7 +6,7 @@ import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
 import { useDataTable } from "@/hooks/use-data-table";
 import type { Member } from "@/db/schema";
 import { getMembersTableColumns, type MembersTableHandlers } from "./members-table-columns";
-import { updateMemberDetails, deleteMember } from "@/app/actions";
+import { updateMemberDetails, deleteMember, swapMemberName, bulkSwapNames } from "@/app/actions";
 import { MemberDeleteDialog } from "./member-delete-dialog";
 import { MemberStatusDialog } from "./member-status-dialog";
 import { MemberMergeDialog } from "./member-merge-dialog";
@@ -25,7 +25,17 @@ export function MembersTable({ members }: MembersTableProps) {
   const [mergeDialogOpen, setMergeDialogOpen] = React.useState(false);
   const [selectedMember, setSelectedMember] = React.useState<Member | null>(null);
   const [isDeletingBulk, setIsDeletingBulk] = React.useState(false);
+  const [isSwappingBulk, setIsSwappingBulk] = React.useState(false);
   const [horizontalScrollEnabled, setHorizontalScrollEnabled] = React.useState(false);
+
+  const handleSwapMemberName = React.useCallback(async (member: Member) => {
+    try {
+      await swapMemberName(member.id);
+      toast.success(`Swapped name: ${member.lastName} ${member.firstName}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to swap name");
+    }
+  }, []);
 
   const handlers = React.useMemo<MembersTableHandlers>(() => ({
     onUpdateMember: async (memberId: string, field: string, value: string) => {
@@ -38,11 +48,12 @@ export function MembersTable({ members }: MembersTableProps) {
       setSelectedMember(member);
       setStatusDialogOpen(true);
     },
+    onSwapName: handleSwapMemberName,
     onDelete: (member: Member) => {
       setSelectedMember(member);
       setDeleteDialogOpen(true);
     },
-  }), []);
+  }), [handleSwapMemberName]);
 
   const columns = React.useMemo(() => getMembersTableColumns(handlers), [handlers]);
 
@@ -51,7 +62,7 @@ export function MembersTable({ members }: MembersTableProps) {
     columns,
     // pageCount removed - TanStack Table calculates automatically when manualPagination: false
     initialState: {
-      pagination: { pageIndex: 0, pageSize: 20 },
+      pagination: { pageIndex: 0, pageSize: 100 },
       sorting: [
         { id: "isActiveMember", desc: true },
         { id: "lastName", desc: false },
@@ -75,6 +86,22 @@ export function MembersTable({ members }: MembersTableProps) {
       return;
     }
     setMergeDialogOpen(true);
+  };
+
+  const handleBulkSwapNames = async () => {
+    if (selectedMembers.length === 0) return;
+
+    setIsSwappingBulk(true);
+    try {
+      const ids = selectedMembers.map(m => m.id);
+      const result = await bulkSwapNames(ids, "member");
+      toast.success(`Swapped names for ${result.swapped} member(s)`);
+      table.resetRowSelection();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to swap names");
+    } finally {
+      setIsSwappingBulk(false);
+    }
   };
 
   const handleBulkDelete = async () => {
@@ -126,6 +153,15 @@ export function MembersTable({ members }: MembersTableProps) {
               Merge Selected
             </Button>
             <Button
+              variant="outline"
+              size="sm"
+              onClick={handleBulkSwapNames}
+              disabled={isSwappingBulk || isDeletingBulk}
+              className="min-h-[44px] w-full sm:w-auto"
+            >
+              {isSwappingBulk ? "Swapping..." : "Swap Names"}
+            </Button>
+            <Button
               variant="destructive"
               size="sm"
               onClick={handleBulkDelete}
@@ -140,6 +176,7 @@ export function MembersTable({ members }: MembersTableProps) {
       <DataTable
         table={table}
         horizontalScrollEnabled={horizontalScrollEnabled}
+        pageSizeOptions={[25, 50, 100, 9999]}
       >
         <DataTableToolbar table={table}>
           <DataTableScrollToggle

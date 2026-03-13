@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { attendees, events, members } from "@/db/schema";
-import { eq, desc, gte, lt, isNull, and, sql } from "drizzle-orm";
+import { eq, desc, gte, lt, isNull, isNotNull, and, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { syncAttendeesForEvent } from "@/lib/sync-attendees";
 import { getCacheAge, invalidateCache } from "@/lib/cache-utils";
@@ -78,11 +78,14 @@ export async function getEventById(eventId: string) {
  * Triggers smart sync for today/future events
  */
 export async function getAttendeesForEvent(eventId: string) {
-  // Trigger sync if needed (for future events) - sync cache controls WooCommerce API calls
-  await syncAttendeesForEvent(eventId);
+  // Trigger sync if needed - don't let sync failures prevent page render
+  try {
+    await syncAttendeesForEvent(eventId);
+  } catch (error) {
+    console.error(`[getAttendeesForEvent] Sync failed for event ${eventId}, using existing DB data:`, error);
+  }
 
   // ALWAYS return fresh data from database
-  // The sync cache only tracks WooCommerce sync timing, not attendee data
   return await db
     .select()
     .from(attendees)
@@ -102,6 +105,7 @@ async function matchOrCreateMember(data: {
   memberId?: string;
   ambiguous?: boolean;
   possibleMatches?: Array<{ id: string; email: string; firstName: string; lastName: string }>;
+  swapDetected?: boolean;
 }> {
   const { email, firstName, lastName } = data;
 
@@ -150,6 +154,32 @@ async function matchOrCreateMember(data: {
           firstName: m.firstName || "",
           lastName: m.lastName || "",
         })),
+      };
+    }
+  }
+
+  // Strategy 2.5: Swapped name match (firstName/lastName reversed)
+  if (firstName && lastName) {
+    const swappedMatches = await db
+      .select()
+      .from(members)
+      .where(
+        and(
+          sql`LOWER(${members.firstName}) = LOWER(${lastName})`,
+          sql`LOWER(${members.lastName}) = LOWER(${firstName})`
+        )
+      );
+
+    if (swappedMatches.length > 0) {
+      return {
+        ambiguous: true,
+        possibleMatches: swappedMatches.map(m => ({
+          id: m.id,
+          email: m.email,
+          firstName: m.firstName || "",
+          lastName: m.lastName || "",
+        })),
+        swapDetected: true,
       };
     }
   }
@@ -222,6 +252,7 @@ export async function checkInAttendee(attendeeId: string) {
       eventId: attendee.eventId,
       requiresManualMatch: true,
       possibleMatches: memberResult.possibleMatches,
+      swapDetected: memberResult.swapDetected,
       attendeeId,
     };
   }
@@ -609,6 +640,81 @@ export async function refreshAttendeesForEvent(eventId: string) {
 }
 
 /**
+ * Re-sync all events that have a WooCommerce product ID
+ * Bypasses cutoff so past events are also re-synced from WooCommerce
+ */
+export async function resyncAllEvents() {
+  "use server";
+
+  const allEvents = await db
+    .select({ id: events.id, name: events.name })
+    .from(events)
+    .where(
+      and(
+        isNotNull(events.woocommerceProductId),
+        isNull(events.mergedIntoEventId)
+      )
+    );
+
+  const results: Array<{ eventName: string; result: any }> = [];
+
+  for (const event of allEvents) {
+    try {
+      const result = await syncAttendeesForEvent(event.id, true, true);
+      results.push({ eventName: event.name, result });
+    } catch (error) {
+      results.push({
+        eventName: event.name,
+        result: { synced: false, reason: "error", error: error instanceof Error ? error.message : String(error) },
+      });
+    }
+  }
+
+  revalidatePath("/");
+  revalidatePath("/community-members-list");
+
+  const synced = results.filter(r => r.result?.synced).length;
+  const skipped = results.filter(r => !r.result?.synced).length;
+
+  return {
+    success: true,
+    totalEvents: allEvents.length,
+    synced,
+    skipped,
+    results,
+  };
+}
+
+/**
+ * Check if a swapped name match exists for given first/last name
+ * Used by the add-manual-member dialog to warn about potential name swaps
+ */
+export async function checkSwappedNameMatch(firstName: string, lastName: string) {
+  "use server";
+
+  if (!firstName || !lastName) return { matches: [] };
+
+  const swappedMatches = await db
+    .select()
+    .from(members)
+    .where(
+      and(
+        sql`LOWER(${members.firstName}) = LOWER(${lastName})`,
+        sql`LOWER(${members.lastName}) = LOWER(${firstName})`
+      )
+    );
+
+  return {
+    matches: swappedMatches.map(m => ({
+      id: m.id,
+      email: m.email,
+      firstName: m.firstName || "",
+      lastName: m.lastName || "",
+    })),
+  };
+}
+
+/**
  * Get cache age for event sync in seconds
  * Returns null if no cache exists or cache is expired
  */
@@ -916,4 +1022,160 @@ export async function mergeAttendeeRecords(data: {
   revalidatePath("/");
 
   return { success: true, eventId: primary.eventId };
+}
+
+/**
+ * Swap firstName and lastName for a single attendee
+ * Marks the attendee as locallyModified to protect from sync overwrites
+ * Also updates the corresponding member record if names match pre-swap values
+ */
+export async function swapAttendeeName(attendeeId: string) {
+  "use server";
+
+  const [attendee] = await db
+    .select()
+    .from(attendees)
+    .where(eq(attendees.id, attendeeId))
+    .limit(1);
+
+  if (!attendee) {
+    throw new Error("Attendee not found");
+  }
+
+  const oldFirst = attendee.firstName;
+  const oldLast = attendee.lastName;
+
+  // Swap the names
+  await db
+    .update(attendees)
+    .set({
+      firstName: oldLast,
+      lastName: oldFirst,
+      locallyModified: true,
+    })
+    .where(eq(attendees.id, attendeeId));
+
+  // Update member record if the member's name matches pre-swap values
+  if (attendee.email) {
+    const [member] = await db
+      .select()
+      .from(members)
+      .where(eq(members.email, attendee.email))
+      .limit(1);
+
+    if (
+      member &&
+      member.firstName === oldFirst &&
+      member.lastName === oldLast
+    ) {
+      await db
+        .update(members)
+        .set({
+          firstName: oldLast,
+          lastName: oldFirst,
+        })
+        .where(eq(members.id, member.id));
+
+      // Sync to Loops if active
+      if (member.isActiveMember) {
+        const updatedMember = { ...member, firstName: oldLast, lastName: oldFirst };
+        await syncMemberToLoops(updatedMember);
+      }
+    }
+  }
+
+  revalidatePath("/");
+  return { success: true, eventId: attendee.eventId };
+}
+
+/**
+ * Swap firstName and lastName for a single member
+ * Also updates all matching attendee records
+ * Syncs to Loops if member is active
+ */
+export async function swapMemberName(memberId: string) {
+  "use server";
+
+  const [member] = await db
+    .select()
+    .from(members)
+    .where(eq(members.id, memberId))
+    .limit(1);
+
+  if (!member) {
+    throw new Error("Member not found");
+  }
+
+  const oldFirst = member.firstName;
+  const oldLast = member.lastName;
+
+  // Swap the member's names
+  const [updatedMember] = await db
+    .update(members)
+    .set({
+      firstName: oldLast,
+      lastName: oldFirst,
+    })
+    .where(eq(members.id, memberId))
+    .returning();
+
+  // Update all attendee records with matching email where names match pre-swap values
+  const matchingAttendees = await db
+    .select()
+    .from(attendees)
+    .where(eq(attendees.email, member.email));
+
+  for (const att of matchingAttendees) {
+    if (att.firstName === oldFirst && att.lastName === oldLast) {
+      await db
+        .update(attendees)
+        .set({
+          firstName: oldLast,
+          lastName: oldFirst,
+        })
+        .where(eq(attendees.id, att.id));
+    }
+  }
+
+  // Sync to Loops if active
+  if (updatedMember?.isActiveMember) {
+    await syncMemberToLoops(updatedMember);
+  }
+
+  revalidatePath("/");
+  revalidatePath("/community-members-list");
+
+  return { success: true };
+}
+
+/**
+ * Bulk swap firstName/lastName for multiple attendees or members
+ */
+export async function bulkSwapNames(ids: string[], type: "attendee" | "member") {
+  "use server";
+
+  const results: Array<{ id: string; success: boolean; error?: string }> = [];
+
+  for (const id of ids) {
+    try {
+      if (type === "attendee") {
+        await swapAttendeeName(id);
+      } else {
+        await swapMemberName(id);
+      }
+      results.push({ id, success: true });
+    } catch (error) {
+      results.push({
+        id,
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+
+  revalidatePath("/");
+  revalidatePath("/community-members-list");
+
+  const successCount = results.filter(r => r.success).length;
+  return { success: true, total: ids.length, swapped: successCount, results };
 }

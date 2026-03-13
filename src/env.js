@@ -15,9 +15,9 @@ export const env = createEnv({
     WOOCOMMERCE_URL: z.string().url(),
     WOOCOMMERCE_CONSUMER_KEY: z.string().min(1),
     WOOCOMMERCE_CONSUMER_SECRET: z.string().min(1),
-    RESEND_API_KEY: z.string().min(1),
     LOOPS_API_KEY: z.string().min(1),
     LOOPS_ACTIVE_MEMBERS_LIST_ID: z.string().min(1),
+    LOOPS_CSV_EXPORT_TRANSACTIONAL_ID: z.string().min(1).optional(),
     CRON_SECRET: z.string().min(1),
     STACK_SECRET_SERVER_KEY: z.string().min(1),
     // Audio Recordings Authorization
@@ -52,9 +52,9 @@ export const env = createEnv({
     WOOCOMMERCE_URL: process.env.WOOCOMMERCE_URL,
     WOOCOMMERCE_CONSUMER_KEY: process.env.WOOCOMMERCE_CONSUMER_KEY,
     WOOCOMMERCE_CONSUMER_SECRET: process.env.WOOCOMMERCE_CONSUMER_SECRET,
-    RESEND_API_KEY: process.env.RESEND_API_KEY,
     LOOPS_API_KEY: process.env.LOOPS_API_KEY,
     LOOPS_ACTIVE_MEMBERS_LIST_ID: process.env.LOOPS_ACTIVE_MEMBERS_LIST_ID,
+    LOOPS_CSV_EXPORT_TRANSACTIONAL_ID: process.env.LOOPS_CSV_EXPORT_TRANSACTIONAL_ID,
     CRON_SECRET: process.env.CRON_SECRET,
     STACK_SECRET_SERVER_KEY: process.env.STACK_SECRET_SERVER_KEY,
     // Audio Recordings Authorization

@@ -18,6 +18,7 @@ interface DataTableProps<TData> extends React.ComponentProps<"div"> {
   actionBar?: React.ReactNode;
   hideRowSelection?: boolean;
   horizontalScrollEnabled?: boolean; // Controls whether scroll mode is active
+  pageSizeOptions?: number[];
 }
 
 export function DataTable<TData>({
@@ -25,6 +26,7 @@ export function DataTable<TData>({
   actionBar,
   hideRowSelection,
   horizontalScrollEnabled = false,
+  pageSizeOptions,
   children,
   className,
   ...props
@@ -106,7 +108,7 @@ export function DataTable<TData>({
         </Table>
       </div>
       <div className="flex flex-col gap-2.5">
-        <DataTablePagination table={table} hideRowSelection={hideRowSelection} />
+        <DataTablePagination table={table} hideRowSelection={hideRowSelection} pageSizeOptions={pageSizeOptions} />
         {actionBar &&
           table.getFilteredSelectedRowModel().rows.length > 0 &&
           actionBar}

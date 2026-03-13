@@ -8,7 +8,7 @@ import { useDataTable } from "@/hooks/use-data-table";
 import type { Attendee } from "@/db/schema";
 import { getCheckInTableColumns, type CheckInTableHandlers, renderSubRow } from "./check-in-table-columns-grouped";
 import { groupAttendeesByOrder, type GroupedOrder } from "@/lib/attendee-grouping";
-import { deleteAttendee } from "@/app/actions";
+import { deleteAttendee, swapAttendeeName, bulkSwapNames } from "@/app/actions";
 import { AttendeeDeleteDialog } from "./attendee-delete-dialog";
 import { AttendeeMergeDialog } from "./attendee-merge-dialog";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,7 @@ export function CheckInTable({ attendees, onMutationSuccess }: CheckInTableProps
   const [mergeDialogOpen, setMergeDialogOpen] = React.useState(false);
   const [selectedAttendee, setSelectedAttendee] = React.useState<Attendee | null>(null);
   const [isDeletingBulk, setIsDeletingBulk] = React.useState(false);
+  const [isSwappingBulk, setIsSwappingBulk] = React.useState(false);
   const [horizontalScrollEnabled, setHorizontalScrollEnabled] = React.useState(false);
   const [showDeletedTickets, setShowDeletedTickets] = React.useState(false);
 
@@ -118,15 +119,25 @@ export function CheckInTable({ attendees, onMutationSuccess }: CheckInTableProps
     });
   }, []);
 
+  const handleSwapAttendeeName = React.useCallback(async (attendee: Attendee) => {
+    try {
+      await swapAttendeeName(attendee.id);
+      toast.success(`Swapped name: ${attendee.lastName} ${attendee.firstName}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to swap name");
+    }
+  }, []);
+
   const handlers = React.useMemo<CheckInTableHandlers>(() => ({
     onDelete: (attendee: Attendee) => {
       setSelectedAttendee(attendee);
       setDeleteDialogOpen(true);
     },
+    onSwapName: handleSwapAttendeeName,
     expandedRows,
     toggleRow,
     onMutationSuccess,
-  }), [expandedRows, toggleRow, onMutationSuccess]);
+  }), [expandedRows, toggleRow, onMutationSuccess, handleSwapAttendeeName]);
 
   const columns = React.useMemo(() => getCheckInTableColumns(handlers), [handlers]);
 
@@ -202,6 +213,22 @@ export function CheckInTable({ attendees, onMutationSuccess }: CheckInTableProps
     }
   };
 
+  const handleBulkSwapNames = async () => {
+    if (selectedAttendees.length === 0) return;
+
+    setIsSwappingBulk(true);
+    try {
+      const ids = selectedAttendees.map(a => a.id);
+      const result = await bulkSwapNames(ids, "attendee");
+      toast.success(`Swapped names for ${result.swapped} attendee(s)`);
+      table.resetRowSelection();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to swap names");
+    } finally {
+      setIsSwappingBulk(false);
+    }
+  };
+
   const handleMergeComplete = () => {
     table.resetRowSelection();
   };
@@ -225,6 +252,15 @@ export function CheckInTable({ attendees, onMutationSuccess }: CheckInTableProps
               className="min-h-[44px] w-full sm:w-auto"
             >
               Merge Selected
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleBulkSwapNames}
+              disabled={isSwappingBulk || isDeletingBulk}
+              className="min-h-[44px] w-full sm:w-auto"
+            >
+              {isSwappingBulk ? "Swapping..." : "Swap Names"}
             </Button>
             <Button
               variant="destructive"
