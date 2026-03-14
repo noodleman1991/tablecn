@@ -388,10 +388,15 @@ export async function syncAttendeesForEvent(
   // Swap detection cache: tracks per product whether name field ordering is swapped
   // Pre-populate from database so persisted detections survive across syncs
   const swapCache = new Map<string, boolean>();
-  const existingSwaps = await db
-    .select()
-    .from(productSwapMap)
-    .where(inArray(productSwapMap.productId, allProductIds));
+  let existingSwaps: { productId: string; isSwapped: boolean }[] = [];
+  try {
+    existingSwaps = await db
+      .select()
+      .from(productSwapMap)
+      .where(inArray(productSwapMap.productId, allProductIds));
+  } catch (error) {
+    console.warn(`[sync-attendees] Failed to read product swap map (table may not exist), continuing without swap cache:`, error instanceof Error ? error.message : error);
+  }
   for (const swap of existingSwaps) {
     swapCache.set(swap.productId, swap.isSwapped);
   }
@@ -541,107 +546,109 @@ export async function syncAttendeesForEvent(
 
   // Persist any newly discovered swaps to the database
   const newlyDetectedSwaps: string[] = [];
-  for (const [productId, isSwapped] of swapCache) {
-    if (!previouslyKnownSwaps.has(productId)) {
-      await db
-        .insert(productSwapMap)
-        .values({
-          productId,
-          isSwapped,
-          detectionMethod: "self_purchase",
-          confidence: 1.0,
-        })
-        .onConflictDoUpdate({
-          target: productSwapMap.productId,
-          set: {
+  try {
+    for (const [productId, isSwapped] of swapCache) {
+      if (!previouslyKnownSwaps.has(productId)) {
+        await db
+          .insert(productSwapMap)
+          .values({
+            productId,
             isSwapped,
             detectionMethod: "self_purchase",
             confidence: 1.0,
-          },
-        });
-      if (isSwapped) {
-        newlyDetectedSwaps.push(productId);
+          })
+          .onConflictDoUpdate({
+            target: productSwapMap.productId,
+            set: {
+              isSwapped,
+              detectionMethod: "self_purchase",
+              confidence: 1.0,
+            },
+          });
+        if (isSwapped) {
+          newlyDetectedSwaps.push(productId);
+        }
       }
     }
+  } catch (error) {
+    console.warn(`[sync-attendees] Failed to persist swap detections (table may not exist):`, error instanceof Error ? error.message : error);
   }
 
   // Cross-reference heuristic: for products not yet in swapCache, check if
   // attendee names match members better when swapped
-  const uncheckProductIds = allProductIds.filter(id => !swapCache.has(id));
-  for (const productId of uncheckProductIds) {
-    const productAttendees = await db
-      .select()
-      .from(attendees)
-      .where(
-        and(
-          eq(attendees.eventId, eventId),
-          eq(attendees.sourceProductId, productId),
-        )
-      );
-
-    if (productAttendees.length < 2) continue;
-
-    let normalMatchCount = 0;
-    let swappedMatchCount = 0;
-
-    for (const att of productAttendees) {
-      if (!att.firstName || !att.lastName) continue;
-
-      // Check normal match against members table
-      const normalMatch = await db
-        .select({ id: members.id })
-        .from(members)
+  try {
+    const uncheckProductIds = allProductIds.filter(id => !swapCache.has(id));
+    for (const productId of uncheckProductIds) {
+      const productAttendees = await db
+        .select()
+        .from(attendees)
         .where(
           and(
-            eq(members.email, att.email),
-            eq(members.firstName, att.firstName),
-            eq(members.lastName, att.lastName),
+            eq(attendees.eventId, eventId),
+            eq(attendees.sourceProductId, productId),
           )
-        )
-        .limit(1);
-      if (normalMatch.length > 0) normalMatchCount++;
+        );
 
-      // Check swapped match
-      const swappedMatch = await db
-        .select({ id: members.id })
+      if (productAttendees.length < 2) continue;
+
+      // Batch query: fetch all matching members in one query instead of 2 per attendee
+      const emails = [...new Set(
+        productAttendees
+          .filter(a => a.firstName && a.lastName && a.email)
+          .map(a => a.email)
+      )];
+      if (emails.length === 0) continue;
+
+      const matchingMembers = await db
+        .select({ email: members.email, firstName: members.firstName, lastName: members.lastName })
         .from(members)
-        .where(
-          and(
-            eq(members.email, att.email),
-            eq(members.firstName, att.lastName),
-            eq(members.lastName, att.firstName),
-          )
-        )
-        .limit(1);
-      if (swappedMatch.length > 0) swappedMatchCount++;
-    }
+        .where(inArray(members.email, emails));
 
-    if (swappedMatchCount > normalMatchCount && swappedMatchCount >= 2) {
-      const confidence = swappedMatchCount / (swappedMatchCount + normalMatchCount);
-      console.log(
-        `[sync-attendees] Cross-reference detected swap for product ${productId}: ` +
-        `${swappedMatchCount} swapped matches vs ${normalMatchCount} normal (confidence: ${confidence.toFixed(2)})`
-      );
+      const membersByEmail = new Map<string, { firstName: string | null; lastName: string | null }>();
+      for (const m of matchingMembers) {
+        membersByEmail.set(m.email, { firstName: m.firstName, lastName: m.lastName });
+      }
 
-      swapCache.set(productId, true);
-      await db
-        .insert(productSwapMap)
-        .values({
-          productId,
-          isSwapped: true,
-          detectionMethod: "cross_reference",
-          confidence,
-        })
-        .onConflictDoUpdate({
-          target: productSwapMap.productId,
-          set: {
+      let normalMatchCount = 0;
+      let swappedMatchCount = 0;
+
+      for (const att of productAttendees) {
+        if (!att.firstName || !att.lastName) continue;
+        const member = membersByEmail.get(att.email);
+        if (!member) continue;
+        if (member.firstName === att.firstName && member.lastName === att.lastName) normalMatchCount++;
+        if (member.firstName === att.lastName && member.lastName === att.firstName) swappedMatchCount++;
+      }
+
+      if (swappedMatchCount > normalMatchCount && swappedMatchCount >= 2) {
+        const confidence = swappedMatchCount / (swappedMatchCount + normalMatchCount);
+        console.log(
+          `[sync-attendees] Cross-reference detected swap for product ${productId}: ` +
+          `${swappedMatchCount} swapped matches vs ${normalMatchCount} normal (confidence: ${confidence.toFixed(2)})`
+        );
+
+        swapCache.set(productId, true);
+        await db
+          .insert(productSwapMap)
+          .values({
+            productId,
             isSwapped: true,
             detectionMethod: "cross_reference",
             confidence,
-          },
-        });
-      newlyDetectedSwaps.push(productId);
+          })
+          .onConflictDoUpdate({
+            target: productSwapMap.productId,
+            set: {
+              isSwapped: true,
+              detectionMethod: "cross_reference",
+              confidence,
+            },
+          });
+        newlyDetectedSwaps.push(productId);
+      }
     }
+  } catch (error) {
+    console.warn(`[sync-attendees] Failed to run cross-reference swap detection (table may not exist):`, error instanceof Error ? error.message : error);
   }
 
   // Retroactive correction: when a swap is newly detected, fix existing attendees

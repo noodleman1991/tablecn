@@ -1,12 +1,47 @@
 {
-  "version": "5",
-  "dialect": "pg",
+  "version": "7",
+  "dialect": "postgresql",
   "entries": [
     {
       "idx": 0,
-      "version": "5",
+      "version": "7",
       "when": 1688996090760,
-      "tag": "0000_perfect_whizzer",
+      "tag": "0000_faithful_iron_fist",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1701676020000,
+      "tag": "0001_blue_zaladane",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1701849840000,
+      "tag": "0002_hesitant_dreaming_celestial",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1704585600000,
+      "tag": "0003_greedy_lyja",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1704655920000,
+      "tag": "0004_wild_beyonder",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1705826820000,
+      "tag": "0005_bright_charles_xavier",
       "breakpoints": true
     },
     {
