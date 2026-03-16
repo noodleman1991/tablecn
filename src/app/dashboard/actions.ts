@@ -67,7 +67,7 @@ export async function getDashboardStats(
     .select({ count: sql<string>`COUNT(*)::text` })
     .from(members)
     .where(eq(members.isActiveMember, true));
-  const activeMembersCount = parseInt(activeResult[0]?.count ?? "0");
+  const communityMembersCount = parseInt(activeResult[0]?.count ?? "0");
 
   const checkinRate = validTickets > 0 ? (checkedInCount / validTickets) * 100 : 0;
 
@@ -77,7 +77,7 @@ export async function getDashboardStats(
     validTickets,
     checkedInCount,
     checkinRate,
-    activeMembersCount,
+    communityMembersCount,
     totalRevenue,
   };
 }
@@ -139,8 +139,8 @@ export async function getFunnelByEvent(
     ticketTypeMap.get(tr.event_id)![tr.ticket_type] = parseInt(tr.cnt);
   }
 
-  // Member conversions
-  const convRows = await db.execute<{
+  // Returning attendees (checked-in attendees who have an existing member record)
+  const returningRows = await db.execute<{
     event_id: string;
     cnt: string;
   }>(sql`
@@ -154,17 +154,17 @@ export async function getFunnelByEvent(
       AND e.merged_into_event_id IS NULL
     GROUP BY a.event_id
   `);
-  const convMap = new Map<string, number>();
-  for (const cr of convRows as any[]) {
-    convMap.set(cr.event_id, parseInt(cr.cnt));
+  const returningMap = new Map<string, number>();
+  for (const cr of returningRows as any[]) {
+    returningMap.set(cr.event_id, parseInt(cr.cnt));
   }
 
-  // New members per event (created within 5min of check-in)
-  const newMemberRows = await db.execute<{
+  // New attendees per event (member created within 5min of check-in)
+  const newCountRows = await db.execute<{
     event_id: string;
-    new_member_count: string;
+    new_count: string;
   }>(sql`
-    SELECT a.event_id, COUNT(DISTINCT m.id)::text AS new_member_count
+    SELECT a.event_id, COUNT(DISTINCT m.id)::text AS new_count
     FROM ${attendees} a
     INNER JOIN ${members} m ON LOWER(m.email) = LOWER(a.email)
     INNER JOIN ${events} e ON e.id = a.event_id
@@ -175,9 +175,9 @@ export async function getFunnelByEvent(
       AND m.created_at <= a.checked_in_at + INTERVAL '5 minutes'
     GROUP BY a.event_id
   `);
-  const newMemberMap = new Map<string, number>();
-  for (const r of newMemberRows as any[]) {
-    newMemberMap.set(r.event_id, parseInt(r.new_member_count));
+  const newCountMap = new Map<string, number>();
+  for (const r of newCountRows as any[]) {
+    newCountMap.set(r.event_id, parseInt(r.new_count));
   }
 
   // Community members gained per event: attendees whose 3rd countable event was this event
@@ -279,10 +279,10 @@ export async function getFunnelByEvent(
       validTickets,
       checkedInCount,
       checkedInPercent: validTickets > 0 ? Math.round((checkedInCount / validTickets) * 100) : 0,
-      memberConversions: convMap.get(r.id) || 0,
+      returningCount: returningMap.get(r.id) || 0,
       communityGained: communityGainedMap.get(r.id) || 0,
       communityLost: communityLostMap.get(r.id) || 0,
-      newMembers: newMemberMap.get(r.id) || 0,
+      newCount: newCountMap.get(r.id) || 0,
       revenue: parseFloat(r.revenue),
     };
   });
@@ -343,8 +343,8 @@ export async function getFunnelByMonth(
     ticketTypeMap.get(tr.month)![tr.ticket_type] = parseInt(tr.cnt);
   }
 
-  // Member conversions by month
-  const convRows = await db.execute<{
+  // Returning attendees by month
+  const returningMonthRows = await db.execute<{
     month: string;
     cnt: string;
   }>(sql`
@@ -360,19 +360,19 @@ export async function getFunnelByMonth(
       AND e.merged_into_event_id IS NULL
     GROUP BY TO_CHAR(e.event_date, 'YYYY-MM')
   `);
-  const convMap = new Map<string, number>();
-  for (const cr of convRows as any[]) {
-    convMap.set(cr.month, parseInt(cr.cnt));
+  const returningMonthMap = new Map<string, number>();
+  for (const cr of returningMonthRows as any[]) {
+    returningMonthMap.set(cr.month, parseInt(cr.cnt));
   }
 
-  // New members by month (created within 5min of check-in)
-  const newMemberMonthRows = await db.execute<{
+  // New attendees by month (member created within 5min of check-in)
+  const newCountMonthRows = await db.execute<{
     month: string;
-    new_member_count: string;
+    new_count: string;
   }>(sql`
     SELECT
       TO_CHAR(e.event_date, 'YYYY-MM') AS month,
-      COUNT(DISTINCT m.id)::text AS new_member_count
+      COUNT(DISTINCT m.id)::text AS new_count
     FROM ${attendees} a
     INNER JOIN ${members} m ON LOWER(m.email) = LOWER(a.email)
     INNER JOIN ${events} e ON e.id = a.event_id
@@ -383,9 +383,9 @@ export async function getFunnelByMonth(
       AND m.created_at <= a.checked_in_at + INTERVAL '5 minutes'
     GROUP BY TO_CHAR(e.event_date, 'YYYY-MM')
   `);
-  const newMemberMonthMap = new Map<string, number>();
-  for (const r of newMemberMonthRows as any[]) {
-    newMemberMonthMap.set(r.month, parseInt(r.new_member_count));
+  const newCountMonthMap = new Map<string, number>();
+  for (const r of newCountMonthRows as any[]) {
+    newCountMonthMap.set(r.month, parseInt(r.new_count));
   }
 
   // Community members gained by month: attendees whose 3rd countable event fell in that month
@@ -477,10 +477,10 @@ export async function getFunnelByMonth(
       validTickets,
       checkedInCount,
       checkedInPercent: validTickets > 0 ? Math.round((checkedInCount / validTickets) * 100) : 0,
-      memberConversions: convMap.get(r.month) || 0,
+      returningCount: returningMonthMap.get(r.month) || 0,
       communityGained: communityGainedMonthMap.get(r.month) || 0,
       communityLost: communityLostMonthMap.get(r.month) || 0,
-      newMembers: newMemberMonthMap.get(r.month) || 0,
+      newCount: newCountMonthMap.get(r.month) || 0,
       revenue: parseFloat(r.revenue),
     };
   });
@@ -681,27 +681,27 @@ export async function getAnalyticsData(
       newCount: parseInt(r.new_count),
       returningCount: parseInt(r.returning_count),
     })),
-    memberGrowthPerEvent: (memberGrowthPerEventRows as any[]).map((r) => ({
+    newAttendeesPerEvent: (memberGrowthPerEventRows as any[]).map((r) => ({
       eventName: r.name,
       date: r.event_date.split("T")[0] ?? r.event_date,
-      newMembers: parseInt(r.new_members),
+      newCount: parseInt(r.new_members),
     })),
-    memberGrowth: filteredMemberGrowth.map((r) => ({
+    communityGrowth: filteredMemberGrowth.map((r) => ({
       month: r.month,
-      newMembers: parseInt(r.new_members),
-      cumulativeMembers: parseInt(r.cumulative_members),
+      newCommunityMembers: parseInt(r.new_members),
+      cumulativeCommunityMembers: parseInt(r.cumulative_members),
     })),
   };
 }
 
 // ─── Member Details ──────────────────────────────────────────────────────────
 
-export async function getMemberDetailsForEvent(eventId: string): Promise<
+export async function getReturningDetailsForEvent(eventId: string): Promise<
   Array<{
     email: string;
     name: string;
-    isNewMember: boolean;
-    isActiveMember: boolean;
+    isNew: boolean;
+    isCommunityMember: boolean;
   }>
 > {
   const rows = await db.execute<{
@@ -732,8 +732,8 @@ export async function getMemberDetailsForEvent(eventId: string): Promise<
   return (rows as any[]).map((r) => ({
     email: r.email,
     name: `${r.first_name} ${r.last_name}`.trim() || r.email,
-    isNewMember: r.is_new === "1",
-    isActiveMember: r.is_active_member === "1",
+    isNew: r.is_new === "1",
+    isCommunityMember: r.is_active_member === "1",
   }));
 }
 

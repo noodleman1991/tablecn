@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getFunnelByEvent, getFunnelByMonth, getMemberDetailsForEvent, getCommunityDetailsForEvent } from "../actions";
+import { getFunnelByEvent, getFunnelByMonth, getReturningDetailsForEvent, getCommunityDetailsForEvent } from "../actions";
 import type { PeriodFilter, FunnelEventRow, FunnelMonthRow } from "../types";
 
 interface FunnelTabProps {
@@ -87,16 +87,16 @@ export function FunnelTab({ period }: FunnelTabProps) {
     );
   }
 
-  function MemberDetailPopover({ eventId, count }: { eventId: string; count: number }) {
+  function ReturningDetailPopover({ eventId, count }: { eventId: string; count: number }) {
     const [details, setDetails] = React.useState<
-      Array<{ email: string; name: string; isNewMember: boolean; isActiveMember: boolean }> | null
+      Array<{ email: string; name: string; isNew: boolean; isCommunityMember: boolean }> | null
     >(null);
     const [loadingDetails, setLoadingDetails] = React.useState(false);
 
     const handleOpen = (open: boolean) => {
       if (open && details === null && !loadingDetails) {
         setLoadingDetails(true);
-        getMemberDetailsForEvent(eventId)
+        getReturningDetailsForEvent(eventId)
           .then(setDetails)
           .catch(console.error)
           .finally(() => setLoadingDetails(false));
@@ -120,7 +120,7 @@ export function FunnelTab({ period }: FunnelTabProps) {
           ) : details && details.length > 0 ? (
             <div className="space-y-1">
               <p className="text-xs font-medium text-muted-foreground mb-2">
-                {details.length} member(s) checked in
+                {details.length} returning attendee(s)
               </p>
               {details.map((d) => (
                 <div key={d.email} className="flex items-center justify-between text-sm">
@@ -129,12 +129,12 @@ export function FunnelTab({ period }: FunnelTabProps) {
                     <span className="text-muted-foreground text-xs ml-1">({d.email})</span>
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    {d.isNewMember && (
+                    {d.isNew && (
                       <Badge variant="outline" className="border-green-500 bg-green-50 text-green-700 text-xs">
                         New
                       </Badge>
                     )}
-                    {d.isActiveMember && (
+                    {d.isCommunityMember && (
                       <Badge variant="outline" className="border-blue-500 bg-blue-50 text-blue-700 text-xs">
                         Community
                       </Badge>
@@ -144,7 +144,7 @@ export function FunnelTab({ period }: FunnelTabProps) {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">No member details found.</p>
+            <p className="text-sm text-muted-foreground">No returning attendees found.</p>
           )}
         </PopoverContent>
       </Popover>
@@ -309,7 +309,7 @@ export function FunnelTab({ period }: FunnelTabProps) {
                           <span className="cursor-help underline decoration-dotted">Returning</span>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p className="text-xs max-w-[200px]">Checked-in attendees who have an existing member record.</p>
+                          <p className="text-xs max-w-[200px]">Checked-in attendees who have attended a previous event.</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -321,7 +321,7 @@ export function FunnelTab({ period }: FunnelTabProps) {
                           <span className="cursor-help underline decoration-dotted">New</span>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p className="text-xs max-w-[200px]">Members created at the time of check-in (within 5 minutes).</p>
+                          <p className="text-xs max-w-[200px]">First-time attendees (member record created at check-in).</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -333,7 +333,7 @@ export function FunnelTab({ period }: FunnelTabProps) {
                           <span className="cursor-help underline decoration-dotted">Community</span>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p className="text-xs max-w-[200px]">Change in community members. Gained: attendees whose 3rd countable event was this one. Lost: members whose 9-month recency expired.</p>
+                          <p className="text-xs max-w-[200px]">Change in community membership. Gained: attendees whose 3rd countable event was this one. Lost: members whose 9-month recency expired.</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -379,11 +379,11 @@ export function FunnelTab({ period }: FunnelTabProps) {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        <MemberDetailPopover eventId={row.eventId} count={row.memberConversions} />
+                        <ReturningDetailPopover eventId={row.eventId} count={row.returningCount} />
                       </TableCell>
                       <TableCell className="text-right">
-                        {row.newMembers > 0 ? (
-                          <span className="text-green-600 font-medium">+{row.newMembers}</span>
+                        {row.newCount > 0 ? (
+                          <span className="text-green-600 font-medium">+{row.newCount}</span>
                         ) : (
                           <span className="text-muted-foreground">0</span>
                         )}
@@ -435,7 +435,7 @@ export function FunnelTab({ period }: FunnelTabProps) {
                           <span className="cursor-help underline decoration-dotted">Returning</span>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p className="text-xs max-w-[200px]">Checked-in attendees who have an existing member record.</p>
+                          <p className="text-xs max-w-[200px]">Checked-in attendees who have attended a previous event.</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -447,7 +447,7 @@ export function FunnelTab({ period }: FunnelTabProps) {
                           <span className="cursor-help underline decoration-dotted">New</span>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p className="text-xs max-w-[200px]">Members created at the time of check-in (within 5 minutes).</p>
+                          <p className="text-xs max-w-[200px]">First-time attendees (member record created at check-in).</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -459,7 +459,7 @@ export function FunnelTab({ period }: FunnelTabProps) {
                           <span className="cursor-help underline decoration-dotted">Community</span>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p className="text-xs max-w-[200px]">Change in community members. Gained: attendees whose 3rd countable event was this one. Lost: members whose 9-month recency expired.</p>
+                          <p className="text-xs max-w-[200px]">Change in community membership. Gained: attendees whose 3rd countable event was this one. Lost: members whose 9-month recency expired.</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -496,10 +496,10 @@ export function FunnelTab({ period }: FunnelTabProps) {
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-right">{row.memberConversions}</TableCell>
+                      <TableCell className="text-right">{row.returningCount}</TableCell>
                       <TableCell className="text-right">
-                        {row.newMembers > 0 ? (
-                          <span className="text-green-600 font-medium">+{row.newMembers}</span>
+                        {row.newCount > 0 ? (
+                          <span className="text-green-600 font-medium">+{row.newCount}</span>
                         ) : (
                           <span className="text-muted-foreground">0</span>
                         )}

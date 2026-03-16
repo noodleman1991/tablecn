@@ -9,7 +9,7 @@ export interface DashboardStats {
   validTickets: number;
   checkedInCount: number;
   checkinRate: number;
-  activeMembersCount: number;
+  communityMembersCount: number;
   totalRevenue: number;
 }
 
@@ -23,10 +23,10 @@ export interface FunnelEventRow {
   validTickets: number;
   checkedInCount: number;
   checkedInPercent: number;
-  memberConversions: number;
+  returningCount: number;
   communityGained: number;
   communityLost: number;
-  newMembers: number;
+  newCount: number;
   revenue: number;
 }
 
@@ -39,10 +39,10 @@ export interface FunnelMonthRow {
   validTickets: number;
   checkedInCount: number;
   checkedInPercent: number;
-  memberConversions: number;
+  returningCount: number;
   communityGained: number;
   communityLost: number;
-  newMembers: number;
+  newCount: number;
   revenue: number;
 }
 
@@ -59,15 +59,15 @@ export interface AnalyticsData {
     newCount: number;
     returningCount: number;
   }>;
-  memberGrowthPerEvent: Array<{
+  newAttendeesPerEvent: Array<{
     eventName: string;
     date: string;
-    newMembers: number;
+    newCount: number;
   }>;
-  memberGrowth: Array<{
+  communityGrowth: Array<{
     month: string;
-    newMembers: number;
-    cumulativeMembers: number;
+    newCommunityMembers: number;
+    cumulativeCommunityMembers: number;
   }>;
 }
 

@@ -17,7 +17,7 @@ export function StatCards({ stats, loading }: StatCardsProps) {
       title: "Check-in Rate",
       value: `${stats.checkinRate.toFixed(1)}%`,
     },
-    { title: "Active Members", value: stats.activeMembersCount.toString() },
+    { title: "Community Members", value: stats.communityMembersCount.toString() },
     {
       title: "Revenue",
       value: `£${stats.totalRevenue.toLocaleString("en-GB", {

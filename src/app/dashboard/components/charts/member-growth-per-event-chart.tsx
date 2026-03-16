@@ -4,14 +4,14 @@ import { Bar, BarChart, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recha
 import { ChartContainer, type ChartConfig } from "@/components/ui/chart";
 
 const chartConfig = {
-  newMembers: { label: "New Members", color: "var(--chart-5)" },
+  newCount: { label: "New Attendees", color: "var(--chart-5)" },
 } satisfies ChartConfig;
 
 interface Props {
-  data: Array<{ eventName: string; date: string; newMembers: number }>;
+  data: Array<{ eventName: string; date: string; newCount: number }>;
 }
 
-export function MemberGrowthPerEventChart({ data }: Props) {
+export function NewAttendeesPerEventChart({ data }: Props) {
   if (data.length === 0) {
     return <p className="text-sm text-muted-foreground text-center py-8">No data available</p>;
   }
@@ -40,12 +40,12 @@ export function MemberGrowthPerEventChart({ data }: Props) {
               <div className="rounded border bg-background p-2 text-sm shadow-sm">
                 <p className="font-medium">{d.eventName}</p>
                 <p className="text-muted-foreground">{d.date}</p>
-                <p>New members: {d.newMembers}</p>
+                <p>New attendees: {d.newCount}</p>
               </div>
             );
           }}
         />
-        <Bar dataKey="newMembers" fill="var(--color-newMembers)" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="newCount" fill="var(--color-newCount)" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ChartContainer>
   );

@@ -13,15 +13,15 @@ import {
 import { ChartContainer, type ChartConfig } from "@/components/ui/chart";
 
 const chartConfig = {
-  newMembers: { label: "New Members", color: "var(--chart-2)" },
-  cumulativeMembers: { label: "Total Members", color: "var(--chart-1)" },
+  newCommunityMembers: { label: "New Community Members", color: "var(--chart-2)" },
+  cumulativeCommunityMembers: { label: "Total Community Members", color: "var(--chart-1)" },
 } satisfies ChartConfig;
 
 interface Props {
-  data: Array<{ month: string; newMembers: number; cumulativeMembers: number }>;
+  data: Array<{ month: string; newCommunityMembers: number; cumulativeCommunityMembers: number }>;
 }
 
-export function MemberGrowthChart({ data }: Props) {
+export function CommunityGrowthChart({ data }: Props) {
   if (data.length === 0) {
     return <p className="text-sm text-muted-foreground text-center py-8">No data available</p>;
   }
@@ -50,8 +50,8 @@ export function MemberGrowthChart({ data }: Props) {
             return (
               <div className="rounded border bg-background p-2 text-sm shadow-sm">
                 <p className="font-medium">{d.month}</p>
-                <p>New members: {d.newMembers}</p>
-                <p>Total members: {d.cumulativeMembers}</p>
+                <p>New community members: {d.newCommunityMembers}</p>
+                <p>Total community members: {d.cumulativeCommunityMembers}</p>
               </div>
             );
           }}
@@ -59,19 +59,19 @@ export function MemberGrowthChart({ data }: Props) {
         <Legend />
         <Bar
           yAxisId="left"
-          dataKey="newMembers"
-          fill="var(--color-newMembers)"
+          dataKey="newCommunityMembers"
+          fill="var(--color-newCommunityMembers)"
           radius={[4, 4, 0, 0]}
-          name="New Members"
+          name="New Community Members"
         />
         <Line
           yAxisId="right"
           type="monotone"
-          dataKey="cumulativeMembers"
-          stroke="var(--color-cumulativeMembers)"
+          dataKey="cumulativeCommunityMembers"
+          stroke="var(--color-cumulativeCommunityMembers)"
           strokeWidth={2}
           dot={{ r: 3 }}
-          name="Total Members"
+          name="Total Community Members"
         />
       </ComposedChart>
     </ChartContainer>

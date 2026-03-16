@@ -32,12 +32,12 @@ const NewVsReturningChart = dynamic(
   () => import("./charts/new-vs-returning-chart").then((m) => m.NewVsReturningChart),
   { ssr: false, loading: () => <Skeleton className="h-[300px] w-full" /> },
 );
-const MemberGrowthPerEventChart = dynamic(
-  () => import("./charts/member-growth-per-event-chart").then((m) => m.MemberGrowthPerEventChart),
+const NewAttendeesPerEventChart = dynamic(
+  () => import("./charts/member-growth-per-event-chart").then((m) => m.NewAttendeesPerEventChart),
   { ssr: false, loading: () => <Skeleton className="h-[300px] w-full" /> },
 );
-const MemberGrowthChart = dynamic(
-  () => import("./charts/member-growth-chart").then((m) => m.MemberGrowthChart),
+const CommunityGrowthChart = dynamic(
+  () => import("./charts/member-growth-chart").then((m) => m.CommunityGrowthChart),
   { ssr: false, loading: () => <Skeleton className="h-[300px] w-full" /> },
 );
 
@@ -95,10 +95,10 @@ export function AnalyticsTab({ period }: AnalyticsTabProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">New Members per Event</CardTitle>
+          <CardTitle className="text-base">New Attendees per Event</CardTitle>
         </CardHeader>
         <CardContent>
-          <MemberGrowthPerEventChart data={data.memberGrowthPerEvent} />
+          <NewAttendeesPerEventChart data={data.newAttendeesPerEvent} />
         </CardContent>
       </Card>
 
@@ -149,10 +149,10 @@ export function AnalyticsTab({ period }: AnalyticsTabProps) {
 
       <Card className="md:col-span-2">
         <CardHeader>
-          <CardTitle className="text-base">Member Growth</CardTitle>
+          <CardTitle className="text-base">Community Growth</CardTitle>
         </CardHeader>
         <CardContent>
-          <MemberGrowthChart data={data.memberGrowth} />
+          <CommunityGrowthChart data={data.communityGrowth} />
         </CardContent>
       </Card>
     </div>
