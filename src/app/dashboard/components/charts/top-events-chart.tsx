@@ -8,7 +8,7 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 interface Props {
-  data: Array<{ eventName: string; count: number }>;
+  data: Array<{ eventName: string; date: string; count: number }>;
 }
 
 export function TopEventsChart({ data }: Props) {
@@ -25,6 +25,12 @@ export function TopEventsChart({ data }: Props) {
           dataKey="eventName"
           tick={{ fontSize: 10 }}
           width={200}
+          tickFormatter={(name, index) => {
+            const item = data[index];
+            if (!item?.date) return name;
+            const d = new Date(item.date);
+            return `${name} (${d.getDate()}/${d.getMonth() + 1})`;
+          }}
         />
         <Tooltip
           content={({ active, payload }) => {
@@ -33,6 +39,7 @@ export function TopEventsChart({ data }: Props) {
             return (
               <div className="rounded border bg-background p-2 text-sm shadow-sm">
                 <p className="font-medium">{d.eventName}</p>
+                {d.date && <p className="text-muted-foreground">{d.date}</p>}
                 <p>{d.count} checked in</p>
               </div>
             );

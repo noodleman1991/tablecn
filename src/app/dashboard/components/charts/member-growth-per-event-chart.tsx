@@ -18,14 +18,18 @@ export function MemberGrowthPerEventChart({ data }: Props) {
 
   return (
     <ChartContainer config={chartConfig} className="h-[300px] w-full">
-      <BarChart data={data}>
+      <BarChart data={data} margin={{ bottom: 20 }}>
         <XAxis
           dataKey="date"
-          tick={{ fontSize: 11 }}
+          tick={{ fontSize: 10 }}
           tickFormatter={(v) => {
             const d = new Date(v);
             return `${d.getDate()}/${d.getMonth() + 1}`;
           }}
+          angle={-45}
+          textAnchor="end"
+          height={60}
+          interval={data.length > 30 ? Math.floor(data.length / 15) : 0}
         />
         <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
         <Tooltip

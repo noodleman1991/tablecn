@@ -54,7 +54,7 @@ export function DashboardPage({ initialStats, defaultPeriod }: DashboardPageProp
         <TabsList>
           <TabsTrigger value="funnel">Funnel</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="validation">Validation</TabsTrigger>
+          <TabsTrigger value="validation" disabled className="opacity-50">Validation (WIP)</TabsTrigger>
         </TabsList>
 
         <TabsContent value="funnel" className="mt-4">

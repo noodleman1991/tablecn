@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getFunnelByEvent, getFunnelByMonth, getMemberDetailsForEvent } from "../actions";
+import { getFunnelByEvent, getFunnelByMonth, getMemberDetailsForEvent, getCommunityDetailsForEvent } from "../actions";
 import type { PeriodFilter, FunnelEventRow, FunnelMonthRow } from "../types";
 
 interface FunnelTabProps {
@@ -89,7 +89,7 @@ export function FunnelTab({ period }: FunnelTabProps) {
 
   function MemberDetailPopover({ eventId, count }: { eventId: string; count: number }) {
     const [details, setDetails] = React.useState<
-      Array<{ email: string; name: string; isNewMember: boolean }> | null
+      Array<{ email: string; name: string; isNewMember: boolean; isActiveMember: boolean }> | null
     >(null);
     const [loadingDetails, setLoadingDetails] = React.useState(false);
 
@@ -128,16 +128,117 @@ export function FunnelTab({ period }: FunnelTabProps) {
                     <span className="font-medium">{d.name}</span>
                     <span className="text-muted-foreground text-xs ml-1">({d.email})</span>
                   </div>
-                  {d.isNewMember && (
-                    <Badge variant="outline" className="border-green-500 bg-green-50 text-green-700 text-xs shrink-0">
-                      New
-                    </Badge>
-                  )}
+                  <div className="flex gap-1 shrink-0">
+                    {d.isNewMember && (
+                      <Badge variant="outline" className="border-green-500 bg-green-50 text-green-700 text-xs">
+                        New
+                      </Badge>
+                    )}
+                    {d.isActiveMember && (
+                      <Badge variant="outline" className="border-blue-500 bg-blue-50 text-blue-700 text-xs">
+                        Community
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">No member details found.</p>
+          )}
+        </PopoverContent>
+      </Popover>
+    );
+  }
+
+  function CommunityDetailPopover({
+    eventId, gained, lost,
+  }: {
+    eventId: string; gained: number; lost: number;
+  }) {
+    const [details, setDetails] = React.useState<{
+      gained: Array<{ email: string; name: string }>;
+      lost: Array<{ email: string; name: string }>;
+    } | null>(null);
+    const [loadingDetails, setLoadingDetails] = React.useState(false);
+
+    if (gained === 0 && lost === 0) {
+      return <span className="text-muted-foreground">0</span>;
+    }
+
+    const handleOpen = (open: boolean) => {
+      if (open && details === null && !loadingDetails) {
+        setLoadingDetails(true);
+        getCommunityDetailsForEvent(eventId)
+          .then(setDetails)
+          .catch(console.error)
+          .finally(() => setLoadingDetails(false));
+      }
+    };
+
+    return (
+      <Popover onOpenChange={handleOpen}>
+        <PopoverTrigger asChild>
+          <button className="cursor-pointer underline decoration-dotted hover:text-foreground flex items-center gap-1">
+            {gained > 0 && (
+              <span className="font-medium text-blue-600">+{gained}</span>
+            )}
+            {lost > 0 && (
+              <span className="font-medium text-orange-600">-{lost}</span>
+            )}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-80 max-h-64 overflow-y-auto p-3" align="end">
+          {loadingDetails ? (
+            <div className="space-y-1">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-5 w-full" />
+              ))}
+            </div>
+          ) : details ? (
+            <div className="space-y-3">
+              {details.gained.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1">
+                    <Badge variant="outline" className="border-blue-500 bg-blue-50 text-blue-700 text-xs">
+                      +{details.gained.length}
+                    </Badge>
+                    Gained community status
+                  </p>
+                  <div className="space-y-0.5">
+                    {details.gained.map((d) => (
+                      <div key={d.email} className="text-sm truncate">
+                        <span className="font-medium">{d.name}</span>
+                        <span className="text-muted-foreground text-xs ml-1">({d.email})</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {details.lost.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1">
+                    <Badge variant="outline" className="border-orange-500 bg-orange-50 text-orange-700 text-xs">
+                      -{details.lost.length}
+                    </Badge>
+                    Lost community status
+                  </p>
+                  <div className="space-y-0.5">
+                    {details.lost.map((d) => (
+                      <div key={d.email} className="text-sm truncate">
+                        <span className="font-medium">{d.name}</span>
+                        <span className="text-muted-foreground text-xs ml-1">({d.email})</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {details.gained.length === 0 && details.lost.length === 0 && (
+                <p className="text-sm text-muted-foreground">No community changes found.</p>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No community changes found.</p>
           )}
         </PopoverContent>
       </Popover>
@@ -201,7 +302,18 @@ export function FunnelTab({ period }: FunnelTabProps) {
                     </TooltipProvider>
                   </TableHead>
                   <TableHead className="min-w-[160px]">Checked In</TableHead>
-                  <TableHead className="text-right">Members</TableHead>
+                  <TableHead className="text-right">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="cursor-help underline decoration-dotted">Returning</span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs max-w-[200px]">Checked-in attendees who have an existing member record.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </TableHead>
                   <TableHead className="text-right">
                     <TooltipProvider>
                       <Tooltip>
@@ -214,13 +326,25 @@ export function FunnelTab({ period }: FunnelTabProps) {
                       </Tooltip>
                     </TooltipProvider>
                   </TableHead>
+                  <TableHead className="text-right">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="cursor-help underline decoration-dotted">Community</span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs max-w-[200px]">Change in community members. Gained: attendees whose 3rd countable event was this one. Lost: members whose 9-month recency expired.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </TableHead>
                   <TableHead className="text-right">Revenue</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {eventData.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center text-muted-foreground">
+                    <TableCell colSpan={10} className="text-center text-muted-foreground">
                       No events in this period
                     </TableCell>
                   </TableRow>
@@ -265,6 +389,15 @@ export function FunnelTab({ period }: FunnelTabProps) {
                         )}
                       </TableCell>
                       <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <CommunityDetailPopover
+                            eventId={row.eventId}
+                            gained={row.communityGained}
+                            lost={row.communityLost}
+                          />
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
                         £{row.revenue.toLocaleString("en-GB", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                       </TableCell>
                     </TableRow>
@@ -295,7 +428,18 @@ export function FunnelTab({ period }: FunnelTabProps) {
                     </TooltipProvider>
                   </TableHead>
                   <TableHead className="min-w-[160px]">Checked In</TableHead>
-                  <TableHead className="text-right">Members</TableHead>
+                  <TableHead className="text-right">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="cursor-help underline decoration-dotted">Returning</span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs max-w-[200px]">Checked-in attendees who have an existing member record.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </TableHead>
                   <TableHead className="text-right">
                     <TooltipProvider>
                       <Tooltip>
@@ -308,13 +452,25 @@ export function FunnelTab({ period }: FunnelTabProps) {
                       </Tooltip>
                     </TooltipProvider>
                   </TableHead>
+                  <TableHead className="text-right">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="cursor-help underline decoration-dotted">Community</span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs max-w-[200px]">Change in community members. Gained: attendees whose 3rd countable event was this one. Lost: members whose 9-month recency expired.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </TableHead>
                   <TableHead className="text-right">Revenue</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {monthData.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center text-muted-foreground">
+                    <TableCell colSpan={10} className="text-center text-muted-foreground">
                       No data in this period
                     </TableCell>
                   </TableRow>
@@ -347,6 +503,19 @@ export function FunnelTab({ period }: FunnelTabProps) {
                         ) : (
                           <span className="text-muted-foreground">0</span>
                         )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {row.communityGained > 0 && (
+                            <span className="font-medium text-blue-600">+{row.communityGained}</span>
+                          )}
+                          {row.communityLost > 0 && (
+                            <span className="font-medium text-orange-600">-{row.communityLost}</span>
+                          )}
+                          {row.communityGained === 0 && row.communityLost === 0 && (
+                            <span className="text-muted-foreground">0</span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-right">
                         £{row.revenue.toLocaleString("en-GB", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}

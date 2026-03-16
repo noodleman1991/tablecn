@@ -29,7 +29,7 @@ export function MemberGrowthChart({ data }: Props) {
   return (
     <ChartContainer config={chartConfig} className="h-[300px] w-full">
       <ComposedChart data={data}>
-        <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+        <XAxis dataKey="month" tick={{ fontSize: 11 }} interval={0} />
         <YAxis
           yAxisId="left"
           tick={{ fontSize: 11 }}

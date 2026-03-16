@@ -24,6 +24,8 @@ export interface FunnelEventRow {
   checkedInCount: number;
   checkedInPercent: number;
   memberConversions: number;
+  communityGained: number;
+  communityLost: number;
   newMembers: number;
   revenue: number;
 }
@@ -38,6 +40,8 @@ export interface FunnelMonthRow {
   checkedInCount: number;
   checkedInPercent: number;
   memberConversions: number;
+  communityGained: number;
+  communityLost: number;
   newMembers: number;
   revenue: number;
 }
@@ -47,7 +51,7 @@ export interface AnalyticsData {
 
   ticketTypeDistribution: Array<{ type: string; count: number }>;
   revenueTrend: Array<{ month: string; revenue: number }>;
-  topEvents: Array<{ eventName: string; count: number }>;
+  topEvents: Array<{ eventName: string; date: string; count: number }>;
   topBuyers: Array<{ email: string; name: string; count: number }>;
   newVsReturning: Array<{
     eventName: string;

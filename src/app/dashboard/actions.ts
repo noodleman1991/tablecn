@@ -180,6 +180,92 @@ export async function getFunnelByEvent(
     newMemberMap.set(r.event_id, parseInt(r.new_member_count));
   }
 
+  // Community members gained per event: attendees whose 3rd countable event was this event
+  const communityGainedRows = await db.execute<{
+    event_id: string;
+    cnt: string;
+  }>(sql`
+    WITH countable_checkins AS (
+      SELECT
+        a.email,
+        a.event_id,
+        e.event_date,
+        ROW_NUMBER() OVER (
+          PARTITION BY LOWER(a.email)
+          ORDER BY e.event_date, e.id
+        ) AS event_rank
+      FROM ${attendees} a
+      INNER JOIN ${events} e ON e.id = a.event_id
+      WHERE a.checked_in = true
+        AND a.order_status NOT IN ('cancelled','refunded','deleted')
+        AND e.merged_into_event_id IS NULL
+        AND e.name NOT ILIKE '%walk%'
+        AND e.name NOT ILIKE '%party%'
+        AND e.name NOT ILIKE '%drinks%'
+        AND NOT (
+          (e.name ILIKE '%winter%' OR e.name ILIKE '%spring%' OR e.name ILIKE '%summer%'
+           OR e.name ILIKE '%autumn%' OR e.name ILIKE '%fall%' OR e.name ILIKE '%solstice%'
+           OR e.name ILIKE '%equinox%')
+          AND e.name ILIKE '%celebration%'
+        )
+    )
+    SELECT cc.event_id, COUNT(DISTINCT cc.email)::text AS cnt
+    FROM countable_checkins cc
+    INNER JOIN ${events} e ON e.id = cc.event_id
+    WHERE cc.event_rank = 3
+      AND e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
+    GROUP BY cc.event_id
+  `);
+  const communityGainedMap = new Map<string, number>();
+  for (const cr of communityGainedRows as any[]) {
+    communityGainedMap.set(cr.event_id, parseInt(cr.cnt));
+  }
+
+  // Community members lost per event: members whose 9-month recency window expired
+  // between the previous event and this event (their last countable event + 9 months
+  // falls between the previous period event date and this event date)
+  const communityLostRows = await db.execute<{
+    event_id: string;
+    cnt: string;
+  }>(sql`
+    WITH period_events AS (
+      SELECT id, event_date,
+        LAG(event_date) OVER (ORDER BY event_date, id) AS prev_event_date
+      FROM ${events}
+      WHERE event_date >= ${isoDate(from)} AND event_date <= ${isoDate(to)}
+        AND merged_into_event_id IS NULL
+    ),
+    member_last_countable AS (
+      SELECT LOWER(a.email) AS email, MAX(e.event_date) AS last_countable_date
+      FROM ${attendees} a
+      INNER JOIN ${events} e ON e.id = a.event_id
+      WHERE a.checked_in = true
+        AND a.order_status NOT IN ('cancelled','refunded','deleted')
+        AND e.merged_into_event_id IS NULL
+        AND e.name NOT ILIKE '%walk%'
+        AND e.name NOT ILIKE '%party%'
+        AND e.name NOT ILIKE '%drinks%'
+        AND NOT (
+          (e.name ILIKE '%winter%' OR e.name ILIKE '%spring%' OR e.name ILIKE '%summer%'
+           OR e.name ILIKE '%autumn%' OR e.name ILIKE '%fall%' OR e.name ILIKE '%solstice%'
+           OR e.name ILIKE '%equinox%')
+          AND e.name ILIKE '%celebration%'
+        )
+      GROUP BY LOWER(a.email)
+      HAVING COUNT(DISTINCT e.id) >= 3
+    )
+    SELECT pe.id AS event_id, COUNT(DISTINCT mlc.email)::text AS cnt
+    FROM period_events pe
+    INNER JOIN member_last_countable mlc
+      ON mlc.last_countable_date + INTERVAL '9 months' > COALESCE(pe.prev_event_date, ${isoDate(from)}::date - INTERVAL '1 day')
+      AND mlc.last_countable_date + INTERVAL '9 months' <= pe.event_date
+    GROUP BY pe.id
+  `);
+  const communityLostMap = new Map<string, number>();
+  for (const cr of communityLostRows as any[]) {
+    communityLostMap.set(cr.event_id, parseInt(cr.cnt));
+  }
+
   return (mainRows as any[]).map((r) => {
     const validTickets = parseInt(r.valid_tickets);
     const checkedInCount = parseInt(r.checked_in_count);
@@ -194,6 +280,8 @@ export async function getFunnelByEvent(
       checkedInCount,
       checkedInPercent: validTickets > 0 ? Math.round((checkedInCount / validTickets) * 100) : 0,
       memberConversions: convMap.get(r.id) || 0,
+      communityGained: communityGainedMap.get(r.id) || 0,
+      communityLost: communityLostMap.get(r.id) || 0,
       newMembers: newMemberMap.get(r.id) || 0,
       revenue: parseFloat(r.revenue),
     };
@@ -300,6 +388,83 @@ export async function getFunnelByMonth(
     newMemberMonthMap.set(r.month, parseInt(r.new_member_count));
   }
 
+  // Community members gained by month: attendees whose 3rd countable event fell in that month
+  const communityGainedMonthRows = await db.execute<{
+    month: string;
+    cnt: string;
+  }>(sql`
+    WITH countable_checkins AS (
+      SELECT
+        a.email,
+        a.event_id,
+        e.event_date,
+        ROW_NUMBER() OVER (
+          PARTITION BY LOWER(a.email)
+          ORDER BY e.event_date, e.id
+        ) AS event_rank
+      FROM ${attendees} a
+      INNER JOIN ${events} e ON e.id = a.event_id
+      WHERE a.checked_in = true
+        AND a.order_status NOT IN ('cancelled','refunded','deleted')
+        AND e.merged_into_event_id IS NULL
+        AND e.name NOT ILIKE '%walk%'
+        AND e.name NOT ILIKE '%party%'
+        AND e.name NOT ILIKE '%drinks%'
+        AND NOT (
+          (e.name ILIKE '%winter%' OR e.name ILIKE '%spring%' OR e.name ILIKE '%summer%'
+           OR e.name ILIKE '%autumn%' OR e.name ILIKE '%fall%' OR e.name ILIKE '%solstice%'
+           OR e.name ILIKE '%equinox%')
+          AND e.name ILIKE '%celebration%'
+        )
+    )
+    SELECT TO_CHAR(cc.event_date, 'YYYY-MM') AS month, COUNT(DISTINCT cc.email)::text AS cnt
+    FROM countable_checkins cc
+    WHERE cc.event_rank = 3
+      AND cc.event_date >= ${isoDate(from)} AND cc.event_date <= ${isoDate(to)}
+    GROUP BY TO_CHAR(cc.event_date, 'YYYY-MM')
+  `);
+  const communityGainedMonthMap = new Map<string, number>();
+  for (const cr of communityGainedMonthRows as any[]) {
+    communityGainedMonthMap.set(cr.month, parseInt(cr.cnt));
+  }
+
+  // Community members lost by month: members whose 9-month recency expired in that month
+  const communityLostMonthRows = await db.execute<{
+    month: string;
+    cnt: string;
+  }>(sql`
+    WITH member_last_countable AS (
+      SELECT LOWER(a.email) AS email, MAX(e.event_date) AS last_countable_date
+      FROM ${attendees} a
+      INNER JOIN ${events} e ON e.id = a.event_id
+      WHERE a.checked_in = true
+        AND a.order_status NOT IN ('cancelled','refunded','deleted')
+        AND e.merged_into_event_id IS NULL
+        AND e.name NOT ILIKE '%walk%'
+        AND e.name NOT ILIKE '%party%'
+        AND e.name NOT ILIKE '%drinks%'
+        AND NOT (
+          (e.name ILIKE '%winter%' OR e.name ILIKE '%spring%' OR e.name ILIKE '%summer%'
+           OR e.name ILIKE '%autumn%' OR e.name ILIKE '%fall%' OR e.name ILIKE '%solstice%'
+           OR e.name ILIKE '%equinox%')
+          AND e.name ILIKE '%celebration%'
+        )
+      GROUP BY LOWER(a.email)
+      HAVING COUNT(DISTINCT e.id) >= 3
+    )
+    SELECT
+      TO_CHAR(mlc.last_countable_date + INTERVAL '9 months', 'YYYY-MM') AS month,
+      COUNT(DISTINCT mlc.email)::text AS cnt
+    FROM member_last_countable mlc
+    WHERE mlc.last_countable_date + INTERVAL '9 months' >= ${isoDate(from)}::date
+      AND mlc.last_countable_date + INTERVAL '9 months' <= ${isoDate(to)}::date
+    GROUP BY TO_CHAR(mlc.last_countable_date + INTERVAL '9 months', 'YYYY-MM')
+  `);
+  const communityLostMonthMap = new Map<string, number>();
+  for (const cr of communityLostMonthRows as any[]) {
+    communityLostMonthMap.set(cr.month, parseInt(cr.cnt));
+  }
+
   return (mainRows as any[]).map((r) => {
     const validTickets = parseInt(r.valid_tickets);
     const checkedInCount = parseInt(r.checked_in_count);
@@ -313,6 +478,8 @@ export async function getFunnelByMonth(
       checkedInCount,
       checkedInPercent: validTickets > 0 ? Math.round((checkedInCount / validTickets) * 100) : 0,
       memberConversions: convMap.get(r.month) || 0,
+      communityGained: communityGainedMonthMap.get(r.month) || 0,
+      communityLost: communityLostMonthMap.get(r.month) || 0,
       newMembers: newMemberMonthMap.get(r.month) || 0,
       revenue: parseFloat(r.revenue),
     };
@@ -375,15 +542,16 @@ export async function getAnalyticsData(
   // Top events
   const topEventsRows = await db.execute<{
     name: string;
+    event_date: string;
     cnt: string;
   }>(sql`
-    SELECT e.name,
+    SELECT e.name, e.event_date::text,
       COUNT(a.id) FILTER (WHERE a.checked_in = true AND a.order_status NOT IN ('cancelled','refunded','deleted'))::text AS cnt
     FROM ${events} e
     LEFT JOIN ${attendees} a ON a.event_id = e.id
     WHERE e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
       AND e.merged_into_event_id IS NULL
-    GROUP BY e.id, e.name
+    GROUP BY e.id, e.name, e.event_date
     ORDER BY COUNT(a.id) FILTER (WHERE a.checked_in = true AND a.order_status NOT IN ('cancelled','refunded','deleted')) DESC
     LIMIT 10
   `);
@@ -499,6 +667,7 @@ export async function getAnalyticsData(
     })),
     topEvents: (topEventsRows as any[]).map((r) => ({
       eventName: r.name,
+      date: r.event_date?.split("T")[0] ?? r.event_date,
       count: parseInt(r.cnt),
     })),
     topBuyers: (topBuyersRows as any[]).map((r) => ({
@@ -532,6 +701,7 @@ export async function getMemberDetailsForEvent(eventId: string): Promise<
     email: string;
     name: string;
     isNewMember: boolean;
+    isActiveMember: boolean;
   }>
 > {
   const rows = await db.execute<{
@@ -539,6 +709,7 @@ export async function getMemberDetailsForEvent(eventId: string): Promise<
     first_name: string;
     last_name: string;
     is_new: string;
+    is_active_member: string;
   }>(sql`
     SELECT
       COALESCE(m.email, a.email) AS email,
@@ -548,7 +719,8 @@ export async function getMemberDetailsForEvent(eventId: string): Promise<
         WHEN m.created_at >= a.checked_in_at - INTERVAL '5 minutes'
           AND m.created_at <= a.checked_in_at + INTERVAL '5 minutes'
         THEN '1' ELSE '0'
-      END AS is_new
+      END AS is_new,
+      CASE WHEN m.is_active_member = true THEN '1' ELSE '0' END AS is_active_member
     FROM ${attendees} a
     INNER JOIN ${members} m ON LOWER(m.email) = LOWER(a.email)
     WHERE a.event_id = ${eventId}
@@ -561,7 +733,122 @@ export async function getMemberDetailsForEvent(eventId: string): Promise<
     email: r.email,
     name: `${r.first_name} ${r.last_name}`.trim() || r.email,
     isNewMember: r.is_new === "1",
+    isActiveMember: r.is_active_member === "1",
   }));
+}
+
+// ─── Community Details ────────────────────────────────────────────────────────
+
+export async function getCommunityDetailsForEvent(eventId: string): Promise<{
+  gained: Array<{ email: string; name: string }>;
+  lost: Array<{ email: string; name: string }>;
+}> {
+  // Gained: attendees whose 3rd countable event was this one
+  const gainedRows = await db.execute<{
+    email: string;
+    first_name: string;
+    last_name: string;
+  }>(sql`
+    WITH countable_checkins AS (
+      SELECT
+        a.email,
+        a.event_id,
+        e.event_date,
+        ROW_NUMBER() OVER (
+          PARTITION BY LOWER(a.email)
+          ORDER BY e.event_date, e.id
+        ) AS event_rank
+      FROM ${attendees} a
+      INNER JOIN ${events} e ON e.id = a.event_id
+      WHERE a.checked_in = true
+        AND a.order_status NOT IN ('cancelled','refunded','deleted')
+        AND e.merged_into_event_id IS NULL
+        AND e.name NOT ILIKE '%walk%'
+        AND e.name NOT ILIKE '%party%'
+        AND e.name NOT ILIKE '%drinks%'
+        AND NOT (
+          (e.name ILIKE '%winter%' OR e.name ILIKE '%spring%' OR e.name ILIKE '%summer%'
+           OR e.name ILIKE '%autumn%' OR e.name ILIKE '%fall%' OR e.name ILIKE '%solstice%'
+           OR e.name ILIKE '%equinox%')
+          AND e.name ILIKE '%celebration%'
+        )
+    )
+    SELECT DISTINCT
+      cc.email,
+      COALESCE(m.first_name, '') AS first_name,
+      COALESCE(m.last_name, '') AS last_name
+    FROM countable_checkins cc
+    LEFT JOIN ${members} m ON LOWER(m.email) = LOWER(cc.email)
+    WHERE cc.event_id = ${eventId}
+      AND cc.event_rank = 3
+    ORDER BY first_name, last_name
+  `);
+
+  // Lost: members whose 9-month recency expired and this event is the first after expiry
+  const eventRow = await db.execute<{ event_date: string }>(sql`
+    SELECT event_date FROM ${events} WHERE id = ${eventId}
+  `);
+  const eventArr = eventRow as any[];
+  if (eventArr.length === 0) {
+    return { gained: [], lost: [] };
+  }
+  const eventDate = eventArr[0].event_date;
+
+  // Find the previous event date in the series
+  const prevEventRow = await db.execute<{ prev_date: string }>(sql`
+    SELECT MAX(event_date) AS prev_date
+    FROM ${events}
+    WHERE event_date < ${eventDate}
+      AND merged_into_event_id IS NULL
+  `);
+  const prevArr = prevEventRow as any[];
+  const prevDate = prevArr[0]?.prev_date;
+
+  const lostRows = await db.execute<{
+    email: string;
+    first_name: string;
+    last_name: string;
+  }>(sql`
+    WITH member_last_countable AS (
+      SELECT LOWER(a.email) AS email, MAX(e.event_date) AS last_countable_date
+      FROM ${attendees} a
+      INNER JOIN ${events} e ON e.id = a.event_id
+      WHERE a.checked_in = true
+        AND a.order_status NOT IN ('cancelled','refunded','deleted')
+        AND e.merged_into_event_id IS NULL
+        AND e.name NOT ILIKE '%walk%'
+        AND e.name NOT ILIKE '%party%'
+        AND e.name NOT ILIKE '%drinks%'
+        AND NOT (
+          (e.name ILIKE '%winter%' OR e.name ILIKE '%spring%' OR e.name ILIKE '%summer%'
+           OR e.name ILIKE '%autumn%' OR e.name ILIKE '%fall%' OR e.name ILIKE '%solstice%'
+           OR e.name ILIKE '%equinox%')
+          AND e.name ILIKE '%celebration%'
+        )
+      GROUP BY LOWER(a.email)
+      HAVING COUNT(DISTINCT e.id) >= 3
+    )
+    SELECT DISTINCT
+      mlc.email,
+      COALESCE(m.first_name, '') AS first_name,
+      COALESCE(m.last_name, '') AS last_name
+    FROM member_last_countable mlc
+    LEFT JOIN ${members} m ON LOWER(m.email) = mlc.email
+    WHERE mlc.last_countable_date + INTERVAL '9 months' > ${prevDate ? prevDate : sql`${eventDate}::date - INTERVAL '1 day'`}
+      AND mlc.last_countable_date + INTERVAL '9 months' <= ${eventDate}
+    ORDER BY first_name, last_name
+  `);
+
+  return {
+    gained: (gainedRows as any[]).map((r) => ({
+      email: r.email,
+      name: `${r.first_name} ${r.last_name}`.trim() || r.email,
+    })),
+    lost: (lostRows as any[]).map((r) => ({
+      email: r.email,
+      name: `${r.first_name} ${r.last_name}`.trim() || r.email,
+    })),
+  };
 }
 
 // ─── Validation ───────────────────────────────────────────────────────────────
