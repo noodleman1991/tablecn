@@ -4,7 +4,7 @@ import { Bar, BarChart, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recha
 import { ChartContainer, type ChartConfig } from "@/components/ui/chart";
 
 const chartConfig = {
-  count: { label: "Attendance", color: "hsl(var(--chart-1))" },
+  count: { label: "Attendance", color: "var(--chart-1)" },
 } satisfies ChartConfig;
 
 interface Props {

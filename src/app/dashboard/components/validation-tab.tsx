@@ -4,7 +4,6 @@ import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import {
   Accordion,
   AccordionContent,
@@ -12,9 +11,26 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Skeleton } from "@/components/ui/skeleton";
-import { runQuickValidation, runDeepValidation, getLastValidationRuns } from "../actions";
-import type { PeriodFilter, ValidationRunResult } from "../types";
+import { runQuickValidation, getLastValidationRuns } from "../actions";
+import type { PeriodFilter, ValidationCheck, ValidationRunResult } from "../types";
 import { ValidationResultCard } from "./validation-result-card";
+
+const QUICK_CHECK_NAMES = [
+  "Order Capture",
+  "Ticket Extraction",
+  "Check-in to Members",
+  "Membership Calculation",
+  "Active Status Accuracy",
+  "Data Quality",
+  "Revenue Audit",
+];
+
+const DEEP_CHECK_NAMES = [
+  ...QUICK_CHECK_NAMES,
+  "WC/DB Order Reconciliation",
+  "Revenue Comparison",
+  "Order Status Sync",
+];
 
 interface ValidationTabProps {
   period: PeriodFilter;
@@ -26,6 +42,8 @@ export function ValidationTab({ period }: ValidationTabProps) {
   const [result, setResult] = React.useState<ValidationRunResult | null>(null);
   const [lastRuns, setLastRuns] = React.useState<ValidationRunResult[]>([]);
   const [loadingHistory, setLoadingHistory] = React.useState(true);
+  const [completedChecks, setCompletedChecks] = React.useState<ValidationCheck[]>([]);
+  const [currentPhase, setCurrentPhase] = React.useState<"idle" | "quick" | "deep">("idle");
 
   React.useEffect(() => {
     getLastValidationRuns(5)
@@ -37,27 +55,52 @@ export function ValidationTab({ period }: ValidationTabProps) {
   const handleRun = async () => {
     setRunning(true);
     setResult(null);
+    setCompletedChecks([]);
+    setCurrentPhase("quick");
+
     try {
-      const res =
-        mode === "quick"
-          ? await runQuickValidation(period)
-          : await runDeepValidation(period);
-      setResult(res);
-      // Refresh history
+      // Phase 1: Quick validation (server action, fast)
+      const quickResult = await runQuickValidation(period);
+      setCompletedChecks(quickResult.checks);
+
+      if (mode === "quick") {
+        setResult(quickResult);
+      } else {
+        // Phase 2: Deep validation via API route (extended timeout)
+        setCurrentPhase("deep");
+        const res = await fetch("/api/validation/run", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mode: "deep", period }),
+        });
+        if (!res.ok) throw new Error("Deep validation failed");
+        const deepResult = (await res.json()) as ValidationRunResult;
+        setCompletedChecks(deepResult.checks);
+        setResult(deepResult);
+      }
+
       const runs = await getLastValidationRuns(5);
       setLastRuns(runs);
     } catch (err) {
       console.error("Validation failed:", err);
     } finally {
       setRunning(false);
+      setCurrentPhase("idle");
     }
   };
+
+  const checkNames = mode === "deep" ? DEEP_CHECK_NAMES : QUICK_CHECK_NAMES;
 
   return (
     <div className="space-y-4">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Data Validation</CardTitle>
+          <div>
+            <CardTitle>Data Validation</CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              Validation is read-only — it analyzes data but never modifies records.
+            </p>
+          </div>
           <div className="flex items-center gap-2">
             <div className="flex gap-1">
               <Button
@@ -81,14 +124,46 @@ export function ValidationTab({ period }: ValidationTabProps) {
           </div>
         </CardHeader>
         <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            {mode === "quick"
+              ? "Database checks only. Verifies data integrity using local records. ~5 seconds, 7 checks."
+              : "Includes all Quick checks + live WooCommerce comparison. ~30-60 seconds, 10 checks."}
+          </p>
+
           {running && (
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">
-                {mode === "deep"
-                  ? "Running deep validation (includes WooCommerce API calls)..."
-                  : "Running quick validation..."}
-              </p>
-              <Progress className="h-2" />
+            <div className="space-y-1 mb-4">
+              {checkNames.map((name) => {
+                const completed = completedChecks.find((c) => c.name === name);
+                const isDeepCheck = !QUICK_CHECK_NAMES.includes(name);
+                const isWaiting = !completed && (isDeepCheck ? currentPhase !== "deep" : currentPhase === "idle");
+                const isRunning = !completed && !isWaiting;
+
+                return (
+                  <div key={name} className="flex items-center gap-2 text-sm py-0.5">
+                    {completed ? (
+                      <span className={
+                        completed.status === "pass"
+                          ? "text-green-600"
+                          : completed.status === "warn"
+                          ? "text-yellow-600"
+                          : "text-red-600"
+                      }>
+                        {completed.status === "pass" ? "\u2713" : completed.status === "warn" ? "\u26A0" : "\u2717"}
+                      </span>
+                    ) : isRunning ? (
+                      <span className="text-blue-500 animate-pulse">\u25CF</span>
+                    ) : (
+                      <span className="text-muted-foreground">\u25CB</span>
+                    )}
+                    <span className={completed ? "" : isRunning ? "text-foreground" : "text-muted-foreground"}>
+                      {name}
+                    </span>
+                    {completed && completed.count > 0 && (
+                      <span className="text-xs text-muted-foreground">({completed.count})</span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 

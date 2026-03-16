@@ -24,6 +24,7 @@ export interface FunnelEventRow {
   checkedInCount: number;
   checkedInPercent: number;
   memberConversions: number;
+  newMembers: number;
   revenue: number;
 }
 
@@ -37,6 +38,7 @@ export interface FunnelMonthRow {
   checkedInCount: number;
   checkedInPercent: number;
   memberConversions: number;
+  newMembers: number;
   revenue: number;
 }
 
@@ -52,6 +54,16 @@ export interface AnalyticsData {
     date: string;
     newCount: number;
     returningCount: number;
+  }>;
+  memberGrowthPerEvent: Array<{
+    eventName: string;
+    date: string;
+    newMembers: number;
+  }>;
+  memberGrowth: Array<{
+    month: string;
+    newMembers: number;
+    cumulativeMembers: number;
   }>;
 }
 

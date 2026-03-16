@@ -32,6 +32,14 @@ const NewVsReturningChart = dynamic(
   () => import("./charts/new-vs-returning-chart").then((m) => m.NewVsReturningChart),
   { ssr: false, loading: () => <Skeleton className="h-[300px] w-full" /> },
 );
+const MemberGrowthPerEventChart = dynamic(
+  () => import("./charts/member-growth-per-event-chart").then((m) => m.MemberGrowthPerEventChart),
+  { ssr: false, loading: () => <Skeleton className="h-[300px] w-full" /> },
+);
+const MemberGrowthChart = dynamic(
+  () => import("./charts/member-growth-chart").then((m) => m.MemberGrowthChart),
+  { ssr: false, loading: () => <Skeleton className="h-[300px] w-full" /> },
+);
 
 interface AnalyticsTabProps {
   period: PeriodFilter;
@@ -60,7 +68,7 @@ export function AnalyticsTab({ period }: AnalyticsTabProps) {
   if (loading || !data) {
     return (
       <div className="grid gap-4 md:grid-cols-2">
-        {Array.from({ length: 6 }).map((_, i) => (
+        {Array.from({ length: 8 }).map((_, i) => (
           <Card key={i}>
             <CardHeader>
               <Skeleton className="h-5 w-32" />
@@ -82,6 +90,15 @@ export function AnalyticsTab({ period }: AnalyticsTabProps) {
         </CardHeader>
         <CardContent>
           <AttendanceTrendChart data={data.attendanceTrend} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">New Members per Event</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <MemberGrowthPerEventChart data={data.memberGrowthPerEvent} />
         </CardContent>
       </Card>
 
@@ -127,6 +144,15 @@ export function AnalyticsTab({ period }: AnalyticsTabProps) {
         </CardHeader>
         <CardContent>
           <NewVsReturningChart data={data.newVsReturning} />
+        </CardContent>
+      </Card>
+
+      <Card className="md:col-span-2">
+        <CardHeader>
+          <CardTitle className="text-base">Member Growth</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <MemberGrowthChart data={data.memberGrowth} />
         </CardContent>
       </Card>
     </div>

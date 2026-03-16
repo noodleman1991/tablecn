@@ -4,8 +4,8 @@ import { Bar, BarChart, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } fro
 import { ChartContainer, type ChartConfig } from "@/components/ui/chart";
 
 const chartConfig = {
-  newCount: { label: "New", color: "hsl(var(--chart-1))" },
-  returningCount: { label: "Returning", color: "hsl(var(--chart-2))" },
+  newCount: { label: "New", color: "var(--chart-2)" },
+  returningCount: { label: "Returning", color: "var(--chart-3)" },
 } satisfies ChartConfig;
 
 interface Props {

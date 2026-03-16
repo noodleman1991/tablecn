@@ -18,8 +18,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getFunnelByEvent, getFunnelByMonth } from "../actions";
+import { getFunnelByEvent, getFunnelByMonth, getMemberDetailsForEvent } from "../actions";
 import type { PeriodFilter, FunnelEventRow, FunnelMonthRow } from "../types";
 
 interface FunnelTabProps {
@@ -81,6 +87,63 @@ export function FunnelTab({ period }: FunnelTabProps) {
     );
   }
 
+  function MemberDetailPopover({ eventId, count }: { eventId: string; count: number }) {
+    const [details, setDetails] = React.useState<
+      Array<{ email: string; name: string; isNewMember: boolean }> | null
+    >(null);
+    const [loadingDetails, setLoadingDetails] = React.useState(false);
+
+    const handleOpen = (open: boolean) => {
+      if (open && details === null && !loadingDetails) {
+        setLoadingDetails(true);
+        getMemberDetailsForEvent(eventId)
+          .then(setDetails)
+          .catch(console.error)
+          .finally(() => setLoadingDetails(false));
+      }
+    };
+
+    return (
+      <Popover onOpenChange={handleOpen}>
+        <PopoverTrigger asChild>
+          <button className="cursor-pointer underline decoration-dotted hover:text-foreground">
+            {count}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-80 max-h-64 overflow-y-auto p-3" align="end">
+          {loadingDetails ? (
+            <div className="space-y-1">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-5 w-full" />
+              ))}
+            </div>
+          ) : details && details.length > 0 ? (
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-muted-foreground mb-2">
+                {details.length} member(s) checked in
+              </p>
+              {details.map((d) => (
+                <div key={d.email} className="flex items-center justify-between text-sm">
+                  <div className="truncate flex-1 mr-2">
+                    <span className="font-medium">{d.name}</span>
+                    <span className="text-muted-foreground text-xs ml-1">({d.email})</span>
+                  </div>
+                  {d.isNewMember && (
+                    <Badge variant="outline" className="border-green-500 bg-green-50 text-green-700 text-xs shrink-0">
+                      New
+                    </Badge>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No member details found.</p>
+          )}
+        </PopoverContent>
+      </Popover>
+    );
+  }
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -139,13 +202,25 @@ export function FunnelTab({ period }: FunnelTabProps) {
                   </TableHead>
                   <TableHead className="min-w-[160px]">Checked In</TableHead>
                   <TableHead className="text-right">Members</TableHead>
+                  <TableHead className="text-right">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="cursor-help underline decoration-dotted">New</span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs max-w-[200px]">Members created at the time of check-in (within 5 minutes).</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </TableHead>
                   <TableHead className="text-right">Revenue</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {eventData.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center text-muted-foreground">
                       No events in this period
                     </TableCell>
                   </TableRow>
@@ -179,7 +254,16 @@ export function FunnelTab({ period }: FunnelTabProps) {
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-right">{row.memberConversions}</TableCell>
+                      <TableCell className="text-right">
+                        <MemberDetailPopover eventId={row.eventId} count={row.memberConversions} />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {row.newMembers > 0 ? (
+                          <span className="text-green-600 font-medium">+{row.newMembers}</span>
+                        ) : (
+                          <span className="text-muted-foreground">0</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">
                         £{row.revenue.toLocaleString("en-GB", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                       </TableCell>
@@ -212,13 +296,25 @@ export function FunnelTab({ period }: FunnelTabProps) {
                   </TableHead>
                   <TableHead className="min-w-[160px]">Checked In</TableHead>
                   <TableHead className="text-right">Members</TableHead>
+                  <TableHead className="text-right">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="cursor-help underline decoration-dotted">New</span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs max-w-[200px]">Members created at the time of check-in (within 5 minutes).</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </TableHead>
                   <TableHead className="text-right">Revenue</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {monthData.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center text-muted-foreground">
                       No data in this period
                     </TableCell>
                   </TableRow>
@@ -245,6 +341,13 @@ export function FunnelTab({ period }: FunnelTabProps) {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">{row.memberConversions}</TableCell>
+                      <TableCell className="text-right">
+                        {row.newMembers > 0 ? (
+                          <span className="text-green-600 font-medium">+{row.newMembers}</span>
+                        ) : (
+                          <span className="text-muted-foreground">0</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">
                         £{row.revenue.toLocaleString("en-GB", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                       </TableCell>

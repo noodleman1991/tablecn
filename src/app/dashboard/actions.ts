@@ -159,6 +159,27 @@ export async function getFunnelByEvent(
     convMap.set(cr.event_id, parseInt(cr.cnt));
   }
 
+  // New members per event (created within 5min of check-in)
+  const newMemberRows = await db.execute<{
+    event_id: string;
+    new_member_count: string;
+  }>(sql`
+    SELECT a.event_id, COUNT(DISTINCT m.id)::text AS new_member_count
+    FROM ${attendees} a
+    INNER JOIN ${members} m ON LOWER(m.email) = LOWER(a.email)
+    INNER JOIN ${events} e ON e.id = a.event_id
+    WHERE a.checked_in = true
+      AND e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
+      AND e.merged_into_event_id IS NULL
+      AND m.created_at >= a.checked_in_at - INTERVAL '5 minutes'
+      AND m.created_at <= a.checked_in_at + INTERVAL '5 minutes'
+    GROUP BY a.event_id
+  `);
+  const newMemberMap = new Map<string, number>();
+  for (const r of newMemberRows as any[]) {
+    newMemberMap.set(r.event_id, parseInt(r.new_member_count));
+  }
+
   return (mainRows as any[]).map((r) => {
     const validTickets = parseInt(r.valid_tickets);
     const checkedInCount = parseInt(r.checked_in_count);
@@ -173,6 +194,7 @@ export async function getFunnelByEvent(
       checkedInCount,
       checkedInPercent: validTickets > 0 ? Math.round((checkedInCount / validTickets) * 100) : 0,
       memberConversions: convMap.get(r.id) || 0,
+      newMembers: newMemberMap.get(r.id) || 0,
       revenue: parseFloat(r.revenue),
     };
   });
@@ -255,6 +277,29 @@ export async function getFunnelByMonth(
     convMap.set(cr.month, parseInt(cr.cnt));
   }
 
+  // New members by month (created within 5min of check-in)
+  const newMemberMonthRows = await db.execute<{
+    month: string;
+    new_member_count: string;
+  }>(sql`
+    SELECT
+      TO_CHAR(e.event_date, 'YYYY-MM') AS month,
+      COUNT(DISTINCT m.id)::text AS new_member_count
+    FROM ${attendees} a
+    INNER JOIN ${members} m ON LOWER(m.email) = LOWER(a.email)
+    INNER JOIN ${events} e ON e.id = a.event_id
+    WHERE a.checked_in = true
+      AND e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
+      AND e.merged_into_event_id IS NULL
+      AND m.created_at >= a.checked_in_at - INTERVAL '5 minutes'
+      AND m.created_at <= a.checked_in_at + INTERVAL '5 minutes'
+    GROUP BY TO_CHAR(e.event_date, 'YYYY-MM')
+  `);
+  const newMemberMonthMap = new Map<string, number>();
+  for (const r of newMemberMonthRows as any[]) {
+    newMemberMonthMap.set(r.month, parseInt(r.new_member_count));
+  }
+
   return (mainRows as any[]).map((r) => {
     const validTickets = parseInt(r.valid_tickets);
     const checkedInCount = parseInt(r.checked_in_count);
@@ -268,6 +313,7 @@ export async function getFunnelByMonth(
       checkedInCount,
       checkedInPercent: validTickets > 0 ? Math.round((checkedInCount / validTickets) * 100) : 0,
       memberConversions: convMap.get(r.month) || 0,
+      newMembers: newMemberMonthMap.get(r.month) || 0,
       revenue: parseFloat(r.revenue),
     };
   });
@@ -392,6 +438,51 @@ export async function getAnalyticsData(
     ORDER BY e.event_date
   `);
 
+  // Member growth per event
+  const memberGrowthPerEventRows = await db.execute<{
+    name: string;
+    event_date: string;
+    new_members: string;
+  }>(sql`
+    SELECT e.name, e.event_date::text,
+      COUNT(DISTINCT m.id) FILTER (
+        WHERE m.created_at >= a.checked_in_at - INTERVAL '5 minutes'
+          AND m.created_at <= a.checked_in_at + INTERVAL '5 minutes'
+      )::text AS new_members
+    FROM ${events} e
+    LEFT JOIN ${attendees} a ON a.event_id = e.id AND a.checked_in = true
+      AND a.order_status NOT IN ('cancelled','refunded','deleted')
+    LEFT JOIN ${members} m ON LOWER(m.email) = LOWER(a.email)
+    WHERE e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
+      AND e.merged_into_event_id IS NULL
+    GROUP BY e.id, e.name, e.event_date
+    ORDER BY e.event_date
+  `);
+
+  // Monthly member growth (cumulative)
+  const memberGrowthRows = await db.execute<{
+    month: string;
+    new_members: string;
+    cumulative_members: string;
+  }>(sql`
+    WITH monthly_new AS (
+      SELECT TO_CHAR(created_at, 'YYYY-MM') AS month, COUNT(*)::text AS cnt
+      FROM ${members}
+      GROUP BY TO_CHAR(created_at, 'YYYY-MM')
+    )
+    SELECT month, cnt AS new_members,
+      SUM(cnt::int) OVER (ORDER BY month)::text AS cumulative_members
+    FROM monthly_new
+    ORDER BY month
+  `);
+
+  // Filter member growth to period range
+  const fromMonth = isoDate(from).slice(0, 7);
+  const toMonth = isoDate(to).slice(0, 7);
+  const filteredMemberGrowth = (memberGrowthRows as any[]).filter(
+    (r) => r.month >= fromMonth && r.month <= toMonth,
+  );
+
   return {
     attendanceTrend: (attendanceTrendRows as any[]).map((r) => ({
       eventName: r.name,
@@ -421,7 +512,56 @@ export async function getAnalyticsData(
       newCount: parseInt(r.new_count),
       returningCount: parseInt(r.returning_count),
     })),
+    memberGrowthPerEvent: (memberGrowthPerEventRows as any[]).map((r) => ({
+      eventName: r.name,
+      date: r.event_date.split("T")[0] ?? r.event_date,
+      newMembers: parseInt(r.new_members),
+    })),
+    memberGrowth: filteredMemberGrowth.map((r) => ({
+      month: r.month,
+      newMembers: parseInt(r.new_members),
+      cumulativeMembers: parseInt(r.cumulative_members),
+    })),
   };
+}
+
+// ─── Member Details ──────────────────────────────────────────────────────────
+
+export async function getMemberDetailsForEvent(eventId: string): Promise<
+  Array<{
+    email: string;
+    name: string;
+    isNewMember: boolean;
+  }>
+> {
+  const rows = await db.execute<{
+    email: string;
+    first_name: string;
+    last_name: string;
+    is_new: string;
+  }>(sql`
+    SELECT
+      COALESCE(m.email, a.email) AS email,
+      COALESCE(m.first_name, a.first_name, '') AS first_name,
+      COALESCE(m.last_name, a.last_name, '') AS last_name,
+      CASE
+        WHEN m.created_at >= a.checked_in_at - INTERVAL '5 minutes'
+          AND m.created_at <= a.checked_in_at + INTERVAL '5 minutes'
+        THEN '1' ELSE '0'
+      END AS is_new
+    FROM ${attendees} a
+    INNER JOIN ${members} m ON LOWER(m.email) = LOWER(a.email)
+    WHERE a.event_id = ${eventId}
+      AND a.checked_in = true
+      AND a.order_status NOT IN ('cancelled','refunded','deleted')
+    ORDER BY m.first_name, m.last_name
+  `);
+
+  return (rows as any[]).map((r) => ({
+    email: r.email,
+    name: `${r.first_name} ${r.last_name}`.trim() || r.email,
+    isNewMember: r.is_new === "1",
+  }));
 }
 
 // ─── Validation ───────────────────────────────────────────────────────────────
@@ -509,42 +649,44 @@ export async function runQuickValidation(
     details: gaps.slice(0, 20).map((r) => ({ label: r.email })),
   });
 
-  // 4. Membership calc accuracy
-  const memberRows = await db.select().from(members);
-  const isSocialEvent = (name: string) => {
-    const lower = name.toLowerCase();
-    if (lower.includes("walk") || lower.includes("party") || lower.includes("drinks")) return true;
-    const seasons = ["winter", "spring", "summer", "autumn", "fall", "solstice", "equinox"];
-    const hasSeason = seasons.some((s) => lower.includes(s));
-    return hasSeason && lower.includes("celebration");
-  };
-
-  let membershipMismatches = 0;
-  const membershipDetails: ValidationCheck["details"] = [];
-
-  for (const member of memberRows) {
-    const attended = await db.execute<{ name: string }>(sql`
-      SELECT e.name
+  // 4. Membership calc accuracy (batched — single query instead of N)
+  const membershipMismatchRows = await db.execute<{
+    email: string;
+    db_count: string;
+    calc_count: string;
+  }>(sql`
+    WITH member_event_counts AS (
+      SELECT LOWER(a.email) AS email,
+        COUNT(DISTINCT e.id) FILTER (
+          WHERE e.name NOT ILIKE '%walk%'
+            AND e.name NOT ILIKE '%party%'
+            AND e.name NOT ILIKE '%drinks%'
+            AND NOT (
+              (e.name ILIKE '%winter%' OR e.name ILIKE '%spring%' OR e.name ILIKE '%summer%'
+               OR e.name ILIKE '%autumn%' OR e.name ILIKE '%fall%' OR e.name ILIKE '%solstice%'
+               OR e.name ILIKE '%equinox%')
+              AND e.name ILIKE '%celebration%'
+            )
+        ) AS countable_events
       FROM ${attendees} a
       INNER JOIN ${events} e ON e.id = a.event_id
-      WHERE LOWER(a.email) = LOWER(${member.email})
-        AND a.checked_in = true
+      WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted')
-    `);
-    const countable = (attended as any[]).filter(
-      (r) => !isSocialEvent(r.name),
-    ).length;
-    if (countable !== member.totalEventsAttended) {
-      membershipMismatches++;
-      if (membershipDetails.length < 10) {
-        membershipDetails.push({
-          label: member.email,
-          expected: countable,
-          actual: member.totalEventsAttended,
-        });
-      }
-    }
-  }
+      GROUP BY LOWER(a.email)
+    )
+    SELECT m.email, m.total_events_attended::text AS db_count, COALESCE(mec.countable_events, 0)::text AS calc_count
+    FROM ${members} m
+    LEFT JOIN member_event_counts mec ON LOWER(m.email) = mec.email
+    WHERE COALESCE(mec.countable_events, 0) != m.total_events_attended
+  `);
+  const membershipMismatches = (membershipMismatchRows as any[]).length;
+  const membershipDetails: ValidationCheck["details"] = (membershipMismatchRows as any[])
+    .slice(0, 10)
+    .map((r) => ({
+      label: r.email,
+      expected: parseInt(r.calc_count),
+      actual: parseInt(r.db_count),
+    }));
 
   checks.push({
     name: "Membership Calculation",
@@ -556,53 +698,69 @@ export async function runQuickValidation(
     details: membershipDetails,
   });
 
-  // 5. Active status accuracy
+  // 5. Active status accuracy (batched — single query instead of N)
   const nineMonthsAgoDate = new Date();
   nineMonthsAgoDate.setMonth(nineMonthsAgoDate.getMonth() - 9);
   const nineMonthsAgo = nineMonthsAgoDate.toISOString();
 
-  let statusMismatches = 0;
-  const statusDetails: ValidationCheck["details"] = [];
-
-  for (const member of memberRows) {
-    const allAttended = await db.execute<{ name: string }>(sql`
-      SELECT e.name
+  const statusMismatchRows = await db.execute<{
+    email: string;
+    is_active_member: string;
+    expected_active: string;
+  }>(sql`
+    WITH member_event_counts AS (
+      SELECT LOWER(a.email) AS email,
+        COUNT(DISTINCT e.id) FILTER (
+          WHERE e.name NOT ILIKE '%walk%'
+            AND e.name NOT ILIKE '%party%'
+            AND e.name NOT ILIKE '%drinks%'
+            AND NOT (
+              (e.name ILIKE '%winter%' OR e.name ILIKE '%spring%' OR e.name ILIKE '%summer%'
+               OR e.name ILIKE '%autumn%' OR e.name ILIKE '%fall%' OR e.name ILIKE '%solstice%'
+               OR e.name ILIKE '%equinox%')
+              AND e.name ILIKE '%celebration%'
+            )
+        ) AS countable_all,
+        COUNT(DISTINCT e.id) FILTER (
+          WHERE e.event_date >= ${nineMonthsAgo}
+            AND e.name NOT ILIKE '%walk%'
+            AND e.name NOT ILIKE '%party%'
+            AND e.name NOT ILIKE '%drinks%'
+            AND NOT (
+              (e.name ILIKE '%winter%' OR e.name ILIKE '%spring%' OR e.name ILIKE '%summer%'
+               OR e.name ILIKE '%autumn%' OR e.name ILIKE '%fall%' OR e.name ILIKE '%solstice%'
+               OR e.name ILIKE '%equinox%')
+              AND e.name ILIKE '%celebration%'
+            )
+        ) AS countable_recent
       FROM ${attendees} a
       INNER JOIN ${events} e ON e.id = a.event_id
-      WHERE LOWER(a.email) = LOWER(${member.email})
-        AND a.checked_in = true
+      WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted')
-    `);
-    const countableAll = (allAttended as any[]).filter(
-      (r) => !isSocialEvent(r.name),
-    ).length;
-
-    const recentAttended = await db.execute<{ name: string }>(sql`
-      SELECT e.name
-      FROM ${attendees} a
-      INNER JOIN ${events} e ON e.id = a.event_id
-      WHERE LOWER(a.email) = LOWER(${member.email})
-        AND a.checked_in = true
-        AND a.order_status NOT IN ('cancelled','refunded','deleted')
-        AND e.event_date >= ${nineMonthsAgo}
-    `);
-    const countableRecent = (recentAttended as any[]).filter(
-      (r) => !isSocialEvent(r.name),
-    ).length;
-
-    const expectedActive = countableAll >= 3 && countableRecent >= 1;
-    // Skip manually-added members as their status can be overridden
-    if (!member.manuallyAdded && member.isActiveMember !== expectedActive) {
-      statusMismatches++;
-      if (statusDetails.length < 10) {
-        statusDetails.push({
-          label: member.email,
-          expected: expectedActive ? "active" : "inactive",
-          actual: member.isActiveMember ? "active" : "inactive",
-        });
-      }
-    }
-  }
+      GROUP BY LOWER(a.email)
+    )
+    SELECT m.email,
+      m.is_active_member::text,
+      CASE WHEN COALESCE(mec.countable_all, 0) >= 3 AND COALESCE(mec.countable_recent, 0) >= 1
+        THEN 'true' ELSE 'false'
+      END AS expected_active
+    FROM ${members} m
+    LEFT JOIN member_event_counts mec ON LOWER(m.email) = mec.email
+    WHERE m.manually_added = false
+      AND m.is_active_member::text != (
+        CASE WHEN COALESCE(mec.countable_all, 0) >= 3 AND COALESCE(mec.countable_recent, 0) >= 1
+          THEN 'true' ELSE 'false'
+        END
+      )
+  `);
+  const statusMismatches = (statusMismatchRows as any[]).length;
+  const statusDetails: ValidationCheck["details"] = (statusMismatchRows as any[])
+    .slice(0, 10)
+    .map((r) => ({
+      label: r.email,
+      expected: r.expected_active === "true" ? "active" : "inactive",
+      actual: r.is_active_member === "true" ? "active" : "inactive",
+    }));
 
   checks.push({
     name: "Active Status Accuracy",
@@ -649,6 +807,44 @@ export async function runQuickValidation(
       ...(emptyEmail > 0 ? [{ label: "Attendees with empty email", actual: emptyEmail }] : []),
       ...(emptyName > 0 ? [{ label: "Attendees with empty name", actual: emptyName }] : []),
       ...(orphanMembers > 0 ? [{ label: "Members with no attendee records", actual: orphanMembers }] : []),
+    ],
+  });
+
+  // 7. Revenue Audit
+  const revenueAuditRows = await db.execute<{
+    total_attendees: string;
+    with_order_total: string;
+    non_zero: string;
+    total_sum: string;
+  }>(sql`
+    SELECT
+      COUNT(*)::text AS total_attendees,
+      COUNT(a.order_total)::text AS with_order_total,
+      COUNT(*) FILTER (WHERE a.order_total > 0)::text AS non_zero,
+      COALESCE(SUM(a.order_total) FILTER (WHERE a.order_status NOT IN ('cancelled','refunded','deleted')), 0)::text AS total_sum
+    FROM ${attendees} a
+    INNER JOIN ${events} e ON e.id = a.event_id
+    WHERE e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
+      AND e.merged_into_event_id IS NULL
+  `);
+  const ra = revenueAuditRows[0] as any;
+  const raTotalAttendees = parseInt(ra?.total_attendees ?? "0");
+  const raWithOrderTotal = parseInt(ra?.with_order_total ?? "0");
+  const raNonZero = parseInt(ra?.non_zero ?? "0");
+  const raTotalSum = parseFloat(ra?.total_sum ?? "0");
+
+  checks.push({
+    name: "Revenue Audit",
+    status: raNonZero > 0 ? "pass" : "warn",
+    message: raNonZero > 0
+      ? `£${raTotalSum.toLocaleString("en-GB", { minimumFractionDigits: 2 })} total revenue from ${raNonZero} attendee(s) with non-zero order totals`
+      : `No non-zero order totals found among ${raTotalAttendees} attendee(s) in this period`,
+    count: raNonZero,
+    details: [
+      { label: "Total attendees in period", actual: raTotalAttendees },
+      { label: "Attendees with order_total field", actual: raWithOrderTotal },
+      { label: "Attendees with order_total > 0", actual: raNonZero },
+      { label: "Sum of valid order totals", actual: `£${raTotalSum.toFixed(2)}` },
     ],
   });
 

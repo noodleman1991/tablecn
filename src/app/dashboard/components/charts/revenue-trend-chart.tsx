@@ -4,7 +4,7 @@ import { Area, AreaChart, XAxis, YAxis, Tooltip, ResponsiveContainer } from "rec
 import { ChartContainer, type ChartConfig } from "@/components/ui/chart";
 
 const chartConfig = {
-  revenue: { label: "Revenue", color: "hsl(var(--chart-3))" },
+  revenue: { label: "Revenue", color: "var(--chart-4)" },
 } satisfies ChartConfig;
 
 interface Props {
