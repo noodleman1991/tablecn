@@ -59,15 +59,24 @@ export interface AnalyticsData {
     newCount: number;
     returningCount: number;
   }>;
-  newAttendeesPerEvent: Array<{
+  attendeeBreakdownByEvent: Array<{
     eventName: string;
     date: string;
     newCount: number;
+    returningCount: number;
+    communityCount: number;
+    communityGained: number;
+    communityLost: number;
+    cumulativeCommunity: number;
   }>;
-  communityGrowth: Array<{
+  attendeeBreakdownByMonth: Array<{
     month: string;
-    newCommunityMembers: number;
-    cumulativeCommunityMembers: number;
+    newCount: number;
+    returningCount: number;
+    communityCount: number;
+    communityGained: number;
+    communityLost: number;
+    cumulativeCommunity: number;
   }>;
 }
 

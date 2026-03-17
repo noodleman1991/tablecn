@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -102,6 +102,8 @@ export function CheckInPage({
   // This allows SSR hydration with initialAttendees, then client-side updates via TanStack Query
   const attendees = eventData?.attendees ?? initialAttendees;
   const cacheAge = eventData?.cacheAge ?? null;
+  const communityEmails = eventData?.communityEmails ?? [];
+  const communityEmailSet = useMemo(() => new Set(communityEmails), [communityEmails]);
 
   // Load cached past events on client-side only (after hydration) - SINGLE effect
   useEffect(() => {
@@ -391,7 +393,7 @@ export function CheckInPage({
                     </div>
                   </div>
                 )}
-                <CheckInTable attendees={attendees} onMutationSuccess={invalidateEventAttendees} />
+                <CheckInTable attendees={attendees} onMutationSuccess={invalidateEventAttendees} communityEmailSet={communityEmailSet} />
               </div>
             </CardContent>
           </Card>

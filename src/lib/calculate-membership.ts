@@ -2,7 +2,7 @@ import "server-only";
 
 import { db } from "@/db";
 import { attendees, events, members } from "@/db/schema";
-import { eq, and, gte, lte, sql } from "drizzle-orm";
+import { eq, and, gte, lte, isNull, not, inArray, sql } from "drizzle-orm";
 import { syncMemberToLoops, removeMemberFromLoops } from "@/lib/loops-sync";
 
 /**
@@ -39,7 +39,8 @@ export async function recalculateMembershipForMember(memberId: string) {
       and(
         eq(attendees.email, memberData.email),
         eq(attendees.checkedIn, true),
-        // NO DATE FILTER - get all events ever
+        not(inArray(attendees.orderStatus, ["cancelled", "refunded", "deleted"])),
+        isNull(events.mergedIntoEventId),
       ),
     )
     .orderBy(sql`${events.eventDate} DESC`);
@@ -57,6 +58,8 @@ export async function recalculateMembershipForMember(memberId: string) {
       and(
         eq(attendees.email, memberData.email),
         eq(attendees.checkedIn, true),
+        not(inArray(attendees.orderStatus, ["cancelled", "refunded", "deleted"])),
+        isNull(events.mergedIntoEventId),
         gte(events.eventDate, nineMonthsAgo),
       ),
     );

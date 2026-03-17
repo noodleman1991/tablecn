@@ -715,6 +715,20 @@ export async function checkSwappedNameMatch(firstName: string, lastName: string)
 }
 
 /**
+ * Get lowercased emails of active community members who are attendees for a given event
+ */
+export async function getCommunityMemberEmailsForEvent(eventId: string): Promise<string[]> {
+  const rows = await db.execute<{ email: string }>(sql`
+    SELECT DISTINCT LOWER(m.email) AS email
+    FROM ${members} m
+    INNER JOIN ${attendees} a ON LOWER(m.email) = LOWER(a.email)
+    WHERE a.event_id = ${eventId} AND m.is_active_member = true
+  `);
+
+  return (rows as any[]).map((r) => r.email);
+}
+
+/**
  * Get cache age for event sync in seconds
  * Returns null if no cache exists or cache is expired
  */

@@ -98,6 +98,7 @@ function OrderDisplayCell({
   ticketField,
   value,
   placeholder,
+  communityEmailSet,
 }: {
   order: GroupedOrder;
   field: "firstName" | "lastName" | "email";
@@ -105,6 +106,7 @@ function OrderDisplayCell({
   ticketField: "firstName" | "lastName" | "email";
   value: string | null;
   placeholder: string;
+  communityEmailSet?: Set<string>;
 }) {
   const inactive = isInactiveOrder(order);
   const inactiveLabel = getInactiveStatusLabel(order);
@@ -113,6 +115,7 @@ function OrderDisplayCell({
   const hasPartialDeletion = !inactive && inactiveCount > 0;
   const isSingleTicket = order.ticketCount === 1;
   const ticket = order.tickets[0];
+  const isCommunityMember = communityEmailSet?.has((order.bookerEmail || "").toLowerCase()) ?? false;
 
   // For single-ticket orders, show editable field with badges
   if (isSingleTicket && ticket) {
@@ -139,6 +142,12 @@ function OrderDisplayCell({
             aria-label="Members-only ticket"
           />
         )}
+        {/* Community member badge */}
+        {isCommunityMember && field === "firstName" && (
+          <Badge variant="outline" className="border-blue-500 bg-blue-50 text-blue-700 text-xs">
+            Community
+          </Badge>
+        )}
         {/* Inactive status badge (Deleted/Cancelled/Refunded) */}
         {inactive && inactiveLabel && field === "firstName" && (
           <Badge
@@ -164,6 +173,12 @@ function OrderDisplayCell({
           className="size-4 text-purple-600 flex-shrink-0"
           aria-label="Members-only ticket"
         />
+      )}
+      {/* Community member badge */}
+      {isCommunityMember && field === "firstName" && (
+        <Badge variant="outline" className="border-blue-500 bg-blue-50 text-blue-700 text-xs">
+          Community
+        </Badge>
       )}
       {/* Booker badge for multi-ticket orders */}
       {field === "firstName" && (
@@ -391,6 +406,7 @@ interface CheckInTableHandlers {
   expandedRows: Set<string>;
   toggleRow: (id: string) => void;
   onMutationSuccess?: (eventId: string) => void;
+  communityEmailSet?: Set<string>;
 }
 
 export type { CheckInTableHandlers };
@@ -720,6 +736,7 @@ export function getCheckInTableColumns(
           ticketField="firstName"
           value={row.getValue("bookerFirstName")}
           placeholder="First name"
+          communityEmailSet={handlers.communityEmailSet}
         />
       ),
       sortingFn: (rowA, rowB, columnId) => {
@@ -765,6 +782,7 @@ export function getCheckInTableColumns(
           ticketField="lastName"
           value={row.getValue("bookerLastName")}
           placeholder="Last name"
+          communityEmailSet={handlers.communityEmailSet}
         />
       ),
       sortingFn: (rowA, rowB, columnId) => {
@@ -810,6 +828,7 @@ export function getCheckInTableColumns(
           ticketField="email"
           value={row.getValue("bookerEmail")}
           placeholder="email@example.com"
+          communityEmailSet={handlers.communityEmailSet}
         />
       ),
       sortingFn: (rowA, rowB, columnId) => {

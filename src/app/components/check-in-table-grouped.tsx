@@ -31,9 +31,10 @@ function isInactiveTicket(ticket: Attendee): boolean {
 interface CheckInTableProps {
   attendees: Attendee[];
   onMutationSuccess?: (eventId: string) => void;
+  communityEmailSet?: Set<string>;
 }
 
-export function CheckInTable({ attendees, onMutationSuccess }: CheckInTableProps) {
+export function CheckInTable({ attendees, onMutationSuccess, communityEmailSet }: CheckInTableProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [mergeDialogOpen, setMergeDialogOpen] = React.useState(false);
   const [selectedAttendee, setSelectedAttendee] = React.useState<Attendee | null>(null);
@@ -137,7 +138,8 @@ export function CheckInTable({ attendees, onMutationSuccess }: CheckInTableProps
     expandedRows,
     toggleRow,
     onMutationSuccess,
-  }), [expandedRows, toggleRow, onMutationSuccess, handleSwapAttendeeName]);
+    communityEmailSet,
+  }), [expandedRows, toggleRow, onMutationSuccess, handleSwapAttendeeName, communityEmailSet]);
 
   const columns = React.useMemo(() => getCheckInTableColumns(handlers), [handlers]);
 

@@ -8,6 +8,7 @@ interface EventAttendeesResponse {
   event: Event;
   attendees: Attendee[];
   cacheAge: number | null;
+  communityEmails: string[];
 }
 
 async function fetchEventAttendees(eventId: string): Promise<EventAttendeesResponse> {

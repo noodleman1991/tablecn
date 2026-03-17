@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getFunnelByEvent, getFunnelByMonth, getReturningDetailsForEvent, getCommunityDetailsForEvent } from "../actions";
+import { getFunnelByEvent, getFunnelByMonth, getReturningDetailsForEvent, getNewAttendeesForEvent, getCommunityDetailsForEvent } from "../actions";
 import type { PeriodFilter, FunnelEventRow, FunnelMonthRow } from "../types";
 
 interface FunnelTabProps {
@@ -89,7 +89,7 @@ export function FunnelTab({ period }: FunnelTabProps) {
 
   function ReturningDetailPopover({ eventId, count }: { eventId: string; count: number }) {
     const [details, setDetails] = React.useState<
-      Array<{ email: string; name: string; isNew: boolean; isCommunityMember: boolean }> | null
+      Array<{ email: string; name: string; isCommunityMember: boolean }> | null
     >(null);
     const [loadingDetails, setLoadingDetails] = React.useState(false);
 
@@ -122,18 +122,13 @@ export function FunnelTab({ period }: FunnelTabProps) {
               <p className="text-xs font-medium text-muted-foreground mb-2">
                 {details.length} returning attendee(s)
               </p>
-              {details.map((d) => (
-                <div key={d.email} className="flex items-center justify-between text-sm">
+              {details.map((d, i) => (
+                <div key={`${d.email}-${i}`} className="flex items-center justify-between text-sm">
                   <div className="truncate flex-1 mr-2">
                     <span className="font-medium">{d.name}</span>
                     <span className="text-muted-foreground text-xs ml-1">({d.email})</span>
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    {d.isNew && (
-                      <Badge variant="outline" className="border-green-500 bg-green-50 text-green-700 text-xs">
-                        New
-                      </Badge>
-                    )}
                     {d.isCommunityMember && (
                       <Badge variant="outline" className="border-blue-500 bg-blue-50 text-blue-700 text-xs">
                         Community
@@ -145,6 +140,60 @@ export function FunnelTab({ period }: FunnelTabProps) {
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">No returning attendees found.</p>
+          )}
+        </PopoverContent>
+      </Popover>
+    );
+  }
+
+  function NewDetailPopover({ eventId, count }: { eventId: string; count: number }) {
+    const [details, setDetails] = React.useState<
+      Array<{ email: string; name: string }> | null
+    >(null);
+    const [loadingDetails, setLoadingDetails] = React.useState(false);
+
+    if (count === 0) {
+      return <span className="text-muted-foreground">0</span>;
+    }
+
+    const handleOpen = (open: boolean) => {
+      if (open && details === null && !loadingDetails) {
+        setLoadingDetails(true);
+        getNewAttendeesForEvent(eventId)
+          .then(setDetails)
+          .catch(console.error)
+          .finally(() => setLoadingDetails(false));
+      }
+    };
+
+    return (
+      <Popover onOpenChange={handleOpen}>
+        <PopoverTrigger asChild>
+          <button className="cursor-pointer text-green-600 font-medium underline decoration-dotted hover:text-green-700">
+            +{count}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-80 max-h-64 overflow-y-auto p-3" align="end">
+          {loadingDetails ? (
+            <div className="space-y-1">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-5 w-full" />
+              ))}
+            </div>
+          ) : details && details.length > 0 ? (
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-muted-foreground mb-2">
+                {details.length} first-time attendee(s)
+              </p>
+              {details.map((d, i) => (
+                <div key={`${d.email}-${i}`} className="text-sm truncate">
+                  <span className="font-medium">{d.name}</span>
+                  <span className="text-muted-foreground text-xs ml-1">({d.email})</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No first-time attendees found.</p>
           )}
         </PopoverContent>
       </Popover>
@@ -321,7 +370,7 @@ export function FunnelTab({ period }: FunnelTabProps) {
                           <span className="cursor-help underline decoration-dotted">New</span>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p className="text-xs max-w-[200px]">First-time attendees (member record created at check-in).</p>
+                          <p className="text-xs max-w-[200px]">Checked-in attendees attending their first-ever event.</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -382,11 +431,7 @@ export function FunnelTab({ period }: FunnelTabProps) {
                         <ReturningDetailPopover eventId={row.eventId} count={row.returningCount} />
                       </TableCell>
                       <TableCell className="text-right">
-                        {row.newCount > 0 ? (
-                          <span className="text-green-600 font-medium">+{row.newCount}</span>
-                        ) : (
-                          <span className="text-muted-foreground">0</span>
-                        )}
+                        <NewDetailPopover eventId={row.eventId} count={row.newCount} />
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
@@ -447,7 +492,7 @@ export function FunnelTab({ period }: FunnelTabProps) {
                           <span className="cursor-help underline decoration-dotted">New</span>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p className="text-xs max-w-[200px]">First-time attendees (member record created at check-in).</p>
+                          <p className="text-xs max-w-[200px]">Checked-in attendees attending their first-ever event.</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>

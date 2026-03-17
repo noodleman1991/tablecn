@@ -192,6 +192,49 @@ export function exportMembersWithEmail(members: Member[]): void {
 }
 
 /**
+ * Export returning attendees to CSV
+ */
+export function exportReturningAttendeesToCSV(
+  attendees: Array<{
+    email: string;
+    firstName: string;
+    lastName: string;
+    eventsAttended: number;
+    lastEventDate: string;
+    isCommunityMember: boolean;
+  }>,
+): string {
+  const headers = [
+    "Email",
+    "First Name",
+    "Last Name",
+    "Events in Period",
+    "Last Event Date",
+    "Community Member",
+  ];
+
+  const rows = attendees.map((a) => [
+    a.email,
+    a.firstName,
+    a.lastName,
+    String(a.eventsAttended),
+    a.lastEventDate,
+    a.isCommunityMember ? "Yes" : "No",
+  ]);
+
+  return arrayToCSV([headers, ...rows]);
+}
+
+/**
+ * Generate filename for returning attendees export
+ */
+export function generateReturningFilename(from: Date, to: Date): string {
+  const fromStr = format(from, "yyyy-MM-dd");
+  const toStr = format(to, "yyyy-MM-dd");
+  return `returning_attendees_${fromStr}_to_${toStr}.csv`;
+}
+
+/**
  * Email CSV via server action with actual attachment
  */
 export async function emailCSVViaServer(

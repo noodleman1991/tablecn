@@ -1,4 +1,4 @@
-import { getEventById, getAttendeesForEvent, getSyncCacheAge } from "@/app/actions";
+import { getEventById, getAttendeesForEvent, getSyncCacheAge, getCommunityMemberEmailsForEvent } from "@/app/actions";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -16,10 +16,11 @@ export async function GET(
     }
 
     // Fetch event and attendees in parallel
-    const [event, attendees, cacheAge] = await Promise.all([
+    const [event, attendees, cacheAge, communityEmails] = await Promise.all([
       getEventById(eventId),
       getAttendeesForEvent(eventId),
       getSyncCacheAge(eventId),
+      getCommunityMemberEmailsForEvent(eventId),
     ]);
 
     if (!event) {
@@ -33,6 +34,7 @@ export async function GET(
       event,
       attendees,
       cacheAge,
+      communityEmails,
     });
   } catch (error) {
     console.error("[API] Error fetching event attendees:", error);
