@@ -185,15 +185,11 @@ export async function getFunnelByEvent(
     event_id: string;
     cnt: string;
   }>(sql`
-    WITH countable_checkins AS (
-      SELECT
-        a.email,
-        a.event_id,
-        e.event_date,
-        ROW_NUMBER() OVER (
-          PARTITION BY LOWER(a.email)
-          ORDER BY e.event_date, e.id
-        ) AS event_rank
+    WITH raw_checkins AS (
+      SELECT DISTINCT ON (LOWER(a.email), e.id)
+        LOWER(a.email) AS email,
+        e.id AS event_id,
+        e.event_date
       FROM ${attendees} a
       INNER JOIN ${events} e ON e.id = a.event_id
       WHERE a.checked_in = true
@@ -208,6 +204,15 @@ export async function getFunnelByEvent(
            OR e.name ILIKE '%equinox%')
           AND e.name ILIKE '%celebration%'
         )
+      ORDER BY LOWER(a.email), e.id
+    ),
+    countable_checkins AS (
+      SELECT email, event_id, event_date,
+        ROW_NUMBER() OVER (
+          PARTITION BY email
+          ORDER BY event_date, event_id
+        ) AS event_rank
+      FROM raw_checkins
     )
     SELECT cc.event_id, COUNT(DISTINCT cc.email)::text AS cnt
     FROM countable_checkins cc
@@ -393,15 +398,11 @@ export async function getFunnelByMonth(
     month: string;
     cnt: string;
   }>(sql`
-    WITH countable_checkins AS (
-      SELECT
-        a.email,
-        a.event_id,
-        e.event_date,
-        ROW_NUMBER() OVER (
-          PARTITION BY LOWER(a.email)
-          ORDER BY e.event_date, e.id
-        ) AS event_rank
+    WITH raw_checkins AS (
+      SELECT DISTINCT ON (LOWER(a.email), e.id)
+        LOWER(a.email) AS email,
+        e.id AS event_id,
+        e.event_date
       FROM ${attendees} a
       INNER JOIN ${events} e ON e.id = a.event_id
       WHERE a.checked_in = true
@@ -416,6 +417,15 @@ export async function getFunnelByMonth(
            OR e.name ILIKE '%equinox%')
           AND e.name ILIKE '%celebration%'
         )
+      ORDER BY LOWER(a.email), e.id
+    ),
+    countable_checkins AS (
+      SELECT email, event_id, event_date,
+        ROW_NUMBER() OVER (
+          PARTITION BY email
+          ORDER BY event_date, event_id
+        ) AS event_rank
+      FROM raw_checkins
     )
     SELECT TO_CHAR(cc.event_date, 'YYYY-MM') AS month, COUNT(DISTINCT cc.email)::text AS cnt
     FROM countable_checkins cc
@@ -645,15 +655,11 @@ export async function getAnalyticsData(
     event_date: string;
     cnt: string;
   }>(sql`
-    WITH countable_checkins AS (
-      SELECT
-        a.email,
-        a.event_id,
-        e.event_date,
-        ROW_NUMBER() OVER (
-          PARTITION BY LOWER(a.email)
-          ORDER BY e.event_date, e.id
-        ) AS event_rank
+    WITH raw_checkins AS (
+      SELECT DISTINCT ON (LOWER(a.email), e.id)
+        LOWER(a.email) AS email,
+        e.id AS event_id,
+        e.event_date
       FROM ${attendees} a
       INNER JOIN ${events} e ON e.id = a.event_id
       WHERE a.checked_in = true
@@ -668,6 +674,15 @@ export async function getAnalyticsData(
            OR e.name ILIKE '%equinox%')
           AND e.name ILIKE '%celebration%'
         )
+      ORDER BY LOWER(a.email), e.id
+    ),
+    countable_checkins AS (
+      SELECT email, event_id, event_date,
+        ROW_NUMBER() OVER (
+          PARTITION BY email
+          ORDER BY event_date, event_id
+        ) AS event_rank
+      FROM raw_checkins
     )
     SELECT cc.event_id, e.event_date::text, COUNT(DISTINCT cc.email)::text AS cnt
     FROM countable_checkins cc
@@ -732,15 +747,11 @@ export async function getAnalyticsData(
     event_date: string;
     community_size: string;
   }>(sql`
-    WITH countable_checkins AS (
-      SELECT
+    WITH raw_checkins AS (
+      SELECT DISTINCT ON (LOWER(a.email), e.id)
         LOWER(a.email) AS email,
         e.event_date,
-        e.id AS event_id,
-        ROW_NUMBER() OVER (
-          PARTITION BY LOWER(a.email)
-          ORDER BY e.event_date, e.id
-        ) AS event_rank
+        e.id AS event_id
       FROM ${attendees} a
       INNER JOIN ${events} e ON e.id = a.event_id
       WHERE a.checked_in = true
@@ -755,6 +766,15 @@ export async function getAnalyticsData(
            OR e.name ILIKE '%equinox%')
           AND e.name ILIKE '%celebration%'
         )
+      ORDER BY LOWER(a.email), e.id
+    ),
+    countable_checkins AS (
+      SELECT email, event_date, event_id,
+        ROW_NUMBER() OVER (
+          PARTITION BY email
+          ORDER BY event_date, event_id
+        ) AS event_rank
+      FROM raw_checkins
     ),
     member_activation AS (
       SELECT email, MIN(event_date) AS activation_date
@@ -840,15 +860,11 @@ export async function getAnalyticsData(
     month: string;
     cnt: string;
   }>(sql`
-    WITH countable_checkins AS (
-      SELECT
-        a.email,
-        a.event_id,
-        e.event_date,
-        ROW_NUMBER() OVER (
-          PARTITION BY LOWER(a.email)
-          ORDER BY e.event_date, e.id
-        ) AS event_rank
+    WITH raw_checkins AS (
+      SELECT DISTINCT ON (LOWER(a.email), e.id)
+        LOWER(a.email) AS email,
+        e.id AS event_id,
+        e.event_date
       FROM ${attendees} a
       INNER JOIN ${events} e ON e.id = a.event_id
       WHERE a.checked_in = true
@@ -863,6 +879,15 @@ export async function getAnalyticsData(
            OR e.name ILIKE '%equinox%')
           AND e.name ILIKE '%celebration%'
         )
+      ORDER BY LOWER(a.email), e.id
+    ),
+    countable_checkins AS (
+      SELECT email, event_id, event_date,
+        ROW_NUMBER() OVER (
+          PARTITION BY email
+          ORDER BY event_date, event_id
+        ) AS event_rank
+      FROM raw_checkins
     )
     SELECT TO_CHAR(cc.event_date, 'YYYY-MM') AS month, COUNT(DISTINCT cc.email)::text AS cnt
     FROM countable_checkins cc
@@ -917,15 +942,11 @@ export async function getAnalyticsData(
     month: string;
     community_size: string;
   }>(sql`
-    WITH countable_checkins AS (
-      SELECT
+    WITH raw_checkins AS (
+      SELECT DISTINCT ON (LOWER(a.email), e.id)
         LOWER(a.email) AS email,
         e.event_date,
-        e.id AS event_id,
-        ROW_NUMBER() OVER (
-          PARTITION BY LOWER(a.email)
-          ORDER BY e.event_date, e.id
-        ) AS event_rank
+        e.id AS event_id
       FROM ${attendees} a
       INNER JOIN ${events} e ON e.id = a.event_id
       WHERE a.checked_in = true
@@ -940,6 +961,15 @@ export async function getAnalyticsData(
            OR e.name ILIKE '%equinox%')
           AND e.name ILIKE '%celebration%'
         )
+      ORDER BY LOWER(a.email), e.id
+    ),
+    countable_checkins AS (
+      SELECT email, event_date, event_id,
+        ROW_NUMBER() OVER (
+          PARTITION BY email
+          ORDER BY event_date, event_id
+        ) AS event_rank
+      FROM raw_checkins
     ),
     member_activation AS (
       SELECT email, MIN(event_date) AS activation_date
@@ -1190,15 +1220,11 @@ export async function getCommunityDetailsForEvent(eventId: string): Promise<{
     first_name: string;
     last_name: string;
   }>(sql`
-    WITH countable_checkins AS (
-      SELECT
-        a.email,
-        a.event_id,
-        e.event_date,
-        ROW_NUMBER() OVER (
-          PARTITION BY LOWER(a.email)
-          ORDER BY e.event_date, e.id
-        ) AS event_rank
+    WITH raw_checkins AS (
+      SELECT DISTINCT ON (LOWER(a.email), e.id)
+        LOWER(a.email) AS email,
+        e.id AS event_id,
+        e.event_date
       FROM ${attendees} a
       INNER JOIN ${events} e ON e.id = a.event_id
       WHERE a.checked_in = true
@@ -1213,6 +1239,15 @@ export async function getCommunityDetailsForEvent(eventId: string): Promise<{
            OR e.name ILIKE '%equinox%')
           AND e.name ILIKE '%celebration%'
         )
+      ORDER BY LOWER(a.email), e.id
+    ),
+    countable_checkins AS (
+      SELECT email, event_id, event_date,
+        ROW_NUMBER() OVER (
+          PARTITION BY email
+          ORDER BY event_date, event_id
+        ) AS event_rank
+      FROM raw_checkins
     )
     SELECT DISTINCT
       cc.email,

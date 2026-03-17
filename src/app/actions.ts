@@ -670,6 +670,19 @@ export async function resyncAllEvents() {
     }
   }
 
+  // Recalculate membership for all members after sync
+  const { recalculateMembershipForMember } = await import("@/lib/calculate-membership");
+  const allMembers = await db.select({ id: members.id }).from(members);
+  let recalculated = 0;
+  for (const member of allMembers) {
+    try {
+      await recalculateMembershipForMember(member.id);
+      recalculated++;
+    } catch (e) {
+      console.error(`Failed to recalculate membership for ${member.id}:`, e);
+    }
+  }
+
   revalidatePath("/");
   revalidatePath("/community-members-list");
 
@@ -681,6 +694,7 @@ export async function resyncAllEvents() {
     totalEvents: allEvents.length,
     synced,
     skipped,
+    membersRecalculated: recalculated,
     results,
   };
 }

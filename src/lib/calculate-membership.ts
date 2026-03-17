@@ -85,9 +85,13 @@ export async function recalculateMembershipForMember(memberId: string) {
     return false;
   };
 
+  // Deduplicate by eventId (multiple tickets for the same event should count as one)
+  const uniqueAllEvents = [...new Map(allAttendedEvents.map(e => [e.eventId, e])).values()];
+  const uniqueRecentEvents = [...new Map(recentAttendedEvents.map(e => [e.eventId, e])).values()];
+
   // Filter out social events before counting
-  const countableAllEvents = allAttendedEvents.filter(e => !isSocialEvent(e.eventName));
-  const countableRecentEvents = recentAttendedEvents.filter(e => !isSocialEvent(e.eventName));
+  const countableAllEvents = uniqueAllEvents.filter(e => !isSocialEvent(e.eventName));
+  const countableRecentEvents = uniqueRecentEvents.filter(e => !isSocialEvent(e.eventName));
 
   const totalEventsAttended = countableAllEvents.length;
   const recentEventsAttended = countableRecentEvents.length;
