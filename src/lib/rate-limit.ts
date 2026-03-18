@@ -1,16 +1,7 @@
 import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { env } from "@/env";
-
-const redis =
-  env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN
-    ? new Redis({
-        url: env.UPSTASH_REDIS_REST_URL,
-        token: env.UPSTASH_REDIS_REST_TOKEN,
-      })
-    : null;
+import { redis } from "./redis";
 
 const ratelimit = redis
   ? new Ratelimit({

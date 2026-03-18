@@ -2,11 +2,12 @@
 
 import { db } from "@/db";
 import { attendees, events, members } from "@/db/schema";
-import { eq, desc, gte, lt, isNull, isNotNull, and, sql } from "drizzle-orm";
+import { eq, desc, gte, lt, isNull, and, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { syncAttendeesForEvent } from "@/lib/sync-attendees";
 import { getCacheAge, invalidateCache } from "@/lib/cache-utils";
 import { syncMemberToLoops, removeMemberFromLoops } from "@/lib/loops-sync";
+import { env } from "@/env";
 
 /**
  * Get all events sorted by date (most recent first)
@@ -473,6 +474,7 @@ export async function toggleMemberStatusOverride(data: {
 
   if (forceActive) {
     updateData.isActiveMember = true;
+    updateData.manuallyAdded = true;
     updateData.manualExpiresAt = expiresAt || null;
   } else if (forceInactive) {
     updateData.isActiveMember = false;
@@ -646,57 +648,18 @@ export async function refreshAttendeesForEvent(eventId: string) {
 export async function resyncAllEvents() {
   "use server";
 
-  const allEvents = await db
-    .select({ id: events.id, name: events.name })
-    .from(events)
-    .where(
-      and(
-        isNotNull(events.woocommerceProductId),
-        isNull(events.mergedIntoEventId)
-      )
-    );
-
-  const results: Array<{ eventName: string; result: any }> = [];
-
-  for (const event of allEvents) {
-    try {
-      const result = await syncAttendeesForEvent(event.id, true, true);
-      results.push({ eventName: event.name, result });
-    } catch (error) {
-      results.push({
-        eventName: event.name,
-        result: { synced: false, reason: "error", error: error instanceof Error ? error.message : String(error) },
-      });
-    }
-  }
-
-  // Recalculate membership for all members after sync
-  const { recalculateMembershipForMember } = await import("@/lib/calculate-membership");
-  const allMembers = await db.select({ id: members.id }).from(members);
-  let recalculated = 0;
-  for (const member of allMembers) {
-    try {
-      await recalculateMembershipForMember(member.id);
-      recalculated++;
-    } catch (e) {
-      console.error(`Failed to recalculate membership for ${member.id}:`, e);
-    }
-  }
-
-  revalidatePath("/");
-  revalidatePath("/community-members-list");
-
-  const synced = results.filter(r => r.result?.synced).length;
-  const skipped = results.filter(r => !r.result?.synced).length;
-
-  return {
-    success: true,
-    totalEvents: allEvents.length,
-    synced,
-    skipped,
-    membersRecalculated: recalculated,
-    results,
-  };
+  const response = await fetch(
+    `${env.NEXT_PUBLIC_APP_URL}/api/batch/resync-events`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.CRON_SECRET}`,
+        "Content-Type": "application/json",
+      },
+    },
+  );
+  const result = (await response.json()) as Record<string, unknown>;
+  return { success: true, batchJobStarted: true, ...result };
 }
 
 /**

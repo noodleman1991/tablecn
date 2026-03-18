@@ -60,7 +60,7 @@ export function AttendeeBreakdownChart({ byEvent, byMonth }: Props) {
   return (
     <div>
       <p className="text-xs text-muted-foreground mb-2">
-        Total Community = people with 3+ countable events and at least 1 in the last 9 months
+        Total Community = people with 3+ countable events (within 9 months of last event) plus manually added members
       </p>
       <div className="flex gap-1 mb-4">
         <Button

@@ -97,7 +97,11 @@ export async function recalculateMembershipForMember(memberId: string) {
   const recentEventsAttended = countableRecentEvents.length;
 
   // NEW RULE: Active if 3+ total events AND 1+ event in last 9 months
-  const isActiveMember = totalEventsAttended >= 3 && recentEventsAttended >= 1;
+  const eventBasedActive = totalEventsAttended >= 3 && recentEventsAttended >= 1;
+  const manuallyActive = memberData.manuallyAdded && memberData.manualExpiresAt
+    ? new Date(memberData.manualExpiresAt) > new Date()
+    : false;
+  const isActiveMember = eventBasedActive || manuallyActive;
 
   // Calculate membership expiry (9 months from last countable event attended)
   let membershipExpiresAt = null;

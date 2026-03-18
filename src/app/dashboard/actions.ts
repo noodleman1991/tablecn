@@ -63,11 +63,66 @@ export async function getDashboardStats(
   const checkedInCount = parseInt(row?.checked_in_count ?? "0");
   const totalRevenue = parseFloat(row?.total_revenue ?? "0");
 
-  const activeResult = await db
-    .select({ count: sql<string>`COUNT(*)::text` })
-    .from(members)
-    .where(eq(members.isActiveMember, true));
-  const communityMembersCount = parseInt(activeResult[0]?.count ?? "0");
+  const communityResult = await db.execute<{ community_size: string }>(sql`
+    WITH raw_checkins AS (
+      SELECT DISTINCT ON (LOWER(a.email), e.id)
+        LOWER(a.email) AS email,
+        e.event_date
+      FROM ${attendees} a
+      INNER JOIN ${events} e ON e.id = a.event_id
+      WHERE a.checked_in = true
+        AND a.order_status NOT IN ('cancelled','refunded','deleted')
+        AND e.merged_into_event_id IS NULL
+        AND e.name NOT ILIKE '%walk%'
+        AND e.name NOT ILIKE '%party%'
+        AND e.name NOT ILIKE '%drinks%'
+        AND NOT (
+          (e.name ILIKE '%winter%' OR e.name ILIKE '%spring%' OR e.name ILIKE '%summer%'
+           OR e.name ILIKE '%autumn%' OR e.name ILIKE '%fall%' OR e.name ILIKE '%solstice%'
+           OR e.name ILIKE '%equinox%')
+          AND e.name ILIKE '%celebration%'
+        )
+      ORDER BY LOWER(a.email), e.id
+    ),
+    countable_checkins AS (
+      SELECT email, event_date,
+        ROW_NUMBER() OVER (
+          PARTITION BY email
+          ORDER BY event_date
+        ) AS event_rank
+      FROM raw_checkins
+    ),
+    member_activation AS (
+      SELECT email, MIN(event_date) AS activation_date
+      FROM countable_checkins
+      WHERE event_rank = 3
+      GROUP BY email
+    ),
+    override_members AS (
+      SELECT LOWER(m.email) AS email,
+             m.created_at AS activation_date,
+             m.manual_expires_at
+      FROM ${members} m
+      WHERE m.manually_added = true
+        AND m.manual_expires_at IS NOT NULL
+    )
+    SELECT (SELECT COUNT(DISTINCT x.email) FROM (
+      SELECT ma.email
+      FROM member_activation ma
+      WHERE ma.activation_date <= ${isoDate(to)}::date
+        AND (
+          SELECT MAX(cc2.event_date)
+          FROM countable_checkins cc2
+          WHERE cc2.email = ma.email AND cc2.event_date <= ${isoDate(to)}::date
+        ) + INTERVAL '9 months' > ${isoDate(to)}::date
+      UNION
+      SELECT om.email
+      FROM override_members om
+      WHERE om.activation_date <= ${isoDate(to)}::date
+        AND om.manual_expires_at > ${isoDate(to)}::date
+    ) x)::text AS community_size
+  `);
+  const communityMembersCount = parseInt((communityResult as any[])[0]?.community_size ?? "0");
 
   const checkinRate = validTickets > 0 ? (checkedInCount / validTickets) * 100 : 0;
 
@@ -782,6 +837,14 @@ export async function getAnalyticsData(
       WHERE event_rank = 3
       GROUP BY email
     ),
+    override_members AS (
+      SELECT LOWER(m.email) AS email,
+             m.created_at AS activation_date,
+             m.manual_expires_at
+      FROM ${members} m
+      WHERE m.manually_added = true
+        AND m.manual_expires_at IS NOT NULL
+    ),
     period_events AS (
       SELECT id, name, event_date
       FROM ${events}
@@ -790,15 +853,22 @@ export async function getAnalyticsData(
       ORDER BY event_date
     )
     SELECT pe.event_date::text,
-      COUNT(DISTINCT ma.email)::text AS community_size
+      (SELECT COUNT(DISTINCT x.email) FROM (
+        SELECT ma.email
+        FROM member_activation ma
+        WHERE ma.activation_date <= pe.event_date
+          AND (
+            SELECT MAX(cc2.event_date)
+            FROM countable_checkins cc2
+            WHERE cc2.email = ma.email AND cc2.event_date <= pe.event_date
+          ) + INTERVAL '9 months' > pe.event_date
+        UNION
+        SELECT om.email
+        FROM override_members om
+        WHERE om.activation_date <= pe.event_date
+          AND om.manual_expires_at > pe.event_date
+      ) x)::text AS community_size
     FROM period_events pe
-    CROSS JOIN member_activation ma
-    WHERE ma.activation_date <= pe.event_date
-      AND (
-        SELECT MAX(cc2.event_date)
-        FROM countable_checkins cc2
-        WHERE cc2.email = ma.email AND cc2.event_date <= pe.event_date
-      ) + INTERVAL '9 months' > pe.event_date
     GROUP BY pe.event_date
     ORDER BY pe.event_date
   `);
@@ -977,6 +1047,14 @@ export async function getAnalyticsData(
       WHERE event_rank = 3
       GROUP BY email
     ),
+    override_members AS (
+      SELECT LOWER(m.email) AS email,
+             m.created_at AS activation_date,
+             m.manual_expires_at
+      FROM ${members} m
+      WHERE m.manually_added = true
+        AND m.manual_expires_at IS NOT NULL
+    ),
     period_months AS (
       SELECT TO_CHAR(gs, 'YYYY-MM') AS month,
         (gs + INTERVAL '1 month' - INTERVAL '1 day')::date AS month_end
@@ -987,16 +1065,23 @@ export async function getAnalyticsData(
       ) AS gs
     )
     SELECT pm.month,
-      COUNT(DISTINCT ma.email)::text AS community_size
+      (SELECT COUNT(DISTINCT x.email) FROM (
+        SELECT ma.email
+        FROM member_activation ma
+        WHERE ma.activation_date <= pm.month_end
+          AND (
+            SELECT MAX(cc2.event_date)
+            FROM countable_checkins cc2
+            WHERE cc2.email = ma.email AND cc2.event_date <= pm.month_end
+          ) + INTERVAL '9 months' > pm.month_end
+        UNION
+        SELECT om.email
+        FROM override_members om
+        WHERE om.activation_date <= pm.month_end
+          AND om.manual_expires_at > pm.month_end
+      ) x)::text AS community_size
     FROM period_months pm
-    CROSS JOIN member_activation ma
-    WHERE ma.activation_date <= pm.month_end
-      AND (
-        SELECT MAX(cc2.event_date)
-        FROM countable_checkins cc2
-        WHERE cc2.email = ma.email AND cc2.event_date <= pm.month_end
-      ) + INTERVAL '9 months' > pm.month_end
-    GROUP BY pm.month
+    GROUP BY pm.month, pm.month_end
     ORDER BY pm.month
   `);
   const communitySizeByMonthMap = new Map<string, number>();

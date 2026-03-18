@@ -5,6 +5,8 @@ import { cleanupExpiredCache } from "@/lib/cache-utils";
  * Cron job to clean up expired cache entries
  * Runs every 6 hours
  */
+export const maxDuration = 60;
+
 export async function GET() {
   try {
     console.log("[cron] Starting cache cleanup...");

@@ -45,9 +45,9 @@ export function MembersPage({ members }: MembersPageProps) {
   const handleResyncAll = async () => {
     setIsResyncing(true);
     try {
-      const result = await resyncAllEvents();
+      await resyncAllEvents();
       toast.success(
-        `Re-sync complete: ${result.synced} synced, ${result.skipped} skipped out of ${result.totalEvents} events`
+        "Batch re-sync started. Events will be processed in the background."
       );
     } catch (error) {
       toast.error(

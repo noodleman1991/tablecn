@@ -10,6 +10,8 @@ import { mergeDuplicateEvents } from "@/lib/merge-events";
  * curl -X POST http://localhost:3000/api/merge-events \
  *   -H "Authorization: Bearer $CRON_SECRET"
  */
+export const maxDuration = 300;
+
 export async function POST(request: NextRequest) {
   // Verify authorization
   const authHeader = request.headers.get("authorization");

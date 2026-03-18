@@ -12,6 +12,8 @@ import {
  * Vercel Cron: https://vercel.com/docs/cron-jobs
  * Configured in vercel.json to run every hour
  */
+export const maxDuration = 120;
+
 export async function GET(request: NextRequest) {
   // Verify cron secret
   const authHeader = request.headers.get("authorization");

@@ -14,6 +14,8 @@ import { and, eq, gte, lte, isNotNull } from "drizzle-orm";
  * Vercel Cron: https://vercel.com/docs/cron-jobs
  * Configured in vercel.json to run daily at 9 AM
  */
+export const maxDuration = 300;
+
 export async function GET(request: NextRequest) {
   // Verify cron secret
   const authHeader = request.headers.get("authorization");

@@ -28,6 +28,8 @@ import { isMembersOnlyProduct } from "@/lib/event-patterns";
  *   }]
  * }
  */
+export const maxDuration = 300;
+
 export async function GET(request: NextRequest) {
   // Verify cron secret
   const authHeader = request.headers.get("authorization");
