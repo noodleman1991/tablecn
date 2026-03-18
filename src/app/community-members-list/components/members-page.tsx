@@ -12,9 +12,11 @@ import {
   emailCSVViaServer,
 } from "@/lib/csv-export";
 import { toast } from "sonner";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { MembersTable } from "./members-table";
 import { AddManualMemberDialog } from "./add-manual-member-dialog";
 import { resyncAllEvents } from "@/app/actions";
+import { BatchProgressIndicator } from "./batch-progress-indicator";
 
 interface MembersPageProps {
   members: Member[];
@@ -24,6 +26,7 @@ export function MembersPage({ members }: MembersPageProps) {
   const [isDownloading, setIsDownloading] = React.useState(false);
   const [isEmailing, setIsEmailing] = React.useState(false);
   const [isResyncing, setIsResyncing] = React.useState(false);
+  const [showBatchProgress, setShowBatchProgress] = React.useState(false);
 
   const activeMembers = members.filter((m) => m.isActiveMember).length;
   const totalMembers = members.length;
@@ -46,6 +49,7 @@ export function MembersPage({ members }: MembersPageProps) {
     setIsResyncing(true);
     try {
       await resyncAllEvents();
+      setShowBatchProgress(true);
       toast.success(
         "Batch re-sync started. Events will be processed in the background."
       );
@@ -120,44 +124,61 @@ export function MembersPage({ members }: MembersPageProps) {
         </Card>
       </div>
 
+      <BatchProgressIndicator isActive={showBatchProgress} />
+
       <Card>
         <CardHeader className="flex flex-col gap-4 space-y-0 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle>Members List</CardTitle>
           <div className="flex flex-col gap-2 sm:flex-row">
             <AddManualMemberDialog />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleResyncAll}
-              disabled={isResyncing}
-              className="min-h-[44px] w-full sm:w-auto gap-2"
-            >
-              <RefreshCw className={`size-4 ${isResyncing ? "animate-spin" : ""}`} />
-              <span className="sm:hidden">Re-sync</span>
-              <span className="hidden sm:inline">{isResyncing ? "Re-syncing..." : "Re-sync All Events"}</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDownloadCSV}
-              disabled={isDownloading}
-              className="min-h-[44px] w-full sm:w-auto gap-2"
-            >
-              <Download className="size-4" />
-              <span className="sm:hidden">CSV</span>
-              <span className="hidden sm:inline">Download CSV</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleEmailCSV}
-              disabled={isEmailing}
-              className="min-h-[44px] w-full sm:w-auto gap-2"
-            >
-              <Mail className="size-4" />
-              <span className="sm:hidden">Email</span>
-              <span className="hidden sm:inline">Send Email</span>
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleResyncAll}
+                  disabled={isResyncing}
+                  className="min-h-[44px] w-full sm:w-auto gap-2"
+                >
+                  <RefreshCw className={`size-4 ${isResyncing ? "animate-spin" : ""}`} />
+                  <span className="sm:hidden">Re-sync</span>
+                  <span className="hidden sm:inline">{isResyncing ? "Re-syncing..." : "Re-sync All Events"}</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Pulls the latest ticket data from WooCommerce for every event, then recalculates all membership statuses. Runs in the background — may take a few minutes.</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownloadCSV}
+                  disabled={isDownloading}
+                  className="min-h-[44px] w-full sm:w-auto gap-2"
+                >
+                  <Download className="size-4" />
+                  <span className="sm:hidden">CSV</span>
+                  <span className="hidden sm:inline">Download CSV</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Download the full members list as a spreadsheet file.</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleEmailCSV}
+                  disabled={isEmailing}
+                  className="min-h-[44px] w-full sm:w-auto gap-2"
+                >
+                  <Mail className="size-4" />
+                  <span className="sm:hidden">Email</span>
+                  <span className="hidden sm:inline">Send Email</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Email the members list as a CSV attachment.</TooltipContent>
+            </Tooltip>
           </div>
         </CardHeader>
         <CardContent>

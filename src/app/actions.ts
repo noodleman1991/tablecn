@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
 import { syncAttendeesForEvent } from "@/lib/sync-attendees";
 import { getCacheAge, invalidateCache } from "@/lib/cache-utils";
 import { syncMemberToLoops, removeMemberFromLoops } from "@/lib/loops-sync";
-import { triggerNextChunk } from "@/lib/batch-processor";
+import { triggerNextChunk, getBatchJob, type BatchJobState } from "@/lib/batch-processor";
 import { after } from "next/server";
 
 /**
@@ -651,6 +651,15 @@ export async function resyncAllEvents() {
 
   after(() => triggerNextChunk("/api/batch/resync-events"));
   return { success: true, batchJobStarted: true };
+}
+
+/**
+ * Get the current status of a batch job by type
+ * Used by client components to poll batch progress without exposing CRON_SECRET
+ */
+export async function getBatchStatus(type: string): Promise<BatchJobState | null> {
+  "use server";
+  return await getBatchJob(type);
 }
 
 /**

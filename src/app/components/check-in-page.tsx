@@ -25,6 +25,7 @@ import { CheckInTable } from "./check-in-table-grouped";
 import { toast } from "sonner";
 import { getPastEvents, refreshAttendeesForEvent } from "../actions";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { AddManualAttendeeDialog } from "./add-manual-attendee-dialog";
 import { useEventAttendees, useInvalidateEventAttendees, usePrefetchEventAttendees } from "@/hooks/use-event-attendees";
 
@@ -300,9 +301,16 @@ export function CheckInPage({
 
           {/* Door staff instructions */}
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
-            <strong>Door Check-In Instructions:</strong> Verify the attendee&apos;s name and email are correct
-            BEFORE checking them in. Edit the ticket details first if needed — only then will the check-in
-            count towards their community membership status.
+            <p>
+              <strong>Door Check-In Instructions:</strong> Verify the attendee&apos;s name and email are correct
+              BEFORE checking them in. Edit the ticket details first if needed — only then will the check-in
+              count towards their community membership status.
+            </p>
+            <p className="mt-2">
+              <strong>If names look swapped</strong> (first name in last name field or vice versa), tap the
+              three-dot menu (&vellip;) on the ticket and choose &quot;Swap First/Last Name&quot;. You can also
+              select multiple tickets and use the &quot;Swap Names&quot; button that appears above the list.
+            </p>
           </div>
 
           <Card>
@@ -331,55 +339,70 @@ export function CheckInPage({
                   const isFutureEvent = eventDate >= today;
 
                   return isFutureEvent && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleRefresh}
+                          disabled={isRefreshing}
+                          className="min-h-[44px] w-full sm:w-auto gap-2"
+                        >
+                          <RefreshCw className={cn("size-4", isRefreshing && "animate-spin")} />
+                          <span className="sm:hidden">Refresh</span>
+                          <span className="hidden sm:inline">{isRefreshing ? "Refreshing..." : "Refresh"}</span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Pull the latest ticket purchases from WooCommerce for this event.</TooltipContent>
+                    </Tooltip>
+                  );
+                })()}
+                <Tooltip>
+                  <TooltipTrigger asChild>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={handleRefresh}
-                      disabled={isRefreshing}
+                      onClick={() => {
+                        const csv = exportDoorListToCSV(selectedEvent, attendees);
+                        const filename = generateDoorListFilename(selectedEvent);
+                        downloadCSV(csv, filename);
+                        toast.success("CSV downloaded successfully");
+                      }}
                       className="min-h-[44px] w-full sm:w-auto gap-2"
                     >
-                      <RefreshCw className={cn("size-4", isRefreshing && "animate-spin")} />
-                      <span className="sm:hidden">Refresh</span>
-                      <span className="hidden sm:inline">{isRefreshing ? "Refreshing..." : "Refresh"}</span>
+                      <Download className="size-4" />
+                      <span className="sm:hidden">CSV</span>
+                      <span className="hidden sm:inline">Download CSV</span>
                     </Button>
-                  );
-                })()}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const csv = exportDoorListToCSV(selectedEvent, attendees);
-                    const filename = generateDoorListFilename(selectedEvent);
-                    downloadCSV(csv, filename);
-                    toast.success("CSV downloaded successfully");
-                  }}
-                  className="min-h-[44px] w-full sm:w-auto gap-2"
-                >
-                  <Download className="size-4" />
-                  <span className="sm:hidden">CSV</span>
-                  <span className="hidden sm:inline">Download CSV</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={async () => {
-                    try {
-                      const csv = exportDoorListToCSV(selectedEvent, attendees);
-                      const filename = generateDoorListFilename(selectedEvent);
-                      await emailCSVViaServer(csv, filename);
-                      toast.success("Email sent successfully");
-                    } catch (error) {
-                      toast.error(
-                        error instanceof Error ? error.message : "Failed to send email"
-                      );
-                    }
-                  }}
-                  className="min-h-[44px] w-full sm:w-auto gap-2"
-                >
-                  <Mail className="size-4" />
-                  <span className="sm:hidden">Email</span>
-                  <span className="hidden sm:inline">Send Email</span>
-                </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Download this event&apos;s door list as a spreadsheet file.</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          const csv = exportDoorListToCSV(selectedEvent, attendees);
+                          const filename = generateDoorListFilename(selectedEvent);
+                          await emailCSVViaServer(csv, filename);
+                          toast.success("Email sent successfully");
+                        } catch (error) {
+                          toast.error(
+                            error instanceof Error ? error.message : "Failed to send email"
+                          );
+                        }
+                      }}
+                      className="min-h-[44px] w-full sm:w-auto gap-2"
+                    >
+                      <Mail className="size-4" />
+                      <span className="sm:hidden">Email</span>
+                      <span className="hidden sm:inline">Send Email</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Email this event&apos;s door list as a CSV attachment.</TooltipContent>
+                </Tooltip>
               </div>
             </CardHeader>
             <CardContent>

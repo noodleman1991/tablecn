@@ -54,6 +54,27 @@ function getTicketTypeFromLineItem(lineItem: any): string | null {
     }
   }
 
+  // Method 1.5: Direct meta_data key lookup (not nested inside _variation_attributes)
+  const ticketTypeMeta = lineItem.meta_data?.find((m: any) => {
+    const key = (m.key || '').toLowerCase();
+    return key === 'pa_ticket-type' || key === 'ticket-type' || key === 'ticket_type'
+      || key.includes('ticket-type') || key.includes('ticket_type');
+  });
+  if (ticketTypeMeta?.value && typeof ticketTypeMeta.value === 'string') {
+    return ticketTypeMeta.value;
+  }
+
+  // Method 1.75: Line item attributes field (WooCommerce variable product variation selections)
+  if (Array.isArray(lineItem.attributes)) {
+    const ticketAttr = lineItem.attributes.find((a: any) => {
+      const name = (a.name || a.slug || '').toLowerCase();
+      return name.includes('ticket-type') || name.includes('ticket_type');
+    });
+    if (ticketAttr?.option || ticketAttr?.value) {
+      return ticketAttr.option || ticketAttr.value;
+    }
+  }
+
   // Method 2: Parse from line item name suffix (e.g., "Event Name - Standard")
   const name = lineItem.name || '';
   const dashIndex = name.lastIndexOf(' - ');
@@ -65,6 +86,11 @@ function getTicketTypeFromLineItem(lineItem: any): string | null {
       return suffix;
     }
   }
+
+  console.warn(
+    `[sync-attendees] Could not extract ticket type for line item ${lineItem.id}. ` +
+    `Name: "${lineItem.name}". Meta keys: [${(lineItem.meta_data || []).map((m: any) => m.key).join(', ')}]`
+  );
 
   return null;
 }
@@ -307,10 +333,8 @@ export async function syncAttendeesForEvent(
     };
   }
 
-  // Conditional date filtering: only for events before the cutoff
-  // For events past the cutoff, we want ALL orders regardless of purchase date
-  // Since we're here, we know we're before the cutoff (check above), so always filter
-  const shouldFilterByDate = true;
+  // Only date-filter for future/current events; for past events being resynced, fetch ALL orders
+  const shouldFilterByDate = !bypassCutoff;
 
   // Collect ALL product IDs to fetch orders from
   // This includes the primary product AND any merged product IDs
@@ -429,12 +453,11 @@ export async function syncAttendeesForEvent(
     // Parse order date
     const orderDate = order.date_created ? new Date(order.date_created) : undefined;
 
-    // Compute per-ticket order total (split evenly across all tickets in the order)
-    const ticketCount = relevantLineItems.reduce((sum: number, li: any) => sum + (parseInt(li.quantity) || 1), 0);
-    const orderTotal = parseFloat(order.total || '0') / ticketCount;
-
     // Process each line item
     for (const lineItem of relevantLineItems) {
+      // Use line item total (price after discounts) divided by quantity for per-ticket revenue
+      const lineItemQuantity = parseInt(lineItem.quantity) || 1;
+      const orderTotal = parseFloat(lineItem.total || '0') / lineItemQuantity;
       // Extract all tickets from this line item
       const ticketsFromLineItem = extractTicketAttendees(order, lineItem, swapCache);
 
