@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import {
   getBatchJob,
   isJobStale,
@@ -14,7 +14,7 @@ export async function POST() {
       return NextResponse.json({ alreadyRunning: true, ...existing });
     }
 
-    triggerNextChunk("/api/batch/sync-memberships");
+    after(() => triggerNextChunk("/api/batch/sync-memberships"));
 
     return NextResponse.json({ status: "started" });
   } catch (error) {

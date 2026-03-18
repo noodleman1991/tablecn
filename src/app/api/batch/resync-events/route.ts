@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { env } from "@/env";
 import { db } from "@/db";
 import { events } from "@/db/schema";
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
         `[batch/resync-events] Job complete: ${completed?.processed} processed, ${completed?.errors} errors`,
       );
       // Kick off membership sync after all events are resynced
-      triggerNextChunk("/api/batch/sync-memberships");
+      after(() => triggerNextChunk("/api/batch/sync-memberships"));
       return NextResponse.json(completed);
     }
 
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
 
     // Trigger next chunk if more remain
     if (updated && updated.offset < updated.total) {
-      triggerNextChunk("/api/batch/resync-events");
+      after(() => triggerNextChunk("/api/batch/resync-events"));
       return NextResponse.json(updated);
     }
 
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
     console.log(
       `[batch/resync-events] Job complete: ${completed?.processed} processed, ${completed?.errors} errors. Starting membership sync...`,
     );
-    triggerNextChunk("/api/batch/sync-memberships");
+    after(() => triggerNextChunk("/api/batch/sync-memberships"));
     return NextResponse.json(completed);
   } catch (error) {
     console.error("[batch/resync-events] Fatal error:", error);

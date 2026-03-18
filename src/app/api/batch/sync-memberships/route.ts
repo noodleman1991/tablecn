@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { env } from "@/env";
 import { db } from "@/db";
 import { members } from "@/db/schema";
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
 
     // Trigger next chunk if more remain
     if (updated && updated.offset < updated.total) {
-      triggerNextChunk("/api/batch/sync-memberships");
+      after(() => triggerNextChunk("/api/batch/sync-memberships"));
       return NextResponse.json(updated);
     }
 

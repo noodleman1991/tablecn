@@ -7,7 +7,8 @@ import { revalidatePath } from "next/cache";
 import { syncAttendeesForEvent } from "@/lib/sync-attendees";
 import { getCacheAge, invalidateCache } from "@/lib/cache-utils";
 import { syncMemberToLoops, removeMemberFromLoops } from "@/lib/loops-sync";
-import { env } from "@/env";
+import { triggerNextChunk } from "@/lib/batch-processor";
+import { after } from "next/server";
 
 /**
  * Get all events sorted by date (most recent first)
@@ -648,18 +649,8 @@ export async function refreshAttendeesForEvent(eventId: string) {
 export async function resyncAllEvents() {
   "use server";
 
-  const response = await fetch(
-    `${env.NEXT_PUBLIC_APP_URL}/api/batch/resync-events`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${env.CRON_SECRET}`,
-        "Content-Type": "application/json",
-      },
-    },
-  );
-  const result = (await response.json()) as Record<string, unknown>;
-  return { success: true, batchJobStarted: true, ...result };
+  after(() => triggerNextChunk("/api/batch/resync-events"));
+  return { success: true, batchJobStarted: true };
 }
 
 /**

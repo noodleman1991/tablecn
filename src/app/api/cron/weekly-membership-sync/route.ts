@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { env } from "@/env";
 import {
   getBatchJob,
@@ -19,12 +19,12 @@ export async function GET(request: NextRequest) {
 
     const existing = await getBatchJob("membership-sync");
     if (existing?.status === "running" && !isJobStale(existing)) {
-      triggerNextChunk("/api/batch/sync-memberships");
+      after(() => triggerNextChunk("/api/batch/sync-memberships"));
       console.log("[weekly-membership-sync] Resumed existing batch job");
       return NextResponse.json({ resuming: true, ...existing });
     }
 
-    triggerNextChunk("/api/batch/sync-memberships");
+    after(() => triggerNextChunk("/api/batch/sync-memberships"));
     console.log("[weekly-membership-sync] Started new batch job");
     return NextResponse.json({
       status: "started",
