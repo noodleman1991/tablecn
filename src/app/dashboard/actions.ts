@@ -3,6 +3,7 @@
 import { db } from "@/db";
 import { attendees, events, members, validationResults } from "@/db/schema";
 import { eq, and, gte, lte, isNull, isNotNull, sql, desc } from "drizzle-orm";
+import { getActiveCommunityMemberCount } from "@/lib/community-count";
 import type {
   PeriodFilter,
   DashboardStats,
@@ -63,66 +64,7 @@ export async function getDashboardStats(
   const checkedInCount = parseInt(row?.checked_in_count ?? "0");
   const totalRevenue = parseFloat(row?.total_revenue ?? "0");
 
-  const communityResult = await db.execute<{ community_size: string }>(sql`
-    WITH raw_checkins AS (
-      SELECT DISTINCT ON (LOWER(a.email), e.id)
-        LOWER(a.email) AS email,
-        e.event_date
-      FROM ${attendees} a
-      INNER JOIN ${events} e ON e.id = a.event_id
-      WHERE a.checked_in = true
-        AND a.order_status NOT IN ('cancelled','refunded','deleted')
-        AND e.merged_into_event_id IS NULL
-        AND e.name NOT ILIKE '%walk%'
-        AND e.name NOT ILIKE '%party%'
-        AND e.name NOT ILIKE '%drinks%'
-        AND NOT (
-          (e.name ILIKE '%winter%' OR e.name ILIKE '%spring%' OR e.name ILIKE '%summer%'
-           OR e.name ILIKE '%autumn%' OR e.name ILIKE '%fall%' OR e.name ILIKE '%solstice%'
-           OR e.name ILIKE '%equinox%')
-          AND e.name ILIKE '%celebration%'
-        )
-      ORDER BY LOWER(a.email), e.id
-    ),
-    countable_checkins AS (
-      SELECT email, event_date,
-        ROW_NUMBER() OVER (
-          PARTITION BY email
-          ORDER BY event_date
-        ) AS event_rank
-      FROM raw_checkins
-    ),
-    member_activation AS (
-      SELECT email, MIN(event_date) AS activation_date
-      FROM countable_checkins
-      WHERE event_rank = 3
-      GROUP BY email
-    ),
-    override_members AS (
-      SELECT LOWER(m.email) AS email,
-             m.created_at AS activation_date,
-             m.manual_expires_at
-      FROM ${members} m
-      WHERE m.manually_added = true
-        AND m.manual_expires_at IS NOT NULL
-    )
-    SELECT (SELECT COUNT(DISTINCT x.email) FROM (
-      SELECT ma.email
-      FROM member_activation ma
-      WHERE ma.activation_date <= ${isoDate(to)}::date
-        AND (
-          SELECT MAX(cc2.event_date)
-          FROM countable_checkins cc2
-          WHERE cc2.email = ma.email AND cc2.event_date <= ${isoDate(to)}::date
-        ) + INTERVAL '9 months' > ${isoDate(to)}::date
-      UNION
-      SELECT om.email
-      FROM override_members om
-      WHERE om.activation_date <= ${isoDate(to)}::date
-        AND om.manual_expires_at > ${isoDate(to)}::date
-    ) x)::text AS community_size
-  `);
-  const communityMembersCount = parseInt((communityResult as any[])[0]?.community_size ?? "0");
+  const communityMembersCount = await getActiveCommunityMemberCount(to);
 
   const checkinRate = validTickets > 0 ? (checkedInCount / validTickets) * 100 : 0;
 

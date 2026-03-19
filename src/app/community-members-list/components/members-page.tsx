@@ -20,15 +20,16 @@ import { BatchProgressIndicator } from "./batch-progress-indicator";
 
 interface MembersPageProps {
   members: Member[];
+  activeMemberCount: number;
 }
 
-export function MembersPage({ members }: MembersPageProps) {
+export function MembersPage({ members, activeMemberCount }: MembersPageProps) {
   const [isDownloading, setIsDownloading] = React.useState(false);
   const [isEmailing, setIsEmailing] = React.useState(false);
   const [isResyncing, setIsResyncing] = React.useState(false);
   const [showBatchProgress, setShowBatchProgress] = React.useState(false);
 
-  const activeMembers = members.filter((m) => m.isActiveMember).length;
+  const activeMembers = activeMemberCount;
   const totalMembers = members.length;
 
   const handleDownloadCSV = () => {
@@ -48,11 +49,17 @@ export function MembersPage({ members }: MembersPageProps) {
   const handleResyncAll = async () => {
     setIsResyncing(true);
     try {
-      await resyncAllEvents();
-      setShowBatchProgress(true);
-      toast.success(
-        "Batch re-sync started. Events will be processed in the background."
-      );
+      const result = await resyncAllEvents();
+      if (result.progressTrackable) {
+        setShowBatchProgress(true);
+        toast.success(
+          "Batch re-sync started. Events will be processed in the background."
+        );
+      } else {
+        toast.success(
+          "Batch re-sync started. Progress tracking is unavailable — the job is running in the background."
+        );
+      }
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to re-sync events"

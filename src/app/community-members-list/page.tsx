@@ -4,6 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MembersPage } from "./components/members-page";
 import { getMembers } from "../actions";
 import { requireAuth } from "@/lib/auth";
+import { getActiveCommunityMemberCount } from "@/lib/community-count";
 
 export const metadata: Metadata = {
   title: "Community Members List",
@@ -34,7 +35,10 @@ export default async function CommunityMembersListPage() {
 }
 
 async function MembersPageWrapper() {
-  const members = await getMembers();
+  const [members, activeMemberCount] = await Promise.all([
+    getMembers(),
+    getActiveCommunityMemberCount(),
+  ]);
 
-  return <MembersPage members={members} />;
+  return <MembersPage members={members} activeMemberCount={activeMemberCount} />;
 }

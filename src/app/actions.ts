@@ -649,8 +649,9 @@ export async function refreshAttendeesForEvent(eventId: string) {
 export async function resyncAllEvents() {
   "use server";
 
+  const { redis } = await import("@/lib/redis");
   after(() => triggerNextChunk("/api/batch/resync-events"));
-  return { success: true, batchJobStarted: true };
+  return { success: true, batchJobStarted: true, progressTrackable: !!redis };
 }
 
 /**

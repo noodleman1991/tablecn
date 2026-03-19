@@ -23,7 +23,9 @@ export function BatchProgressIndicator({ isActive }: BatchProgressIndicatorProps
   });
   const [isPolling, setIsPolling] = useState(false);
   const [hideTimeout, setHideTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const [timedOut, setTimedOut] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollCountRef = useRef(0);
 
   const fetchStatuses = useCallback(async () => {
     const [eventResync, membershipSync] = await Promise.all([
@@ -37,11 +39,31 @@ export function BatchProgressIndicator({ isActive }: BatchProgressIndicatorProps
   const startPolling = useCallback(() => {
     if (intervalRef.current) return;
     setIsPolling(true);
+    setTimedOut(false);
+    pollCountRef.current = 0;
     intervalRef.current = setInterval(async () => {
+      pollCountRef.current += 1;
       const result = await fetchStatuses();
-      const bothTerminal =
-        (!result.eventResync || result.eventResync.status !== "running") &&
-        (!result.membershipSync || result.membershipSync.status !== "running");
+      const hasAnyRunningJob =
+        result.eventResync?.status === "running" || result.membershipSync?.status === "running";
+      const hasAnyJobData = result.eventResync || result.membershipSync;
+
+      // Timeout: if after 4 polls (~12s) we still have no job data, give up
+      if (!hasAnyJobData && pollCountRef.current >= 4) {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+        setTimedOut(true);
+        const timeout = setTimeout(() => {
+          setIsPolling(false);
+          setTimedOut(false);
+        }, 8000);
+        setHideTimeout(timeout);
+        return;
+      }
+
+      const bothTerminal = hasAnyJobData && !hasAnyRunningJob;
       if (bothTerminal) {
         // Stop polling, show result for 8 seconds then hide
         if (intervalRef.current) {
@@ -87,7 +109,19 @@ export function BatchProgressIndicator({ isActive }: BatchProgressIndicatorProps
   }, [isActive]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const hasAnyJob = jobs.eventResync || jobs.membershipSync;
-  if (!isPolling && !hasAnyJob) return null;
+  if (!isPolling && !hasAnyJob && !timedOut) return null;
+
+  if (timedOut) {
+    return (
+      <Card>
+        <CardContent className="pt-4">
+          <p className="text-sm text-muted-foreground">
+            The batch job is running in the background but progress tracking is unavailable. Refresh the page later to see updated data.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const jobRows: JobDisplay[] = [
     { label: "Syncing events", state: jobs.eventResync },

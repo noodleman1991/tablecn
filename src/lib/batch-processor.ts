@@ -147,7 +147,13 @@ export function triggerNextChunk(path: string): void {
       Authorization: `Bearer ${env.CRON_SECRET}`,
       "Content-Type": "application/json",
     },
-  }).catch((err) => {
-    console.error(`[batch] Failed to trigger next chunk at ${path}:`, err);
-  });
+  })
+    .then((res) => {
+      if (!res.ok) {
+        console.error(`[batch] triggerNextChunk failed: ${res.status} ${res.statusText} for ${url}`);
+      }
+    })
+    .catch((err) => {
+      console.error(`[batch] Failed to trigger next chunk at ${path}:`, err);
+    });
 }
