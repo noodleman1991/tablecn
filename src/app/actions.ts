@@ -8,7 +8,6 @@ import { syncAttendeesForEvent } from "@/lib/sync-attendees";
 import { getCacheAge, invalidateCache } from "@/lib/cache-utils";
 import { syncMemberToLoops, removeMemberFromLoops } from "@/lib/loops-sync";
 import { triggerNextChunk, getBatchJob, type BatchJobState } from "@/lib/batch-processor";
-import { after } from "next/server";
 
 /**
  * Get all events sorted by date (most recent first)
@@ -650,8 +649,22 @@ export async function resyncAllEvents() {
   "use server";
 
   const { redis } = await import("@/lib/redis");
-  after(() => triggerNextChunk("/api/batch/resync-events"));
-  return { success: true, batchJobStarted: true, progressTrackable: !!redis };
+
+  // In dev, use after() to free the single-threaded dev server before the self-fetch
+  if (process.env.NODE_ENV === "development") {
+    const { after } = await import("next/server");
+    after(() => triggerNextChunk("/api/batch/resync-events"));
+    return { success: true, batchJobStarted: true, progressTrackable: !!redis };
+  }
+
+  try {
+    const res = await triggerNextChunk("/api/batch/resync-events");
+    console.log(`[resyncAllEvents] Trigger response: ${res.status} ${res.statusText}`);
+    return { success: true, batchJobStarted: true, progressTrackable: !!redis };
+  } catch (error) {
+    console.error("[resyncAllEvents] Failed to trigger batch:", error);
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+  }
 }
 
 /**

@@ -138,22 +138,44 @@ export function isJobStale(job: BatchJobState): boolean {
   return Date.now() - lastHeartbeat > STALE_THRESHOLD_MS;
 }
 
-export function triggerNextChunk(path: string): void {
+/**
+ * Fire-and-forget: trigger the next batch chunk via HTTP POST.
+ * We only need the server to accept the request (not wait for it to finish),
+ * so we use a short timeout and treat timeouts as success — the new invocation
+ * is already running on the server side.
+ */
+export async function triggerNextChunk(path: string): Promise<Response> {
   const url = `${env.NEXT_PUBLIC_APP_URL}${path}`;
+  console.log(`[batch] triggerNextChunk: POST ${url}`);
 
-  fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.CRON_SECRET}`,
-      "Content-Type": "application/json",
-    },
-  })
-    .then((res) => {
-      if (!res.ok) {
-        console.error(`[batch] triggerNextChunk failed: ${res.status} ${res.statusText} for ${url}`);
-      }
-    })
-    .catch((err) => {
-      console.error(`[batch] Failed to trigger next chunk at ${path}:`, err);
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.CRON_SECRET}`,
+        "Content-Type": "application/json",
+      },
+      // Short timeout: we just need the server to accept the request.
+      // The spawned invocation runs independently on Vercel.
+      signal: AbortSignal.timeout(10_000),
     });
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => "(unreadable)");
+      console.error(`[batch] triggerNextChunk failed: ${res.status} ${res.statusText} for ${url} — body: ${body}`);
+    } else {
+      console.log(`[batch] triggerNextChunk OK: ${res.status} ${res.statusText}`);
+    }
+
+    return res;
+  } catch (err) {
+    // On Vercel, a timeout here is expected and fine — the new invocation is
+    // already running. Only log at warn level, don't throw.
+    if (err instanceof DOMException && err.name === "TimeoutError") {
+      console.log(`[batch] triggerNextChunk: request sent to ${url} (timed out waiting for response — expected on Vercel, invocation is running)`);
+      return new Response(null, { status: 202, statusText: "Accepted (fire-and-forget)" });
+    }
+    console.error(`[batch] triggerNextChunk error for ${url}:`, err);
+    throw err;
+  }
 }

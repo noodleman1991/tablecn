@@ -50,6 +50,10 @@ export function MembersPage({ members, activeMemberCount }: MembersPageProps) {
     setIsResyncing(true);
     try {
       const result = await resyncAllEvents();
+      if (!result.success) {
+        toast.error(`Failed to start re-sync: ${result.error ?? "Unknown error"}`);
+        return;
+      }
       if (result.progressTrackable) {
         setShowBatchProgress(true);
         toast.success(
