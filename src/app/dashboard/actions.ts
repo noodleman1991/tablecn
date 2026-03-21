@@ -146,6 +146,7 @@ export async function getFunnelByEvent(
     INNER JOIN ${members} m ON LOWER(a.email) = LOWER(m.email)
     INNER JOIN ${events} e ON e.id = a.event_id
     WHERE a.checked_in = true
+      AND a.order_status NOT IN ('cancelled','refunded','deleted')
       AND e.event_date >= ${isoDate(from)}
       AND e.event_date <= ${isoDate(to)}
       AND e.merged_into_event_id IS NULL
@@ -156,20 +157,29 @@ export async function getFunnelByEvent(
     returningMap.set(cr.event_id, parseInt(cr.cnt));
   }
 
-  // New attendees per event (member created within 5min of check-in)
+  // New attendees per event (first-ever event by date)
   const newCountRows = await db.execute<{
     event_id: string;
     new_count: string;
   }>(sql`
-    SELECT a.event_id, COUNT(DISTINCT m.id)::text AS new_count
+    WITH first_events AS (
+      SELECT LOWER(a.email) AS email, MIN(e.event_date) AS first_date
+      FROM ${attendees} a
+      INNER JOIN ${events} e ON e.id = a.event_id
+      WHERE a.checked_in = true
+        AND a.order_status NOT IN ('cancelled','refunded','deleted')
+        AND e.merged_into_event_id IS NULL
+      GROUP BY LOWER(a.email)
+    )
+    SELECT a.event_id, COUNT(DISTINCT LOWER(a.email))::text AS new_count
     FROM ${attendees} a
-    INNER JOIN ${members} m ON LOWER(m.email) = LOWER(a.email)
     INNER JOIN ${events} e ON e.id = a.event_id
+    INNER JOIN first_events fe ON LOWER(a.email) = fe.email
     WHERE a.checked_in = true
+      AND a.order_status NOT IN ('cancelled','refunded','deleted')
       AND e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
       AND e.merged_into_event_id IS NULL
-      AND m.created_at >= a.checked_in_at - INTERVAL '5 minutes'
-      AND m.created_at <= a.checked_in_at + INTERVAL '5 minutes'
+      AND fe.first_date = e.event_date
     GROUP BY a.event_id
   `);
   const newCountMap = new Map<string, number>();

@@ -13,6 +13,7 @@ import {
   isJobStale,
   triggerNextChunk,
 } from "@/lib/batch-processor";
+import { revalidatePath } from "next/cache";
 
 export const maxDuration = 300;
 
@@ -81,6 +82,7 @@ export async function POST(request: NextRequest) {
         console.log(
           `[batch/resync-events] Job complete: ${completed?.processed} processed, ${completed?.errors} errors`,
         );
+        revalidatePath("/community-members-list");
         // Kick off membership sync after all events are resynced
         console.log("[batch/resync-events] Triggering membership sync...");
         try {
@@ -135,6 +137,7 @@ export async function POST(request: NextRequest) {
         console.log(
           `[batch/resync-events] Job complete: ${completed?.processed} processed, ${completed?.errors} errors. Starting membership sync...`,
         );
+        revalidatePath("/community-members-list");
         try {
           const syncRes = await triggerNextChunk("/api/batch/sync-memberships");
           console.log(`[batch/resync-events] Membership sync trigger: ${syncRes.status}`);

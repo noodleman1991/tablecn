@@ -13,6 +13,7 @@ import {
   isJobStale,
   triggerNextChunk,
 } from "@/lib/batch-processor";
+import { revalidatePath } from "next/cache";
 
 export const maxDuration = 300;
 
@@ -75,6 +76,8 @@ export async function POST(request: NextRequest) {
         console.log(
           `[batch/sync-memberships] Job complete: ${completed?.processed} processed, ${completed?.errors} errors`,
         );
+        revalidatePath("/community-members-list");
+        revalidatePath("/");
         return NextResponse.json(completed);
       }
 
@@ -123,6 +126,8 @@ export async function POST(request: NextRequest) {
         console.log(
           `[batch/sync-memberships] Job complete: ${completed?.processed} processed, ${completed?.errors} errors`,
         );
+        revalidatePath("/community-members-list");
+        revalidatePath("/");
         return NextResponse.json(completed);
       }
     }

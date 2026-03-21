@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +18,7 @@ interface JobDisplay {
 }
 
 export function BatchProgressIndicator({ isActive }: BatchProgressIndicatorProps) {
+  const router = useRouter();
   const [jobs, setJobs] = useState<{ eventResync: BatchJobState | null; membershipSync: BatchJobState | null }>({
     eventResync: null,
     membershipSync: null,
@@ -73,6 +75,7 @@ export function BatchProgressIndicator({ isActive }: BatchProgressIndicatorProps
         const timeout = setTimeout(() => {
           setIsPolling(false);
           setJobs({ eventResync: null, membershipSync: null });
+          router.refresh();
         }, 8000);
         setHideTimeout(timeout);
       }
