@@ -6,6 +6,7 @@ import {
   getProducts,
   isEventProduct,
   extractEventDate,
+  extractQualifyingEventAttribute,
 } from "@/lib/woocommerce";
 import { eq } from "drizzle-orm";
 import { mergeDuplicateEvents } from "@/lib/merge-events";
@@ -68,6 +69,9 @@ export async function GET(request: NextRequest) {
 
       const productId = product.id.toString();
       const isMembersOnly = isMembersOnlyProduct(product.name);
+      const qualifyingEvent = extractQualifyingEventAttribute(product);
+      // Use attribute if set, otherwise default to true (qualifying)
+      const isQualifyingEvent = qualifyingEvent !== null ? qualifyingEvent : true;
 
       // Use atomic upsert to prevent race conditions
       // This will INSERT if not exists, or UPDATE if exists
@@ -78,6 +82,7 @@ export async function GET(request: NextRequest) {
           eventDate,
           woocommerceProductId: productId,
           isMembersOnlyProduct: isMembersOnly,
+          isQualifyingEvent,
         })
         .onConflictDoUpdate({
           target: events.woocommerceProductId,
@@ -86,6 +91,7 @@ export async function GET(request: NextRequest) {
             name: product.name,
             eventDate,
             isMembersOnlyProduct: isMembersOnly,
+            isQualifyingEvent,
             updatedAt: new Date(),
           },
         })

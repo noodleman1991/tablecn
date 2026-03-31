@@ -41,6 +41,7 @@ export async function recalculateMembershipForMember(memberId: string) {
         eq(attendees.checkedIn, true),
         not(inArray(attendees.orderStatus, ["cancelled", "refunded", "deleted"])),
         isNull(events.mergedIntoEventId),
+        eq(events.isQualifyingEvent, true),
       ),
     )
     .orderBy(sql`${events.eventDate} DESC`);
@@ -60,38 +61,17 @@ export async function recalculateMembershipForMember(memberId: string) {
         eq(attendees.checkedIn, true),
         not(inArray(attendees.orderStatus, ["cancelled", "refunded", "deleted"])),
         isNull(events.mergedIntoEventId),
+        eq(events.isQualifyingEvent, true),
         gte(events.eventDate, nineMonthsAgo),
       ),
     );
-
-  // Helper function to check if event is a social event (not counted toward membership)
-  const isSocialEvent = (eventName: string): boolean => {
-    const lowerName = eventName.toLowerCase();
-
-    // Existing exclusions
-    if (lowerName.includes("walk") || lowerName.includes("party") || lowerName.includes("drinks")) {
-      return true;
-    }
-
-    // Seasonal celebrations (season + celebration together)
-    const seasons = ["winter", "spring", "summer", "autumn", "fall", "solstice", "equinox"];
-    const hasSeasonWord = seasons.some(season => lowerName.includes(season));
-    const hasCelebration = lowerName.includes("celebration");
-
-    if (hasSeasonWord && hasCelebration) {
-      return true;
-    }
-
-    return false;
-  };
 
   // Deduplicate by eventId (multiple tickets for the same event should count as one)
   const uniqueAllEvents = [...new Map(allAttendedEvents.map(e => [e.eventId, e])).values()];
   const uniqueRecentEvents = [...new Map(recentAttendedEvents.map(e => [e.eventId, e])).values()];
 
-  // Filter out social events before counting
-  const countableAllEvents = uniqueAllEvents.filter(e => !isSocialEvent(e.eventName));
-  const countableRecentEvents = uniqueRecentEvents.filter(e => !isSocialEvent(e.eventName));
+  const countableAllEvents = uniqueAllEvents;
+  const countableRecentEvents = uniqueRecentEvents;
 
   const totalEventsAttended = countableAllEvents.length;
   const recentEventsAttended = countableRecentEvents.length;

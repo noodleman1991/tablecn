@@ -25,15 +25,7 @@ export async function getActiveCommunityMemberCount(
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted')
         AND e.merged_into_event_id IS NULL
-        AND e.name NOT ILIKE '%walk%'
-        AND e.name NOT ILIKE '%party%'
-        AND e.name NOT ILIKE '%drinks%'
-        AND NOT (
-          (e.name ILIKE '%winter%' OR e.name ILIKE '%spring%' OR e.name ILIKE '%summer%'
-           OR e.name ILIKE '%autumn%' OR e.name ILIKE '%fall%' OR e.name ILIKE '%solstice%'
-           OR e.name ILIKE '%equinox%')
-          AND e.name ILIKE '%celebration%'
-        )
+        AND e.is_qualifying_event = true
       ORDER BY LOWER(a.email), e.id
     ),
     countable_checkins AS (

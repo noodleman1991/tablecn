@@ -95,6 +95,7 @@ export async function getFunnelByEvent(
     total_tickets: string;
     valid_tickets: string;
     checked_in_count: string;
+    valid_unique: string;
     revenue: string;
   }>(sql`
     SELECT
@@ -104,7 +105,8 @@ export async function getFunnelByEvent(
       COUNT(DISTINCT a.woocommerce_order_id)::text AS orders_count,
       COUNT(a.id)::text AS total_tickets,
       COUNT(a.id) FILTER (WHERE a.order_status NOT IN ('cancelled','refunded','deleted'))::text AS valid_tickets,
-      COUNT(a.id) FILTER (WHERE a.checked_in = true AND a.order_status NOT IN ('cancelled','refunded','deleted'))::text AS checked_in_count,
+      COUNT(DISTINCT LOWER(a.email)) FILTER (WHERE a.checked_in = true AND a.order_status NOT IN ('cancelled','refunded','deleted'))::text AS checked_in_count,
+      COUNT(DISTINCT LOWER(a.email)) FILTER (WHERE a.order_status NOT IN ('cancelled','refunded','deleted'))::text AS valid_unique,
       COALESCE(SUM(a.order_total) FILTER (WHERE a.order_status NOT IN ('cancelled','refunded','deleted')), 0)::text AS revenue
     FROM ${events} e
     LEFT JOIN ${attendees} a ON a.event_id = e.id
@@ -121,14 +123,14 @@ export async function getFunnelByEvent(
     ticket_type: string;
     cnt: string;
   }>(sql`
-    SELECT a.event_id, COALESCE(a.ticket_type, 'Unknown') AS ticket_type, COUNT(*)::text AS cnt
+    SELECT a.event_id, INITCAP(REPLACE(COALESCE(a.ticket_type, 'unknown'), '-', ' ')) AS ticket_type, COUNT(*)::text AS cnt
     FROM ${attendees} a
     INNER JOIN ${events} e ON e.id = a.event_id
     WHERE e.event_date >= ${isoDate(from)}
       AND e.event_date <= ${isoDate(to)}
       AND e.merged_into_event_id IS NULL
       AND a.order_status NOT IN ('cancelled','refunded','deleted')
-    GROUP BY a.event_id, a.ticket_type
+    GROUP BY a.event_id, INITCAP(REPLACE(COALESCE(a.ticket_type, 'unknown'), '-', ' '))
   `);
   const ticketTypeMap = new Map<string, Record<string, number>>();
   for (const tr of ticketRows as any[]) {
@@ -136,20 +138,29 @@ export async function getFunnelByEvent(
     ticketTypeMap.get(tr.event_id)![tr.ticket_type] = parseInt(tr.cnt);
   }
 
-  // Returning attendees (checked-in attendees who have an existing member record)
+  // Returning attendees (checked-in attendees who attended a previous event)
   const returningRows = await db.execute<{
     event_id: string;
     cnt: string;
   }>(sql`
-    SELECT a.event_id, COUNT(DISTINCT a.email)::text AS cnt
+    WITH first_events AS (
+      SELECT LOWER(a.email) AS email, MIN(e.event_date) AS first_date
+      FROM ${attendees} a
+      INNER JOIN ${events} e ON e.id = a.event_id
+      WHERE a.checked_in = true
+        AND a.order_status NOT IN ('cancelled','refunded','deleted')
+        AND e.merged_into_event_id IS NULL
+      GROUP BY LOWER(a.email)
+    )
+    SELECT a.event_id, COUNT(DISTINCT LOWER(a.email))::text AS cnt
     FROM ${attendees} a
-    INNER JOIN ${members} m ON LOWER(a.email) = LOWER(m.email)
     INNER JOIN ${events} e ON e.id = a.event_id
+    INNER JOIN first_events fe ON LOWER(a.email) = fe.email
     WHERE a.checked_in = true
       AND a.order_status NOT IN ('cancelled','refunded','deleted')
-      AND e.event_date >= ${isoDate(from)}
-      AND e.event_date <= ${isoDate(to)}
+      AND e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
       AND e.merged_into_event_id IS NULL
+      AND fe.first_date < e.event_date
     GROUP BY a.event_id
   `);
   const returningMap = new Map<string, number>();
@@ -202,15 +213,7 @@ export async function getFunnelByEvent(
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted')
         AND e.merged_into_event_id IS NULL
-        AND e.name NOT ILIKE '%walk%'
-        AND e.name NOT ILIKE '%party%'
-        AND e.name NOT ILIKE '%drinks%'
-        AND NOT (
-          (e.name ILIKE '%winter%' OR e.name ILIKE '%spring%' OR e.name ILIKE '%summer%'
-           OR e.name ILIKE '%autumn%' OR e.name ILIKE '%fall%' OR e.name ILIKE '%solstice%'
-           OR e.name ILIKE '%equinox%')
-          AND e.name ILIKE '%celebration%'
-        )
+        AND e.is_qualifying_event = true
       ORDER BY LOWER(a.email), e.id
     ),
     countable_checkins AS (
@@ -254,15 +257,7 @@ export async function getFunnelByEvent(
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted')
         AND e.merged_into_event_id IS NULL
-        AND e.name NOT ILIKE '%walk%'
-        AND e.name NOT ILIKE '%party%'
-        AND e.name NOT ILIKE '%drinks%'
-        AND NOT (
-          (e.name ILIKE '%winter%' OR e.name ILIKE '%spring%' OR e.name ILIKE '%summer%'
-           OR e.name ILIKE '%autumn%' OR e.name ILIKE '%fall%' OR e.name ILIKE '%solstice%'
-           OR e.name ILIKE '%equinox%')
-          AND e.name ILIKE '%celebration%'
-        )
+        AND e.is_qualifying_event = true
       GROUP BY LOWER(a.email)
       HAVING COUNT(DISTINCT e.id) >= 3
     )
@@ -281,6 +276,7 @@ export async function getFunnelByEvent(
   return (mainRows as any[]).map((r) => {
     const validTickets = parseInt(r.valid_tickets);
     const checkedInCount = parseInt(r.checked_in_count);
+    const validUnique = parseInt(r.valid_unique ?? "0");
     return {
       eventId: r.id,
       eventName: r.name,
@@ -290,7 +286,7 @@ export async function getFunnelByEvent(
       totalTickets: parseInt(r.total_tickets),
       validTickets,
       checkedInCount,
-      checkedInPercent: validTickets > 0 ? Math.round((checkedInCount / validTickets) * 100) : 0,
+      checkedInPercent: validUnique > 0 ? Math.round((checkedInCount / validUnique) * 100) : 0,
       returningCount: returningMap.get(r.id) || 0,
       communityGained: communityGainedMap.get(r.id) || 0,
       communityLost: communityLostMap.get(r.id) || 0,
@@ -312,6 +308,7 @@ export async function getFunnelByMonth(
     total_tickets: string;
     valid_tickets: string;
     checked_in_count: string;
+    valid_unique: string;
     revenue: string;
   }>(sql`
     SELECT
@@ -320,7 +317,8 @@ export async function getFunnelByMonth(
       COUNT(DISTINCT a.woocommerce_order_id)::text AS orders_count,
       COUNT(a.id)::text AS total_tickets,
       COUNT(a.id) FILTER (WHERE a.order_status NOT IN ('cancelled','refunded','deleted'))::text AS valid_tickets,
-      COUNT(a.id) FILTER (WHERE a.checked_in = true AND a.order_status NOT IN ('cancelled','refunded','deleted'))::text AS checked_in_count,
+      COUNT(DISTINCT LOWER(a.email)) FILTER (WHERE a.checked_in = true AND a.order_status NOT IN ('cancelled','refunded','deleted'))::text AS checked_in_count,
+      COUNT(DISTINCT LOWER(a.email)) FILTER (WHERE a.order_status NOT IN ('cancelled','refunded','deleted'))::text AS valid_unique,
       COALESCE(SUM(a.order_total) FILTER (WHERE a.order_status NOT IN ('cancelled','refunded','deleted')), 0)::text AS revenue
     FROM ${events} e
     LEFT JOIN ${attendees} a ON a.event_id = e.id
@@ -339,7 +337,7 @@ export async function getFunnelByMonth(
   }>(sql`
     SELECT
       TO_CHAR(e.event_date, 'YYYY-MM') AS month,
-      COALESCE(a.ticket_type, 'Unknown') AS ticket_type,
+      INITCAP(REPLACE(COALESCE(a.ticket_type, 'unknown'), '-', ' ')) AS ticket_type,
       COUNT(*)::text AS cnt
     FROM ${attendees} a
     INNER JOIN ${events} e ON e.id = a.event_id
@@ -347,7 +345,7 @@ export async function getFunnelByMonth(
       AND e.event_date <= ${isoDate(to)}
       AND e.merged_into_event_id IS NULL
       AND a.order_status NOT IN ('cancelled','refunded','deleted')
-    GROUP BY TO_CHAR(e.event_date, 'YYYY-MM'), a.ticket_type
+    GROUP BY TO_CHAR(e.event_date, 'YYYY-MM'), INITCAP(REPLACE(COALESCE(a.ticket_type, 'unknown'), '-', ' '))
   `);
   const ticketTypeMap = new Map<string, Record<string, number>>();
   for (const tr of ticketRows as any[]) {
@@ -355,21 +353,31 @@ export async function getFunnelByMonth(
     ticketTypeMap.get(tr.month)![tr.ticket_type] = parseInt(tr.cnt);
   }
 
-  // Returning attendees by month
+  // Returning attendees by month (attended a previous event)
   const returningMonthRows = await db.execute<{
     month: string;
     cnt: string;
   }>(sql`
+    WITH first_events AS (
+      SELECT LOWER(a.email) AS email, MIN(e.event_date) AS first_date
+      FROM ${attendees} a
+      INNER JOIN ${events} e ON e.id = a.event_id
+      WHERE a.checked_in = true
+        AND a.order_status NOT IN ('cancelled','refunded','deleted')
+        AND e.merged_into_event_id IS NULL
+      GROUP BY LOWER(a.email)
+    )
     SELECT
       TO_CHAR(e.event_date, 'YYYY-MM') AS month,
-      COUNT(DISTINCT a.email)::text AS cnt
+      COUNT(DISTINCT LOWER(a.email))::text AS cnt
     FROM ${attendees} a
-    INNER JOIN ${members} m ON LOWER(a.email) = LOWER(m.email)
     INNER JOIN ${events} e ON e.id = a.event_id
+    INNER JOIN first_events fe ON LOWER(a.email) = fe.email
     WHERE a.checked_in = true
-      AND e.event_date >= ${isoDate(from)}
-      AND e.event_date <= ${isoDate(to)}
+      AND a.order_status NOT IN ('cancelled','refunded','deleted')
+      AND e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
       AND e.merged_into_event_id IS NULL
+      AND fe.first_date < e.event_date
     GROUP BY TO_CHAR(e.event_date, 'YYYY-MM')
   `);
   const returningMonthMap = new Map<string, number>();
@@ -377,22 +385,31 @@ export async function getFunnelByMonth(
     returningMonthMap.set(cr.month, parseInt(cr.cnt));
   }
 
-  // New attendees by month (member created within 5min of check-in)
+  // New attendees by month (first-ever event by date)
   const newCountMonthRows = await db.execute<{
     month: string;
     new_count: string;
   }>(sql`
+    WITH first_events AS (
+      SELECT LOWER(a.email) AS email, MIN(e.event_date) AS first_date
+      FROM ${attendees} a
+      INNER JOIN ${events} e ON e.id = a.event_id
+      WHERE a.checked_in = true
+        AND a.order_status NOT IN ('cancelled','refunded','deleted')
+        AND e.merged_into_event_id IS NULL
+      GROUP BY LOWER(a.email)
+    )
     SELECT
       TO_CHAR(e.event_date, 'YYYY-MM') AS month,
-      COUNT(DISTINCT m.id)::text AS new_count
+      COUNT(DISTINCT LOWER(a.email))::text AS new_count
     FROM ${attendees} a
-    INNER JOIN ${members} m ON LOWER(m.email) = LOWER(a.email)
     INNER JOIN ${events} e ON e.id = a.event_id
+    INNER JOIN first_events fe ON LOWER(a.email) = fe.email
     WHERE a.checked_in = true
+      AND a.order_status NOT IN ('cancelled','refunded','deleted')
       AND e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
       AND e.merged_into_event_id IS NULL
-      AND m.created_at >= a.checked_in_at - INTERVAL '5 minutes'
-      AND m.created_at <= a.checked_in_at + INTERVAL '5 minutes'
+      AND fe.first_date = e.event_date
     GROUP BY TO_CHAR(e.event_date, 'YYYY-MM')
   `);
   const newCountMonthMap = new Map<string, number>();
@@ -415,15 +432,7 @@ export async function getFunnelByMonth(
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted')
         AND e.merged_into_event_id IS NULL
-        AND e.name NOT ILIKE '%walk%'
-        AND e.name NOT ILIKE '%party%'
-        AND e.name NOT ILIKE '%drinks%'
-        AND NOT (
-          (e.name ILIKE '%winter%' OR e.name ILIKE '%spring%' OR e.name ILIKE '%summer%'
-           OR e.name ILIKE '%autumn%' OR e.name ILIKE '%fall%' OR e.name ILIKE '%solstice%'
-           OR e.name ILIKE '%equinox%')
-          AND e.name ILIKE '%celebration%'
-        )
+        AND e.is_qualifying_event = true
       ORDER BY LOWER(a.email), e.id
     ),
     countable_checkins AS (
@@ -457,15 +466,7 @@ export async function getFunnelByMonth(
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted')
         AND e.merged_into_event_id IS NULL
-        AND e.name NOT ILIKE '%walk%'
-        AND e.name NOT ILIKE '%party%'
-        AND e.name NOT ILIKE '%drinks%'
-        AND NOT (
-          (e.name ILIKE '%winter%' OR e.name ILIKE '%spring%' OR e.name ILIKE '%summer%'
-           OR e.name ILIKE '%autumn%' OR e.name ILIKE '%fall%' OR e.name ILIKE '%solstice%'
-           OR e.name ILIKE '%equinox%')
-          AND e.name ILIKE '%celebration%'
-        )
+        AND e.is_qualifying_event = true
       GROUP BY LOWER(a.email)
       HAVING COUNT(DISTINCT e.id) >= 3
     )
@@ -485,6 +486,7 @@ export async function getFunnelByMonth(
   return (mainRows as any[]).map((r) => {
     const validTickets = parseInt(r.valid_tickets);
     const checkedInCount = parseInt(r.checked_in_count);
+    const validUnique = parseInt(r.valid_unique ?? "0");
     return {
       month: r.month,
       eventsCount: parseInt(r.events_count),
@@ -493,7 +495,7 @@ export async function getFunnelByMonth(
       totalTickets: parseInt(r.total_tickets),
       validTickets,
       checkedInCount,
-      checkedInPercent: validTickets > 0 ? Math.round((checkedInCount / validTickets) * 100) : 0,
+      checkedInPercent: validUnique > 0 ? Math.round((checkedInCount / validUnique) * 100) : 0,
       returningCount: returningMonthMap.get(r.month) || 0,
       communityGained: communityGainedMonthMap.get(r.month) || 0,
       communityLost: communityLostMonthMap.get(r.month) || 0,
@@ -531,13 +533,13 @@ export async function getAnalyticsData(
     ticket_type: string;
     cnt: string;
   }>(sql`
-    SELECT COALESCE(a.ticket_type, 'Unknown') AS ticket_type, COUNT(*)::text AS cnt
+    SELECT INITCAP(REPLACE(COALESCE(a.ticket_type, 'unknown'), '-', ' ')) AS ticket_type, COUNT(*)::text AS cnt
     FROM ${attendees} a
     INNER JOIN ${events} e ON e.id = a.event_id
     WHERE e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
       AND e.merged_into_event_id IS NULL
       AND a.order_status NOT IN ('cancelled','refunded','deleted')
-    GROUP BY a.ticket_type
+    GROUP BY INITCAP(REPLACE(COALESCE(a.ticket_type, 'unknown'), '-', ' '))
     ORDER BY COUNT(*) DESC
   `);
 
@@ -672,15 +674,7 @@ export async function getAnalyticsData(
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted')
         AND e.merged_into_event_id IS NULL
-        AND e.name NOT ILIKE '%walk%'
-        AND e.name NOT ILIKE '%party%'
-        AND e.name NOT ILIKE '%drinks%'
-        AND NOT (
-          (e.name ILIKE '%winter%' OR e.name ILIKE '%spring%' OR e.name ILIKE '%summer%'
-           OR e.name ILIKE '%autumn%' OR e.name ILIKE '%fall%' OR e.name ILIKE '%solstice%'
-           OR e.name ILIKE '%equinox%')
-          AND e.name ILIKE '%celebration%'
-        )
+        AND e.is_qualifying_event = true
       ORDER BY LOWER(a.email), e.id
     ),
     countable_checkins AS (
@@ -724,15 +718,7 @@ export async function getAnalyticsData(
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted')
         AND e.merged_into_event_id IS NULL
-        AND e.name NOT ILIKE '%walk%'
-        AND e.name NOT ILIKE '%party%'
-        AND e.name NOT ILIKE '%drinks%'
-        AND NOT (
-          (e.name ILIKE '%winter%' OR e.name ILIKE '%spring%' OR e.name ILIKE '%summer%'
-           OR e.name ILIKE '%autumn%' OR e.name ILIKE '%fall%' OR e.name ILIKE '%solstice%'
-           OR e.name ILIKE '%equinox%')
-          AND e.name ILIKE '%celebration%'
-        )
+        AND e.is_qualifying_event = true
       GROUP BY LOWER(a.email)
       HAVING COUNT(DISTINCT e.id) >= 3
     )
@@ -764,15 +750,7 @@ export async function getAnalyticsData(
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted')
         AND e.merged_into_event_id IS NULL
-        AND e.name NOT ILIKE '%walk%'
-        AND e.name NOT ILIKE '%party%'
-        AND e.name NOT ILIKE '%drinks%'
-        AND NOT (
-          (e.name ILIKE '%winter%' OR e.name ILIKE '%spring%' OR e.name ILIKE '%summer%'
-           OR e.name ILIKE '%autumn%' OR e.name ILIKE '%fall%' OR e.name ILIKE '%solstice%'
-           OR e.name ILIKE '%equinox%')
-          AND e.name ILIKE '%celebration%'
-        )
+        AND e.is_qualifying_event = true
       ORDER BY LOWER(a.email), e.id
     ),
     countable_checkins AS (
@@ -892,15 +870,7 @@ export async function getAnalyticsData(
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted')
         AND e.merged_into_event_id IS NULL
-        AND e.name NOT ILIKE '%walk%'
-        AND e.name NOT ILIKE '%party%'
-        AND e.name NOT ILIKE '%drinks%'
-        AND NOT (
-          (e.name ILIKE '%winter%' OR e.name ILIKE '%spring%' OR e.name ILIKE '%summer%'
-           OR e.name ILIKE '%autumn%' OR e.name ILIKE '%fall%' OR e.name ILIKE '%solstice%'
-           OR e.name ILIKE '%equinox%')
-          AND e.name ILIKE '%celebration%'
-        )
+        AND e.is_qualifying_event = true
       ORDER BY LOWER(a.email), e.id
     ),
     countable_checkins AS (
@@ -934,15 +904,7 @@ export async function getAnalyticsData(
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted')
         AND e.merged_into_event_id IS NULL
-        AND e.name NOT ILIKE '%walk%'
-        AND e.name NOT ILIKE '%party%'
-        AND e.name NOT ILIKE '%drinks%'
-        AND NOT (
-          (e.name ILIKE '%winter%' OR e.name ILIKE '%spring%' OR e.name ILIKE '%summer%'
-           OR e.name ILIKE '%autumn%' OR e.name ILIKE '%fall%' OR e.name ILIKE '%solstice%'
-           OR e.name ILIKE '%equinox%')
-          AND e.name ILIKE '%celebration%'
-        )
+        AND e.is_qualifying_event = true
       GROUP BY LOWER(a.email)
       HAVING COUNT(DISTINCT e.id) >= 3
     )
@@ -974,15 +936,7 @@ export async function getAnalyticsData(
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted')
         AND e.merged_into_event_id IS NULL
-        AND e.name NOT ILIKE '%walk%'
-        AND e.name NOT ILIKE '%party%'
-        AND e.name NOT ILIKE '%drinks%'
-        AND NOT (
-          (e.name ILIKE '%winter%' OR e.name ILIKE '%spring%' OR e.name ILIKE '%summer%'
-           OR e.name ILIKE '%autumn%' OR e.name ILIKE '%fall%' OR e.name ILIKE '%solstice%'
-           OR e.name ILIKE '%equinox%')
-          AND e.name ILIKE '%celebration%'
-        )
+        AND e.is_qualifying_event = true
       ORDER BY LOWER(a.email), e.id
     ),
     countable_checkins AS (
@@ -1188,17 +1142,29 @@ export async function getReturningDetailsForEvent(eventId: string): Promise<
     last_name: string;
     is_active_member: string;
   }>(sql`
-    SELECT
-      COALESCE(m.email, a.email) AS email,
-      COALESCE(m.first_name, a.first_name, '') AS first_name,
-      COALESCE(m.last_name, a.last_name, '') AS last_name,
+    WITH first_events AS (
+      SELECT LOWER(a.email) AS email, MIN(e.event_date) AS first_date
+      FROM ${attendees} a
+      INNER JOIN ${events} e ON e.id = a.event_id
+      WHERE a.checked_in = true
+        AND a.order_status NOT IN ('cancelled','refunded','deleted')
+        AND e.merged_into_event_id IS NULL
+      GROUP BY LOWER(a.email)
+    )
+    SELECT DISTINCT ON (LOWER(a.email))
+      a.email,
+      COALESCE(a.first_name, '') AS first_name,
+      COALESCE(a.last_name, '') AS last_name,
       CASE WHEN m.is_active_member = true THEN '1' ELSE '0' END AS is_active_member
     FROM ${attendees} a
-    INNER JOIN ${members} m ON LOWER(m.email) = LOWER(a.email)
+    INNER JOIN ${events} e ON e.id = a.event_id
+    INNER JOIN first_events fe ON LOWER(a.email) = fe.email
+    LEFT JOIN ${members} m ON LOWER(m.email) = LOWER(a.email)
     WHERE a.event_id = ${eventId}
       AND a.checked_in = true
       AND a.order_status NOT IN ('cancelled','refunded','deleted')
-    ORDER BY m.first_name, m.last_name
+      AND fe.first_date < e.event_date
+    ORDER BY LOWER(a.email), a.first_name, a.last_name
   `);
 
   return (rows as any[]).map((r) => ({
@@ -1267,15 +1233,7 @@ export async function getCommunityDetailsForEvent(eventId: string): Promise<{
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted')
         AND e.merged_into_event_id IS NULL
-        AND e.name NOT ILIKE '%walk%'
-        AND e.name NOT ILIKE '%party%'
-        AND e.name NOT ILIKE '%drinks%'
-        AND NOT (
-          (e.name ILIKE '%winter%' OR e.name ILIKE '%spring%' OR e.name ILIKE '%summer%'
-           OR e.name ILIKE '%autumn%' OR e.name ILIKE '%fall%' OR e.name ILIKE '%solstice%'
-           OR e.name ILIKE '%equinox%')
-          AND e.name ILIKE '%celebration%'
-        )
+        AND e.is_qualifying_event = true
       ORDER BY LOWER(a.email), e.id
     ),
     countable_checkins AS (
@@ -1329,15 +1287,7 @@ export async function getCommunityDetailsForEvent(eventId: string): Promise<{
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted')
         AND e.merged_into_event_id IS NULL
-        AND e.name NOT ILIKE '%walk%'
-        AND e.name NOT ILIKE '%party%'
-        AND e.name NOT ILIKE '%drinks%'
-        AND NOT (
-          (e.name ILIKE '%winter%' OR e.name ILIKE '%spring%' OR e.name ILIKE '%summer%'
-           OR e.name ILIKE '%autumn%' OR e.name ILIKE '%fall%' OR e.name ILIKE '%solstice%'
-           OR e.name ILIKE '%equinox%')
-          AND e.name ILIKE '%celebration%'
-        )
+        AND e.is_qualifying_event = true
       GROUP BY LOWER(a.email)
       HAVING COUNT(DISTINCT e.id) >= 3
     )
@@ -1458,15 +1408,7 @@ export async function runQuickValidation(
     WITH member_event_counts AS (
       SELECT LOWER(a.email) AS email,
         COUNT(DISTINCT e.id) FILTER (
-          WHERE e.name NOT ILIKE '%walk%'
-            AND e.name NOT ILIKE '%party%'
-            AND e.name NOT ILIKE '%drinks%'
-            AND NOT (
-              (e.name ILIKE '%winter%' OR e.name ILIKE '%spring%' OR e.name ILIKE '%summer%'
-               OR e.name ILIKE '%autumn%' OR e.name ILIKE '%fall%' OR e.name ILIKE '%solstice%'
-               OR e.name ILIKE '%equinox%')
-              AND e.name ILIKE '%celebration%'
-            )
+          WHERE e.is_qualifying_event = true
         ) AS countable_events
       FROM ${attendees} a
       INNER JOIN ${events} e ON e.id = a.event_id
@@ -1511,27 +1453,11 @@ export async function runQuickValidation(
     WITH member_event_counts AS (
       SELECT LOWER(a.email) AS email,
         COUNT(DISTINCT e.id) FILTER (
-          WHERE e.name NOT ILIKE '%walk%'
-            AND e.name NOT ILIKE '%party%'
-            AND e.name NOT ILIKE '%drinks%'
-            AND NOT (
-              (e.name ILIKE '%winter%' OR e.name ILIKE '%spring%' OR e.name ILIKE '%summer%'
-               OR e.name ILIKE '%autumn%' OR e.name ILIKE '%fall%' OR e.name ILIKE '%solstice%'
-               OR e.name ILIKE '%equinox%')
-              AND e.name ILIKE '%celebration%'
-            )
+          WHERE e.is_qualifying_event = true
         ) AS countable_all,
         COUNT(DISTINCT e.id) FILTER (
           WHERE e.event_date >= ${nineMonthsAgo}
-            AND e.name NOT ILIKE '%walk%'
-            AND e.name NOT ILIKE '%party%'
-            AND e.name NOT ILIKE '%drinks%'
-            AND NOT (
-              (e.name ILIKE '%winter%' OR e.name ILIKE '%spring%' OR e.name ILIKE '%summer%'
-               OR e.name ILIKE '%autumn%' OR e.name ILIKE '%fall%' OR e.name ILIKE '%solstice%'
-               OR e.name ILIKE '%equinox%')
-              AND e.name ILIKE '%celebration%'
-            )
+            AND e.is_qualifying_event = true
         ) AS countable_recent
       FROM ${attendees} a
       INNER JOIN ${events} e ON e.id = a.event_id

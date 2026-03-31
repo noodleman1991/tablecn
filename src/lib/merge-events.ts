@@ -277,6 +277,7 @@ export async function findDuplicateEvents(): Promise<DuplicateEventGroup[]> {
     name: string;
     event_date: Date;
     woocommerce_product_id: string;
+    is_qualifying_event: boolean | null;
     created_at: Date;
     updated_at: Date;
     attendee_count: string;
@@ -286,6 +287,7 @@ export async function findDuplicateEvents(): Promise<DuplicateEventGroup[]> {
       e.name,
       e.event_date,
       e.woocommerce_product_id,
+      e.is_qualifying_event,
       e.created_at,
       e.updated_at,
       COUNT(a.id) as attendee_count
@@ -294,7 +296,7 @@ export async function findDuplicateEvents(): Promise<DuplicateEventGroup[]> {
     WHERE e.woocommerce_product_id IS NOT NULL
       AND e.merged_into_event_id IS NULL
       AND LENGTH(TRIM(e.name)) > 0
-    GROUP BY e.id, e.name, e.event_date, e.woocommerce_product_id, e.created_at, e.updated_at
+    GROUP BY e.id, e.name, e.event_date, e.woocommerce_product_id, e.is_qualifying_event, e.created_at, e.updated_at
     ORDER BY e.event_date DESC
   `);
 
@@ -306,6 +308,7 @@ export async function findDuplicateEvents(): Promise<DuplicateEventGroup[]> {
     mergedIntoEventId: null,
     mergedProductIds: [] as string[],
     isMembersOnlyProduct: isMembersOnlyProduct(row.name),
+    isQualifyingEvent: row.is_qualifying_event ?? true,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
     attendeeCount: parseInt(row.attendee_count || "0"),

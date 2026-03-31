@@ -96,13 +96,154 @@ function getTicketTypeFromLineItem(lineItem: any): string | null {
 }
 
 /**
+ * Known hash key → field mapping for WooCommerce ticket data.
+ * Validated 2026-03-31: all 38 products tested use these same global hash keys.
+ * The ticketing plugin generates these hashes from the field labels.
+ */
+const KNOWN_HASH_KEYS: Record<string, 'firstName' | 'lastName' | 'email'> = {
+  'd6d93e88becfc567bb30ca978a237726': 'lastName',
+  'ddf0c5e3362962d29180d9226f2e5be8': 'firstName',
+  'c276b415493b81614a98b061f511e8ff': 'email',
+};
+
+/**
+ * Parse attendee fields from the HTML ticket meta that WooCommerce provides
+ * alongside _ticket_data. This HTML contains explicit field labels like
+ * "First Name", "Last Name", "Email" — no guesswork needed.
+ *
+ * The HTML meta key looks like:
+ *   <span class="order-item-meta-ticket ticket-id-{ticketId}">Ticket #N</span>
+ * The value looks like:
+ *   <li><strong>First Name</strong>: <span class="text">Tom</span></li>...
+ */
+function parseHtmlTicketMeta(
+  lineItem: any,
+  ticketId: string
+): { firstName: string; lastName: string; email: string } | null {
+  // Find the HTML meta entry for this specific ticket
+  const htmlMeta = lineItem.meta_data?.find((m: any) =>
+    typeof m.key === 'string' && m.key.includes(`ticket-id-${ticketId}`)
+  );
+
+  if (!htmlMeta?.value || typeof htmlMeta.value !== 'string') return null;
+
+  const labelRegex = /<strong>(.*?)<\/strong>:\s*<span[^>]*>(.*?)<\/span>/g;
+  let firstName = '';
+  let lastName = '';
+  let email = '';
+  let match;
+
+  while ((match = labelRegex.exec(htmlMeta.value)) !== null) {
+    const label = match[1]!.toLowerCase().trim();
+    const value = match[2]!.trim();
+
+    if (label.includes('first')) {
+      firstName = value;
+    } else if (label.includes('last') || label.includes('family')) {
+      lastName = value;
+    } else if (label.includes('email')) {
+      email = value.toLowerCase();
+    }
+  }
+
+  if (firstName || lastName || email) {
+    return { firstName, lastName, email };
+  }
+
+  return null;
+}
+
+/**
+ * Extract attendee fields from _ticket_data using known hash key mapping.
+ * Falls back to alphabetical sort + swap detection if hash keys are unrecognized.
+ */
+function extractFieldsFromHashedData(
+  fields: TicketFields,
+  order: any,
+  productId: string,
+  swapCache?: Map<string, boolean>
+): { firstName: string; lastName: string; email: string } {
+  // Try known hash key mapping first
+  const mappedFields: Partial<Record<'firstName' | 'lastName' | 'email', string>> = {};
+  let knownKeysMatched = 0;
+
+  for (const [hashKey, value] of Object.entries(fields)) {
+    const fieldType = KNOWN_HASH_KEYS[hashKey];
+    if (fieldType) {
+      mappedFields[fieldType] = typeof value === 'string' ? value : '';
+      knownKeysMatched++;
+    }
+  }
+
+  if (knownKeysMatched >= 2 && (mappedFields.firstName || mappedFields.lastName)) {
+    return {
+      firstName: mappedFields.firstName || '',
+      lastName: mappedFields.lastName || '',
+      email: (mappedFields.email || '').toLowerCase(),
+    };
+  }
+
+  // Fallback: alphabetical sort + swap detection (legacy logic for unknown hash keys)
+  const sortedEntries = Object.entries(fields).sort(([a], [b]) => a.localeCompare(b));
+
+  const emailEntry = sortedEntries.find(([_, value]) =>
+    typeof value === 'string' && value.includes('@')
+  );
+  const email = emailEntry ? emailEntry[1].toLowerCase() : '';
+
+  const nameFields = sortedEntries
+    .map(([_, v]) => v)
+    .filter((v: string) => {
+      if (!v || typeof v !== 'string') return false;
+      if (v.includes('@')) return false;
+      if (v.length >= 50) return false;
+      const lower = v.toLowerCase().trim();
+      if (lower === 'first name' || lower === 'last name' || lower === 'family name') {
+        console.warn(`[sync-attendees] Skipping corrupted field value: "${v}"`);
+        return false;
+      }
+      return true;
+    });
+
+  let isSwapped = false;
+  if (swapCache && productId) {
+    if (swapCache.has(productId)) {
+      isSwapped = swapCache.get(productId)!;
+    } else if (nameFields.length >= 2) {
+      const billingEmail = order.billing?.email?.toLowerCase() || '';
+      const billingFirst = (order.billing?.first_name || '').trim().toLowerCase();
+      const billingLast = (order.billing?.last_name || '').trim().toLowerCase();
+
+      if (email && billingEmail && email === billingEmail && billingFirst && billingLast) {
+        const field0 = nameFields[0]!.trim().toLowerCase();
+        const field1 = nameFields[1]!.trim().toLowerCase();
+
+        if (field0 === billingLast && field1 === billingFirst) {
+          isSwapped = true;
+          console.log(`[sync-attendees] Detected name swap for product ${productId} (unknown hash keys, fallback detection)`);
+        }
+        swapCache.set(productId, isSwapped);
+      }
+    }
+  }
+
+  return {
+    firstName: isSwapped ? (nameFields[1] || '') : (nameFields[0] || ''),
+    lastName: isSwapped ? (nameFields[0] || '') : (nameFields[1] || ''),
+    email,
+  };
+}
+
+/**
  * Helper: Extract per-ticket attendee info from WooCommerce order
  * Handles the actual _ticket_data structure used by WooCommerce ticketing plugin
  *
- * @param swapCache - Per-product cache tracking whether name fields are swapped.
- *   Some WooCommerce ticket products have hash keys where alphabetical ordering
- *   puts last name before first name. We detect this by checking self-purchase
- *   tickets (where ticket email === billing email) and comparing against billing name.
+ * Resolution priority for attendee names:
+ *   1. HTML ticket meta (explicit "First Name"/"Last Name" labels — definitive)
+ *   2. Known hash key mapping (validated global mapping)
+ *   3. Alphabetical sort + swap detection (legacy fallback)
+ *
+ * @param swapCache - Per-product cache for legacy swap detection (fallback only)
  */
 function extractTicketAttendees(
   order: any,
@@ -120,80 +261,34 @@ function extractTicketAttendees(
   }
 
   const ticketDataArray: TicketDataEntry[] = ticketDataMeta.value;
+  const productId = lineItem.product_id?.toString() || '';
 
   for (const ticketData of ticketDataArray) {
     const { uid, index, fields } = ticketData;
 
-    // Extract field values from hashed keys
-    // Based on observed pattern from WooCommerce data:
-    // - First field (alphabetically by hash) tends to be first name
-    // - Second field tends to be last name
-    // - Third field tends to be email
-    // - Fourth field (if exists) is membership number
-    // Sort entries by key for deterministic ordering (alphabetical, matching original intent)
-    // WooCommerce hash keys for a given field are consistent across all tickets of the same product
-    const sortedEntries = Object.entries(fields).sort(([a], [b]) => a.localeCompare(b));
-
-    // Find email field (contains @ symbol) and normalize to lowercase
-    const emailEntry = sortedEntries.find(([_, value]) =>
-      typeof value === 'string' && value.includes('@')
-    );
-    const email = emailEntry ? emailEntry[1].toLowerCase() : '';
-
-    // Find first and last name (non-email, non-empty fields)
-    // Also filter out corrupted literal values like "first name" or "family name"
-    const nameFields = sortedEntries
-      .map(([_, v]) => v)
-      .filter((v: string) => {
-      if (!v || typeof v !== 'string') return false;
-      if (v.includes('@')) return false;
-      if (v.length >= 50) return false;
-      const lower = v.toLowerCase().trim();
-      // Skip corrupted placeholder values
-      if (lower === 'first name' || lower === 'last name' || lower === 'family name') {
-        console.warn(`[sync-attendees] Skipping corrupted field value: "${v}"`);
-        return false;
-      }
-      return true;
-    });
-
-    // Swap detection: check if this product's hash key ordering puts lastName before firstName
-    const productId = lineItem.product_id?.toString() || '';
-    let isSwapped = false;
-
-    if (swapCache && productId) {
-      if (swapCache.has(productId)) {
-        // Use cached result
-        isSwapped = swapCache.get(productId)!;
-      } else if (nameFields.length >= 2) {
-        // Detect swap using self-purchase tickets (ticket email === billing email)
-        const billingEmail = order.billing?.email?.toLowerCase() || '';
-        const billingFirst = (order.billing?.first_name || '').trim().toLowerCase();
-        const billingLast = (order.billing?.last_name || '').trim().toLowerCase();
-
-        if (email && billingEmail && email === billingEmail && billingFirst && billingLast) {
-          const field0 = nameFields[0]!.trim().toLowerCase();
-          const field1 = nameFields[1]!.trim().toLowerCase();
-
-          if (field0 === billingLast && field1 === billingFirst) {
-            // Fields are swapped: field[0] is actually lastName, field[1] is firstName
-            isSwapped = true;
-            console.log(`[sync-attendees] Detected name swap for product ${productId}: "${nameFields[0]}" matches billing last name, "${nameFields[1]}" matches billing first name`);
-          }
-          // Cache the result for this product
-          swapCache.set(productId, isSwapped);
-        }
-      }
-    }
-
-    const firstName = isSwapped ? (nameFields[1] || '') : (nameFields[0] || '');
-    const lastName = isSwapped ? (nameFields[0] || '') : (nameFields[1] || '');
-
-    // Find the actual WooCommerce ticket ID
+    // Find the actual WooCommerce ticket ID (needed for HTML meta lookup)
     const ticketIdKey = `_ticket_id_for_${uid}`;
     const ticketIdMeta = lineItem.meta_data?.find((m: any) => m.key === ticketIdKey);
     const ticketId = ticketIdMeta?.value || `${lineItem.id}-${index}`;
 
+    // Priority 1: Parse from HTML ticket meta (has explicit field labels)
+    const htmlParsed = parseHtmlTicketMeta(lineItem, ticketId);
+
+    let firstName: string;
+    let lastName: string;
+    let email: string;
+
+    if (htmlParsed && (htmlParsed.firstName || htmlParsed.lastName)) {
+      firstName = htmlParsed.firstName;
+      lastName = htmlParsed.lastName;
+      email = htmlParsed.email;
+    } else {
+      // Priority 2 & 3: Known hash key mapping, then alphabetical fallback
+      const extracted = extractFieldsFromHashedData(fields, order, productId, swapCache);
+      firstName = extracted.firstName;
+      lastName = extracted.lastName;
+      email = extracted.email;
+    }
 
     // Get ticket type from line item (same for all tickets in the line item)
     const ticketType = getTicketTypeFromLineItem(lineItem);
@@ -228,7 +323,7 @@ function extractTicketAttendees(
         bookerFirstName: order.billing?.first_name || '',
         bookerLastName: order.billing?.last_name || '',
         bookerEmail: order.billing?.email?.toLowerCase() || '',
-        ticketType: getTicketTypeFromLineItem(lineItem), // Still try to extract ticket type
+        ticketType: getTicketTypeFromLineItem(lineItem),
       });
     }
   }

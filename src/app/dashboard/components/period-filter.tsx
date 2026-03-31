@@ -37,14 +37,11 @@ function computePreset(key: PresetKey): PeriodFilter | null {
   }
 
   const months = key === "1m" ? 1 : key === "3m" ? 3 : key === "6m" ? 6 : 9;
-  const from = new Date(now.getFullYear(), now.getMonth() - months, 1);
-  // End of previous month
-  const to = new Date(now.getFullYear(), now.getMonth(), 0);
-  // If "this month", use today
   if (key === "1m") {
     return { from: new Date(now.getFullYear(), now.getMonth(), 1), to: now };
   }
-  return { from, to };
+  const from = new Date(now.getFullYear(), now.getMonth() - months, 1);
+  return { from, to: now };
 }
 
 export function PeriodFilterSelect({ value, onChange }: PeriodFilterSelectProps) {
