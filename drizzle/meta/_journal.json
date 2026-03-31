@@ -64,6 +64,13 @@
       "when": 1774985206955,
       "tag": "0008_brave_white_tiger",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1774994039744,
+      "tag": "0009_serious_darkstar",
+      "breakpoints": true
     }
   ]
 }

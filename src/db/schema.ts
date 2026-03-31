@@ -117,6 +117,12 @@ export const members = pgTable("members", {
   lastEventDate: timestamp("last_event_date"),
   manuallyAdded: boolean("manually_added").notNull().default(false),
   manualExpiresAt: timestamp("manual_expires_at"),
+  // Billing address from WooCommerce orders (populated from self-purchase tickets)
+  address: varchar("address", { length: 500 }),
+  city: varchar("city", { length: 128 }),
+  postcode: varchar("postcode", { length: 20 }),
+  country: varchar("country", { length: 10 }),
+  phone: varchar("phone", { length: 50 }),
   notes: varchar("notes", { length: 1000 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")

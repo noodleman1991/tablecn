@@ -249,8 +249,15 @@ function extractTicketAttendees(
   order: any,
   lineItem: any,
   swapCache?: Map<string, boolean>
-): Array<{ firstName: string; lastName: string; email: string; ticketId: string; uid: string; bookerFirstName: string; bookerLastName: string; bookerEmail: string; ticketType: string | null }> {
+): Array<{ firstName: string; lastName: string; email: string; ticketId: string; uid: string; bookerFirstName: string; bookerLastName: string; bookerEmail: string; ticketType: string | null; billingAddress: string; billingCity: string; billingPostcode: string; billingCountry: string; billingPhone: string }> {
   const attendees = [];
+
+  // Extract billing address (available on all orders, not hashed)
+  const billingAddress = [order.billing?.address_1, order.billing?.address_2].filter(Boolean).join(', ') || '';
+  const billingCity = order.billing?.city || '';
+  const billingPostcode = order.billing?.postcode || '';
+  const billingCountry = order.billing?.country || '';
+  const billingPhone = order.billing?.phone || '';
 
   // Find _ticket_data in line item meta_data
   const ticketDataMeta = lineItem.meta_data?.find((m: any) => m.key === '_ticket_data');
@@ -304,6 +311,11 @@ function extractTicketAttendees(
       bookerLastName: order.billing?.last_name || '',
       bookerEmail: order.billing?.email?.toLowerCase() || '',
       ticketType,
+      billingAddress,
+      billingCity,
+      billingPostcode,
+      billingCountry,
+      billingPhone,
     });
   }
 
@@ -324,6 +336,11 @@ function extractTicketAttendees(
         bookerLastName: order.billing?.last_name || '',
         bookerEmail: order.billing?.email?.toLowerCase() || '',
         ticketType: getTicketTypeFromLineItem(lineItem),
+        billingAddress,
+        billingCity,
+        billingPostcode,
+        billingCountry,
+        billingPhone,
       });
     }
   }
@@ -656,8 +673,20 @@ export async function syncAttendeesForEvent(
           createdCount++;
         }
 
-        // Ensure member record exists
-        await upsertMember(ticket.email, ticket.firstName, ticket.lastName);
+        // Ensure member record exists, include billing address for self-purchase tickets
+        const isSelfPurchase = ticket.email === ticket.bookerEmail;
+        await upsertMember(
+          ticket.email,
+          ticket.firstName,
+          ticket.lastName,
+          isSelfPurchase ? {
+            address: ticket.billingAddress,
+            city: ticket.billingCity,
+            postcode: ticket.billingPostcode,
+            country: ticket.billingCountry,
+            phone: ticket.billingPhone,
+          } : undefined,
+        );
       }
     }
   }
@@ -845,28 +874,57 @@ export async function syncAttendeesForEvent(
 /**
  * Ensure a member record exists for an email
  * Creates if doesn't exist, updates name if changed
+ * Stores billing address from self-purchase tickets
  * Uses atomic onConflictDoUpdate to avoid race conditions
  */
 async function upsertMember(
   email: string,
   firstName: string,
   lastName: string,
+  billingDetails?: {
+    address: string;
+    city: string;
+    postcode: string;
+    country: string;
+    phone: string;
+  },
 ) {
+  const insertValues: any = {
+    email,
+    firstName,
+    lastName,
+    isActiveMember: false,
+    totalEventsAttended: 0,
+  };
+
+  const updateSet: any = {
+    firstName,
+    lastName,
+  };
+
+  // Include billing address if provided (from self-purchase tickets)
+  if (billingDetails) {
+    if (billingDetails.address) insertValues.address = billingDetails.address;
+    if (billingDetails.city) insertValues.city = billingDetails.city;
+    if (billingDetails.postcode) insertValues.postcode = billingDetails.postcode;
+    if (billingDetails.country) insertValues.country = billingDetails.country;
+    if (billingDetails.phone) insertValues.phone = billingDetails.phone;
+
+    // On conflict: update address fields using COALESCE to not overwrite existing data
+    // unless new data is available
+    if (billingDetails.address) updateSet.address = billingDetails.address;
+    if (billingDetails.city) updateSet.city = billingDetails.city;
+    if (billingDetails.postcode) updateSet.postcode = billingDetails.postcode;
+    if (billingDetails.country) updateSet.country = billingDetails.country;
+    if (billingDetails.phone) updateSet.phone = billingDetails.phone;
+  }
+
   await db
     .insert(members)
-    .values({
-      email,
-      firstName,
-      lastName,
-      isActiveMember: false,
-      totalEventsAttended: 0,
-    })
+    .values(insertValues)
     .onConflictDoUpdate({
       target: members.email,
-      set: {
-        firstName,
-        lastName,
-      },
+      set: updateSet,
     });
 }
 

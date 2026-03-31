@@ -129,6 +129,12 @@ function formatMemberForLoops(member: Member) {
     lastEventDate: member.lastEventDate?.toISOString() || null,
     membershipExpiresAt: member.membershipExpiresAt?.toISOString() || null,
     manuallyAdded: member.manuallyAdded,
+    // Billing address from WooCommerce orders
+    address: member.address || "",
+    city: member.city || "",
+    postcode: member.postcode || "",
+    country: member.country || "",
+    phone: member.phone || "",
     subscribed: true, // Required for mailing list membership
     // source: intentionally not set - preserve original source
     // Add to "Active Community Members" list
