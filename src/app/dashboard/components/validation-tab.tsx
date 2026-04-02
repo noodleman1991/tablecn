@@ -418,10 +418,13 @@ export function ValidationTab({ period }: ValidationTabProps) {
       </Card>
 
       {/* Validation Card */}
-      <Card>
+      <Card className="opacity-60">
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>Data Validation</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              Data Validation
+              <Badge variant="outline" className="text-xs font-normal">WIP</Badge>
+            </CardTitle>
             <p className="text-xs text-muted-foreground mt-1">
               Validation is read-only — it analyzes data but never modifies records.
             </p>
@@ -432,6 +435,7 @@ export function ValidationTab({ period }: ValidationTabProps) {
                 variant={mode === "quick" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setMode("quick")}
+                disabled
               >
                 Quick
               </Button>
@@ -439,12 +443,13 @@ export function ValidationTab({ period }: ValidationTabProps) {
                 variant={mode === "deep" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setMode("deep")}
+                disabled
               >
                 Deep
               </Button>
             </div>
-            <Button onClick={handleRun} disabled={running} size="sm">
-              {running ? "Running..." : "Run Validation"}
+            <Button onClick={handleRun} disabled size="sm">
+              Run Validation
             </Button>
           </div>
         </CardHeader>

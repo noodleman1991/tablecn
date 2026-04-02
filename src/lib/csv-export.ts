@@ -87,6 +87,15 @@ export function exportMembersToCSV(members: Member[]): string {
     "Total Events Attended",
     "Membership Expires At",
     "Last Event Date",
+    "Address",
+    "City",
+    "Postcode",
+    "Country",
+    "Phone",
+    "Manually Added",
+    "Manual Expires At",
+    "Notes",
+    "Created At",
   ];
 
   const rows = members.map((member) => [
@@ -100,6 +109,19 @@ export function exportMembersToCSV(members: Member[]): string {
       : "",
     member.lastEventDate
       ? format(new Date(member.lastEventDate), "PPP")
+      : "",
+    member.address || "",
+    member.city || "",
+    member.postcode || "",
+    member.country || "",
+    member.phone || "",
+    member.manuallyAdded ? "Yes" : "No",
+    member.manualExpiresAt
+      ? format(new Date(member.manualExpiresAt), "PPP")
+      : "",
+    member.notes || "",
+    member.createdAt
+      ? format(new Date(member.createdAt), "PPP")
       : "",
   ]);
 
