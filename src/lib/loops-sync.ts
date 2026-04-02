@@ -196,6 +196,30 @@ export async function syncMemberToLoops(member: Member): Promise<boolean> {
 
     const result = await response.json() as { id?: string; success?: boolean };
 
+    // Verify the contact is actually in the mailing list
+    // Loops API can return 200 success but silently fail to add the contact to the list
+    const verifyResponse = await loopsApiRequest(
+      `/contacts/find?email=${encodeURIComponent(member.email)}`,
+      "GET"
+    );
+    if (verifyResponse.ok) {
+      const contacts = await verifyResponse.json() as Array<{ mailingLists?: Record<string, boolean> }>;
+      const inList = contacts[0]?.mailingLists?.[env.LOOPS_ACTIVE_MEMBERS_LIST_ID] === true;
+
+      if (!inList) {
+        console.warn(`[Loops] Contact ${member.email} synced but NOT in mailing list — deleting and recreating`);
+        // Delete the stuck contact
+        await loopsApiRequest("/contacts/delete", "POST", { email: member.email });
+        // Recreate with list membership
+        const createResponse = await loopsApiRequest("/contacts/create", "POST", contactData);
+        if (!createResponse.ok) {
+          const createError = await createResponse.text();
+          throw new Error(`Recreate failed after stuck list detection: ${createError}`);
+        }
+        console.log(`[Loops] Recreated contact ${member.email} — now in mailing list`);
+      }
+    }
+
     await logLoopsSync(
       "sync",
       member.email,
