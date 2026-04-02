@@ -34,6 +34,18 @@ export async function POST(request: NextRequest) {
 
   const startTime = Date.now();
 
+  // Parse optional startFromOffset from request body
+  let requestedOffset = 0;
+  try {
+    const body = await request.json().catch(() => ({})) as Record<string, unknown>;
+    if (body.startFromOffset && typeof body.startFromOffset === "number" && body.startFromOffset > 0) {
+      requestedOffset = body.startFromOffset;
+      console.log(`[batch/resync-events] Requested start offset: ${requestedOffset}`);
+    }
+  } catch {
+    // No body or invalid JSON — use default offset 0
+  }
+
   try {
     let job = await getBatchJob(JOB_TYPE);
     console.log(`[batch/resync-events] Current job state:`, job ? `status=${job.status} offset=${job.offset}/${job.total} stale=${isJobStale(job)}` : "null");
@@ -53,8 +65,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ status: "no_events", total: 0 });
       }
 
-      job = await startBatchJob(JOB_TYPE, total);
-      console.log(`[batch/resync-events] Started new job: ${total} events`);
+      job = await startBatchJob(JOB_TYPE, total, requestedOffset);
+      console.log(`[batch/resync-events] Started new job: ${total} events${requestedOffset > 0 ? ` (starting from offset ${requestedOffset})` : ""}`);
     } else if (job.status === "running") {
       console.log(
         `[batch/resync-events] Resuming job at offset ${job.offset}/${job.total}`,

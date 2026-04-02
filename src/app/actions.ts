@@ -668,6 +668,24 @@ export async function resyncAllEvents() {
 }
 
 /**
+ * Re-sync events starting from a specific offset (resume after failure)
+ */
+export async function resyncFromOffset(startFromOffset: number) {
+  "use server";
+
+  const { redis } = await import("@/lib/redis");
+
+  try {
+    const res = await triggerNextChunk("/api/batch/resync-events", { startFromOffset });
+    console.log(`[resyncFromOffset] Trigger response: ${res.status} (offset: ${startFromOffset})`);
+    return { success: true, batchJobStarted: true, progressTrackable: !!redis };
+  } catch (error) {
+    console.error("[resyncFromOffset] Failed to trigger batch:", error);
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+  }
+}
+
+/**
  * Get the current status of a batch job by type
  * Used by client components to poll batch progress without exposing CRON_SECRET
  */

@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { runQuickValidation, getLastValidationRuns } from "../actions";
-import { resyncAllEvents, getBatchStatus } from "@/app/actions";
+import { resyncAllEvents, resyncFromOffset, getBatchStatus } from "@/app/actions";
 import type { PeriodFilter, ValidationCheck, ValidationRunResult } from "../types";
 import type { BatchJobState } from "@/lib/batch-processor";
 import { ValidationResultCard } from "./validation-result-card";
@@ -234,11 +234,48 @@ export function ValidationTab({ period }: ValidationTabProps) {
               );
             })}
             {lastFailedJob && (
-              <p className="text-xs text-destructive">
-                Failed at event {lastFailedJob.processed} of {lastFailedJob.total}.
-                {lastFailedJob.error && ` Error: ${lastFailedJob.error}`}
-                {" "}Click "Re-sync All Events" to retry.
-              </p>
+              <div className="flex items-center justify-between gap-2 rounded border border-destructive/30 bg-destructive/5 p-2">
+                <p className="text-xs text-destructive">
+                  Failed at event {lastFailedJob.processed} of {lastFailedJob.total}.
+                  {lastFailedJob.error && ` Error: ${lastFailedJob.error}`}
+                </p>
+                <div className="flex gap-2 shrink-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-7"
+                    disabled={isResyncing}
+                    onClick={async () => {
+                      setIsResyncing(true);
+                      try {
+                        const result = await resyncFromOffset(lastFailedJob.processed);
+                        if (!result.success) {
+                          toast.error(`Failed: ${result.error ?? "Unknown error"}`);
+                          setIsResyncing(false);
+                          return;
+                        }
+                        toast.success(`Resuming from event ${lastFailedJob.processed}...`);
+                        resyncIntervalRef.current = setInterval(pollResyncStatus, 5000);
+                        setTimeout(pollResyncStatus, 2000);
+                      } catch (error) {
+                        toast.error(error instanceof Error ? error.message : "Failed");
+                        setIsResyncing(false);
+                      }
+                    }}
+                  >
+                    Resume from #{lastFailedJob.processed}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-7"
+                    disabled={isResyncing}
+                    onClick={handleResync}
+                  >
+                    Restart from beginning
+                  </Button>
+                </div>
+              </div>
             )}
           </CardContent>
         )}

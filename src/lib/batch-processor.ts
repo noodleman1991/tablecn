@@ -26,6 +26,7 @@ function batchKey(type: string): string {
 export async function startBatchJob(
   type: string,
   total: number,
+  startOffset: number = 0,
 ): Promise<BatchJobState> {
   if (!redis) {
     throw new Error("Redis is not configured — cannot run batch jobs");
@@ -37,8 +38,8 @@ export async function startBatchJob(
     type,
     status: "running",
     total,
-    processed: 0,
-    offset: 0,
+    processed: startOffset,
+    offset: startOffset,
     errors: 0,
     startedAt: now,
     lastHeartbeat: now,
@@ -143,9 +144,9 @@ export function isJobStale(job: BatchJobState): boolean {
  * Uses a 30s timeout (up from 10s) to handle Vercel cold starts,
  * and retries once on failure to prevent silent chain breaks.
  */
-export async function triggerNextChunk(path: string): Promise<Response> {
+export async function triggerNextChunk(path: string, body?: Record<string, unknown>): Promise<Response> {
   const url = `${env.NEXT_PUBLIC_APP_URL}${path}`;
-  console.log(`[batch] triggerNextChunk: POST ${url}`);
+  console.log(`[batch] triggerNextChunk: POST ${url}${body ? ` body=${JSON.stringify(body)}` : ""}`);
 
   const attempt = async (isRetry: boolean): Promise<Response> => {
     try {
@@ -155,6 +156,7 @@ export async function triggerNextChunk(path: string): Promise<Response> {
           Authorization: `Bearer ${env.CRON_SECRET}`,
           "Content-Type": "application/json",
         },
+        body: body ? JSON.stringify(body) : undefined,
         signal: AbortSignal.timeout(30_000),
       });
 
