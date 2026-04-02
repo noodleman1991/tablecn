@@ -15,11 +15,11 @@ import {
 } from "@/lib/batch-processor";
 import { revalidatePath } from "next/cache";
 
-export const maxDuration = 300;
+export const maxDuration = 800;
 
 const IS_DEV = process.env.NODE_ENV === "development";
 const CHUNK_SIZE = 200;
-const TIME_BUDGET_MS = 240_000; // stop 60s before maxDuration
+const TIME_BUDGET_MS = 720_000; // stop 80s before maxDuration
 
 const JOB_TYPE = "membership-sync";
 
@@ -78,6 +78,13 @@ export async function POST(request: NextRequest) {
         );
         revalidatePath("/community-members-list");
         revalidatePath("/");
+        console.log("[batch/sync-memberships] Triggering Loops bulk sync...");
+        try {
+          const loopsRes = await triggerNextChunk("/api/loops/bulk-sync");
+          console.log(`[batch/sync-memberships] Loops bulk sync trigger: ${loopsRes.status}`);
+        } catch (loopsErr) {
+          console.error("[batch/sync-memberships] Failed to trigger Loops bulk sync:", loopsErr);
+        }
         return NextResponse.json(completed);
       }
 
@@ -128,6 +135,13 @@ export async function POST(request: NextRequest) {
         );
         revalidatePath("/community-members-list");
         revalidatePath("/");
+        console.log("[batch/sync-memberships] Triggering Loops bulk sync...");
+        try {
+          const loopsRes = await triggerNextChunk("/api/loops/bulk-sync");
+          console.log(`[batch/sync-memberships] Loops bulk sync trigger: ${loopsRes.status}`);
+        } catch (loopsErr) {
+          console.error("[batch/sync-memberships] Failed to trigger Loops bulk sync:", loopsErr);
+        }
         return NextResponse.json(completed);
       }
     }

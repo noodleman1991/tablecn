@@ -15,11 +15,11 @@ import {
 } from "@/lib/batch-processor";
 import { revalidatePath } from "next/cache";
 
-export const maxDuration = 300;
+export const maxDuration = 800;
 
 const IS_DEV = process.env.NODE_ENV === "development";
 const CHUNK_SIZE = IS_DEV ? 1 : 3;
-const TIME_BUDGET_MS = 240_000; // stop 60s before maxDuration
+const TIME_BUDGET_MS = 720_000; // stop 80s before maxDuration
 
 const JOB_TYPE = "event-resync";
 

@@ -16,8 +16,8 @@ export interface BatchJobState {
 }
 
 const BATCH_KEY_PREFIX = "batch:";
-const BATCH_TTL_SECONDS = 3600; // 1 hour
-const STALE_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes
+const BATCH_TTL_SECONDS = 86400; // 24 hours — full resync chain can take 20+ hours
+const STALE_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes — increased to handle Vercel cold starts and retries
 
 function batchKey(type: string): string {
   return `${BATCH_KEY_PREFIX}${type}`;
@@ -140,42 +140,56 @@ export function isJobStale(job: BatchJobState): boolean {
 
 /**
  * Fire-and-forget: trigger the next batch chunk via HTTP POST.
- * We only need the server to accept the request (not wait for it to finish),
- * so we use a short timeout and treat timeouts as success — the new invocation
- * is already running on the server side.
+ * Uses a 30s timeout (up from 10s) to handle Vercel cold starts,
+ * and retries once on failure to prevent silent chain breaks.
  */
 export async function triggerNextChunk(path: string): Promise<Response> {
   const url = `${env.NEXT_PUBLIC_APP_URL}${path}`;
   console.log(`[batch] triggerNextChunk: POST ${url}`);
 
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${env.CRON_SECRET}`,
-        "Content-Type": "application/json",
-      },
-      // Short timeout: we just need the server to accept the request.
-      // The spawned invocation runs independently on Vercel.
-      signal: AbortSignal.timeout(10_000),
-    });
+  const attempt = async (isRetry: boolean): Promise<Response> => {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${env.CRON_SECRET}`,
+          "Content-Type": "application/json",
+        },
+        signal: AbortSignal.timeout(30_000),
+      });
 
-    if (!res.ok) {
-      const body = await res.text().catch(() => "(unreadable)");
-      console.error(`[batch] triggerNextChunk failed: ${res.status} ${res.statusText} for ${url} — body: ${body}`);
-    } else {
-      console.log(`[batch] triggerNextChunk OK: ${res.status} ${res.statusText}`);
-    }
+      if (!res.ok) {
+        const body = await res.text().catch(() => "(unreadable)");
+        console.error(`[batch] triggerNextChunk ${isRetry ? "retry " : ""}failed: ${res.status} ${res.statusText} for ${url} — body: ${body}`);
 
-    return res;
-  } catch (err) {
-    // On Vercel, a timeout here is expected and fine — the new invocation is
-    // already running. Only log at warn level, don't throw.
-    if (err instanceof DOMException && err.name === "TimeoutError") {
-      console.log(`[batch] triggerNextChunk: request sent to ${url} (timed out waiting for response — expected on Vercel, invocation is running)`);
-      return new Response(null, { status: 202, statusText: "Accepted (fire-and-forget)" });
+        // Retry once on non-success (e.g. 508 recursion protection, 502 cold start)
+        if (!isRetry) {
+          console.log(`[batch] triggerNextChunk: retrying in 5s...`);
+          await new Promise(r => setTimeout(r, 5_000));
+          return attempt(true);
+        }
+      } else {
+        console.log(`[batch] triggerNextChunk OK: ${res.status} ${res.statusText}`);
+      }
+
+      return res;
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "TimeoutError") {
+        console.log(`[batch] triggerNextChunk: ${isRetry ? "retry " : ""}timed out for ${url} — assuming invocation is running`);
+        return new Response(null, { status: 202, statusText: "Accepted (fire-and-forget)" });
+      }
+
+      // Retry once on network errors
+      if (!isRetry) {
+        console.warn(`[batch] triggerNextChunk error, retrying in 5s:`, err);
+        await new Promise(r => setTimeout(r, 5_000));
+        return attempt(true);
+      }
+
+      console.error(`[batch] triggerNextChunk error for ${url} (after retry):`, err);
+      throw err;
     }
-    console.error(`[batch] triggerNextChunk error for ${url}:`, err);
-    throw err;
-  }
+  };
+
+  return attempt(false);
 }
