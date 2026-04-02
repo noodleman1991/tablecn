@@ -71,6 +71,13 @@
       "when": 1774994039744,
       "tag": "0009_serious_darkstar",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1775121340547,
+      "tag": "0010_last_ben_grimm",
+      "breakpoints": true
     }
   ]
 }

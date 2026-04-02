@@ -11,8 +11,12 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Skeleton } from "@/components/ui/skeleton";
+import { RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 import { runQuickValidation, getLastValidationRuns } from "../actions";
+import { resyncAllEvents, getBatchStatus } from "@/app/actions";
 import type { PeriodFilter, ValidationCheck, ValidationRunResult } from "../types";
+import type { BatchJobState } from "@/lib/batch-processor";
 import { ValidationResultCard } from "./validation-result-card";
 
 const QUICK_CHECK_NAMES = [
@@ -44,6 +48,70 @@ export function ValidationTab({ period }: ValidationTabProps) {
   const [loadingHistory, setLoadingHistory] = React.useState(true);
   const [completedChecks, setCompletedChecks] = React.useState<ValidationCheck[]>([]);
   const [currentPhase, setCurrentPhase] = React.useState<"idle" | "quick" | "deep">("idle");
+
+  // Resync state
+  const [isResyncing, setIsResyncing] = React.useState(false);
+  const [resyncJobs, setResyncJobs] = React.useState<{
+    eventResync: BatchJobState | null;
+    membershipSync: BatchJobState | null;
+    loopsSync: BatchJobState | null;
+  }>({ eventResync: null, membershipSync: null, loopsSync: null });
+  const resyncIntervalRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const pollResyncStatus = React.useCallback(async () => {
+    const [eventResync, membershipSync, loopsSync] = await Promise.all([
+      getBatchStatus("event-resync"),
+      getBatchStatus("membership-sync"),
+      getBatchStatus("loops-sync"),
+    ]);
+    setResyncJobs({ eventResync, membershipSync, loopsSync });
+
+    const anyRunning = eventResync?.status === "running" || membershipSync?.status === "running" || loopsSync?.status === "running";
+    if (!anyRunning && (eventResync || membershipSync || loopsSync)) {
+      // All done — stop polling
+      if (resyncIntervalRef.current) {
+        clearInterval(resyncIntervalRef.current);
+        resyncIntervalRef.current = null;
+      }
+      setIsResyncing(false);
+    }
+  }, []);
+
+  // Check for running jobs on mount
+  React.useEffect(() => {
+    pollResyncStatus().then(() => {
+      const hasRunning = resyncJobs.eventResync?.status === "running" ||
+        resyncJobs.membershipSync?.status === "running" ||
+        resyncJobs.loopsSync?.status === "running";
+      if (hasRunning) {
+        setIsResyncing(true);
+        resyncIntervalRef.current = setInterval(pollResyncStatus, 5000);
+      }
+    });
+    return () => {
+      if (resyncIntervalRef.current) clearInterval(resyncIntervalRef.current);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleResync = async () => {
+    setIsResyncing(true);
+    try {
+      const result = await resyncAllEvents();
+      if (!result.success) {
+        toast.error(`Failed to start re-sync: ${result.error ?? "Unknown error"}`);
+        setIsResyncing(false);
+        return;
+      }
+      toast.success("Re-sync started. This runs in the background and may take several hours.");
+      // Start polling
+      resyncIntervalRef.current = setInterval(pollResyncStatus, 5000);
+      // Initial poll after short delay
+      setTimeout(pollResyncStatus, 2000);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to start re-sync");
+      setIsResyncing(false);
+    }
+  };
 
   React.useEffect(() => {
     getLastValidationRuns(5)
@@ -91,8 +159,92 @@ export function ValidationTab({ period }: ValidationTabProps) {
 
   const checkNames = mode === "deep" ? DEEP_CHECK_NAMES : QUICK_CHECK_NAMES;
 
+  const resyncJobRows = [
+    { label: "Syncing events from WooCommerce", state: resyncJobs.eventResync },
+    { label: "Recalculating memberships", state: resyncJobs.membershipSync },
+    { label: "Syncing to Loops.so", state: resyncJobs.loopsSync },
+  ].filter((j) => j.state !== null);
+
+  const lastFailedJob = [resyncJobs.eventResync, resyncJobs.membershipSync, resyncJobs.loopsSync]
+    .find((j) => j?.status === "failed");
+
   return (
     <div className="space-y-4">
+      {/* Re-sync Card */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Re-sync All Events</CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              Pulls latest ticket data from WooCommerce, recalculates memberships, and syncs contacts to Loops.so. Runs in the background — may take several hours for all events.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleResync}
+            disabled={isResyncing}
+            className="gap-2 shrink-0"
+          >
+            <RefreshCw className={`size-4 ${isResyncing ? "animate-spin" : ""}`} />
+            {isResyncing ? "Re-syncing..." : "Re-sync All Events"}
+          </Button>
+        </CardHeader>
+        {resyncJobRows.length > 0 && (
+          <CardContent className="space-y-3">
+            {resyncJobRows.map(({ label, state }) => {
+              if (!state) return null;
+              const pct = state.total > 0 ? Math.round((state.processed / state.total) * 100) : 0;
+              return (
+                <div key={state.type} className="space-y-1.5">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">{label}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground tabular-nums">
+                        {state.processed} / {state.total}
+                      </span>
+                      {state.errors > 0 && (
+                        <span className="text-destructive text-xs">
+                          ({state.errors} {state.errors === 1 ? "error" : "errors"})
+                        </span>
+                      )}
+                      <Badge
+                        variant="outline"
+                        className={
+                          state.status === "running"
+                            ? "border-blue-300 text-blue-700"
+                            : state.status === "completed"
+                            ? "border-green-300 text-green-700"
+                            : "border-red-300 text-red-700"
+                        }
+                      >
+                        {state.status === "running" ? "Running" : state.status === "completed" ? "Completed" : "Failed"}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${
+                        state.status === "failed" ? "bg-destructive" : "bg-primary"
+                      }`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+            {lastFailedJob && (
+              <p className="text-xs text-destructive">
+                Failed at event {lastFailedJob.processed} of {lastFailedJob.total}.
+                {lastFailedJob.error && ` Error: ${lastFailedJob.error}`}
+                {" "}Click "Re-sync All Events" to retry.
+              </p>
+            )}
+          </CardContent>
+        )}
+      </Card>
+
+      {/* Validation Card */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>

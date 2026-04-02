@@ -78,6 +78,14 @@ export const attendees = pgTable("attendees", {
   bookerFirstName: varchar("booker_first_name", { length: 128 }),  // Order purchaser's first name
   bookerLastName: varchar("booker_last_name", { length: 128 }),   // Order purchaser's last name
   bookerEmail: varchar("booker_email", { length: 255 }),           // Order purchaser's email
+  // Billing address from WooCommerce order
+  billingAddress: varchar("billing_address", { length: 500 }),
+  billingCity: varchar("billing_city", { length: 128 }),
+  billingPostcode: varchar("billing_postcode", { length: 20 }),
+  billingCountry: varchar("billing_country", { length: 10 }),
+  billingPhone: varchar("billing_phone", { length: 50 }),
+  // How the attendee's name was resolved during sync
+  nameResolutionMethod: varchar("name_resolution_method", { length: 30 }),
   locallyModified: boolean("locally_modified").notNull().default(false),
   orderTotal: real("order_total"),
   manuallyAdded: boolean("manually_added").notNull().default(false),

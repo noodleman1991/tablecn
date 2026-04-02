@@ -206,6 +206,69 @@ export function getMembersTableColumns(
       } as any,
     },
     {
+      id: "postcode",
+      accessorKey: "postcode",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} label="Postcode" />
+      ),
+      cell: ({ row }) => row.getValue("postcode") || "-",
+      enableHiding: true,
+      meta: {
+        label: "Postcode",
+        placeholder: "Search postcode...",
+        variant: "text",
+      } as any,
+      enableColumnFilter: true,
+    },
+    {
+      id: "city",
+      accessorKey: "city",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} label="City" />
+      ),
+      cell: ({ row }) => row.getValue("city") || "-",
+      enableHiding: true,
+      meta: {
+        label: "City",
+      } as any,
+    },
+    {
+      id: "country",
+      accessorKey: "country",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} label="Country" />
+      ),
+      cell: ({ row }) => row.getValue("country") || "-",
+      enableHiding: true,
+      meta: {
+        label: "Country",
+      } as any,
+    },
+    {
+      id: "phone",
+      accessorKey: "phone",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} label="Phone" />
+      ),
+      cell: ({ row }) => row.getValue("phone") || "-",
+      enableHiding: true,
+      meta: {
+        label: "Phone",
+      } as any,
+    },
+    {
+      id: "address",
+      accessorKey: "address",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} label="Address" />
+      ),
+      cell: ({ row }) => row.getValue("address") || "-",
+      enableHiding: true,
+      meta: {
+        label: "Address",
+      } as any,
+    },
+    {
       id: "actions",
       cell: ({ row }) => (
         <MemberActionsCell

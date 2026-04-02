@@ -67,7 +67,7 @@ export function MembersTable({ members }: MembersTableProps) {
         { id: "isActiveMember", desc: true },
         { id: "lastName", desc: false },
       ],
-      columnVisibility: {},
+      columnVisibility: { postcode: false, city: false, country: false, phone: false, address: false },
     },
     enableAdvancedFilter: false,
     enableRowSelection: true,

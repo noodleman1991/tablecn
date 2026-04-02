@@ -162,7 +162,7 @@ function extractFieldsFromHashedData(
   order: any,
   productId: string,
   swapCache?: Map<string, boolean>
-): { firstName: string; lastName: string; email: string } {
+): { firstName: string; lastName: string; email: string; method: string } {
   // Try known hash key mapping first
   const mappedFields: Partial<Record<'firstName' | 'lastName' | 'email', string>> = {};
   let knownKeysMatched = 0;
@@ -180,6 +180,7 @@ function extractFieldsFromHashedData(
       firstName: mappedFields.firstName || '',
       lastName: mappedFields.lastName || '',
       email: (mappedFields.email || '').toLowerCase(),
+      method: 'known_hash',
     };
   }
 
@@ -231,6 +232,7 @@ function extractFieldsFromHashedData(
     firstName: isSwapped ? (nameFields[1] || '') : (nameFields[0] || ''),
     lastName: isSwapped ? (nameFields[0] || '') : (nameFields[1] || ''),
     email,
+    method: 'alphabetical_fallback',
   };
 }
 
@@ -249,7 +251,7 @@ function extractTicketAttendees(
   order: any,
   lineItem: any,
   swapCache?: Map<string, boolean>
-): Array<{ firstName: string; lastName: string; email: string; ticketId: string; uid: string; bookerFirstName: string; bookerLastName: string; bookerEmail: string; ticketType: string | null; billingAddress: string; billingCity: string; billingPostcode: string; billingCountry: string; billingPhone: string }> {
+): Array<{ firstName: string; lastName: string; email: string; ticketId: string; uid: string; bookerFirstName: string; bookerLastName: string; bookerEmail: string; ticketType: string | null; billingAddress: string; billingCity: string; billingPostcode: string; billingCountry: string; billingPhone: string; nameResolutionMethod: string }> {
   const attendees = [];
 
   // Extract billing address (available on all orders, not hashed)
@@ -284,17 +286,20 @@ function extractTicketAttendees(
     let firstName: string;
     let lastName: string;
     let email: string;
+    let nameResolutionMethod: string;
 
     if (htmlParsed && (htmlParsed.firstName || htmlParsed.lastName)) {
       firstName = htmlParsed.firstName;
       lastName = htmlParsed.lastName;
       email = htmlParsed.email;
+      nameResolutionMethod = 'html';
     } else {
       // Priority 2 & 3: Known hash key mapping, then alphabetical fallback
       const extracted = extractFieldsFromHashedData(fields, order, productId, swapCache);
       firstName = extracted.firstName;
       lastName = extracted.lastName;
       email = extracted.email;
+      nameResolutionMethod = extracted.method;
     }
 
     // Get ticket type from line item (same for all tickets in the line item)
@@ -316,6 +321,7 @@ function extractTicketAttendees(
       billingPostcode,
       billingCountry,
       billingPhone,
+      nameResolutionMethod,
     });
   }
 
@@ -341,6 +347,7 @@ function extractTicketAttendees(
         billingPostcode,
         billingCountry,
         billingPhone,
+        nameResolutionMethod: 'billing_fallback',
       });
     }
   }
@@ -642,6 +649,12 @@ export async function syncAttendeesForEvent(
               bookerEmail: ticket.bookerEmail,
               ticketType: ticket.ticketType, // Track ticket type (Standard, Under 30, etc.)
               orderTotal, // Per-ticket share of order total
+              billingAddress: ticket.billingAddress || null,
+              billingCity: ticket.billingCity || null,
+              billingPostcode: ticket.billingPostcode || null,
+              billingCountry: ticket.billingCountry || null,
+              billingPhone: ticket.billingPhone || null,
+              nameResolutionMethod: ticket.nameResolutionMethod,
               // NOT updating: checkedIn, checkedInAt, locallyModified, manuallyAdded
             })
             .where(eq(attendees.id, existingAttendee.id));
@@ -665,6 +678,12 @@ export async function syncAttendeesForEvent(
             bookerEmail: ticket.bookerEmail,
             ticketType: ticket.ticketType, // Track ticket type (Standard, Under 30, etc.)
             orderTotal, // Per-ticket share of order total
+            billingAddress: ticket.billingAddress || null,
+            billingCity: ticket.billingCity || null,
+            billingPostcode: ticket.billingPostcode || null,
+            billingCountry: ticket.billingCountry || null,
+            billingPhone: ticket.billingPhone || null,
+            nameResolutionMethod: ticket.nameResolutionMethod,
             manuallyAdded: false,
             locallyModified: false,
             checkedIn: false,
@@ -692,7 +711,7 @@ export async function syncAttendeesForEvent(
   }
 
   // Persist any newly discovered swaps to the database
-  const newlyDetectedSwaps: string[] = [];
+  // Persist swap detections to DB for debugging (no longer used for retroactive correction)
   try {
     for (const [productId, isSwapped] of swapCache) {
       if (!previouslyKnownSwaps.has(productId)) {
@@ -713,7 +732,7 @@ export async function syncAttendeesForEvent(
             },
           });
         if (isSwapped) {
-          newlyDetectedSwaps.push(productId);
+          console.log(`[sync-attendees] Persisted swap detection for product ${productId}`);
         }
       }
     }
@@ -721,132 +740,12 @@ export async function syncAttendeesForEvent(
     console.warn(`[sync-attendees] Failed to persist swap detections (table may not exist):`, error instanceof Error ? error.message : error);
   }
 
-  // Cross-reference heuristic: for products not yet in swapCache, check if
-  // attendee names match members better when swapped
-  try {
-    const uncheckProductIds = allProductIds.filter(id => !swapCache.has(id));
-    for (const productId of uncheckProductIds) {
-      const productAttendees = await db
-        .select()
-        .from(attendees)
-        .where(
-          and(
-            eq(attendees.eventId, eventId),
-            eq(attendees.sourceProductId, productId),
-          )
-        );
-
-      if (productAttendees.length < 2) continue;
-
-      // Batch query: fetch all matching members in one query instead of 2 per attendee
-      const emails = [...new Set(
-        productAttendees
-          .filter(a => a.firstName && a.lastName && a.email)
-          .map(a => a.email)
-      )];
-      if (emails.length === 0) continue;
-
-      const matchingMembers = await db
-        .select({ email: members.email, firstName: members.firstName, lastName: members.lastName })
-        .from(members)
-        .where(inArray(members.email, emails));
-
-      const membersByEmail = new Map<string, { firstName: string | null; lastName: string | null }>();
-      for (const m of matchingMembers) {
-        membersByEmail.set(m.email, { firstName: m.firstName, lastName: m.lastName });
-      }
-
-      let normalMatchCount = 0;
-      let swappedMatchCount = 0;
-
-      for (const att of productAttendees) {
-        if (!att.firstName || !att.lastName) continue;
-        const member = membersByEmail.get(att.email);
-        if (!member) continue;
-        if (member.firstName === att.firstName && member.lastName === att.lastName) normalMatchCount++;
-        if (member.firstName === att.lastName && member.lastName === att.firstName) swappedMatchCount++;
-      }
-
-      if (swappedMatchCount > normalMatchCount && swappedMatchCount >= 2) {
-        const confidence = swappedMatchCount / (swappedMatchCount + normalMatchCount);
-        console.log(
-          `[sync-attendees] Cross-reference detected swap for product ${productId}: ` +
-          `${swappedMatchCount} swapped matches vs ${normalMatchCount} normal (confidence: ${confidence.toFixed(2)})`
-        );
-
-        swapCache.set(productId, true);
-        await db
-          .insert(productSwapMap)
-          .values({
-            productId,
-            isSwapped: true,
-            detectionMethod: "cross_reference",
-            confidence,
-          })
-          .onConflictDoUpdate({
-            target: productSwapMap.productId,
-            set: {
-              isSwapped: true,
-              detectionMethod: "cross_reference",
-              confidence,
-            },
-          });
-        newlyDetectedSwaps.push(productId);
-      }
-    }
-  } catch (error) {
-    console.warn(`[sync-attendees] Failed to run cross-reference swap detection (table may not exist):`, error instanceof Error ? error.message : error);
-  }
-
-  // Retroactive correction: when a swap is newly detected, fix existing attendees
-  for (const productId of newlyDetectedSwaps) {
-    console.log(`[sync-attendees] Retroactively correcting names for product ${productId}`);
-    const toCorrect = await db
-      .select()
-      .from(attendees)
-      .where(
-        and(
-          eq(attendees.sourceProductId, productId),
-          eq(attendees.locallyModified, false),
-        )
-      );
-
-    for (const att of toCorrect) {
-      if (!att.firstName && !att.lastName) continue;
-
-      // Swap the names in the attendee record
-      await db
-        .update(attendees)
-        .set({
-          firstName: att.lastName,
-          lastName: att.firstName,
-        })
-        .where(eq(attendees.id, att.id));
-
-      // Also update corresponding member record if the name matches pre-swap values
-      if (att.email) {
-        const [member] = await db
-          .select()
-          .from(members)
-          .where(eq(members.email, att.email))
-          .limit(1);
-
-        if (
-          member &&
-          member.firstName === att.firstName &&
-          member.lastName === att.lastName
-        ) {
-          await db
-            .update(members)
-            .set({
-              firstName: att.lastName,
-              lastName: att.firstName,
-            })
-            .where(eq(members.id, member.id));
-        }
-      }
-    }
-  }
+  // NOTE: Cross-reference heuristic and retroactive correction were REMOVED.
+  // The per-product swap model is fundamentally broken — within the same product,
+  // some tickets are resolved via HTML parsing (correct) while others use the
+  // alphabetical fallback (may need swap). Blanket retroactive correction was
+  // swapping names that were already correct. The swap is now applied ONLY at
+  // extraction time for tickets using the alphabetical fallback path.
 
   console.log(
     `[sync-attendees] Sync complete: ${createdCount} created, ${updatedCount} updated`,
