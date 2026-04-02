@@ -8,7 +8,7 @@ import { Loader2 } from "lucide-react";
 interface EditableCellProps {
   value: string | null;
   memberId: string;
-  field: "firstName" | "lastName" | "email";
+  field: "firstName" | "lastName" | "email" | "address" | "city" | "postcode" | "country" | "phone" | "notes";
   onSave: (memberId: string, field: string, value: string) => Promise<void>;
   placeholder?: string;
   type?: "text" | "email";

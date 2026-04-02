@@ -412,6 +412,11 @@ export async function updateMemberDetails(data: {
   email?: string;
   firstName?: string;
   lastName?: string;
+  address?: string;
+  city?: string;
+  postcode?: string;
+  country?: string;
+  phone?: string;
   notes?: string;
   manualExpiresAt?: Date | null;
 }) {
@@ -437,6 +442,11 @@ export async function updateMemberDetails(data: {
   if (updates.email !== undefined) updateData.email = updates.email.toLowerCase().trim();
   if (updates.firstName !== undefined) updateData.firstName = updates.firstName.trim();
   if (updates.lastName !== undefined) updateData.lastName = updates.lastName.trim();
+  if (updates.address !== undefined) updateData.address = updates.address.trim() || null;
+  if (updates.city !== undefined) updateData.city = updates.city.trim() || null;
+  if (updates.postcode !== undefined) updateData.postcode = updates.postcode.trim() || null;
+  if (updates.country !== undefined) updateData.country = updates.country.trim() || null;
+  if (updates.phone !== undefined) updateData.phone = updates.phone.trim() || null;
   if (updates.notes !== undefined) updateData.notes = updates.notes?.trim() || null;
   if (updates.manualExpiresAt !== undefined) updateData.manualExpiresAt = updates.manualExpiresAt;
 

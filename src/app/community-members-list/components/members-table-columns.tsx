@@ -211,7 +211,15 @@ export function getMembersTableColumns(
       header: ({ column }) => (
         <DataTableColumnHeader column={column} label="Postcode" />
       ),
-      cell: ({ row }) => row.getValue("postcode") || "-",
+      cell: ({ row }) => (
+        <EditableCell
+          value={row.getValue("postcode")}
+          memberId={row.original.id}
+          field="postcode"
+          onSave={handlers.onUpdateMember}
+          placeholder="Postcode"
+        />
+      ),
       enableHiding: true,
       meta: {
         label: "Postcode",
@@ -226,7 +234,15 @@ export function getMembersTableColumns(
       header: ({ column }) => (
         <DataTableColumnHeader column={column} label="City" />
       ),
-      cell: ({ row }) => row.getValue("city") || "-",
+      cell: ({ row }) => (
+        <EditableCell
+          value={row.getValue("city")}
+          memberId={row.original.id}
+          field="city"
+          onSave={handlers.onUpdateMember}
+          placeholder="City"
+        />
+      ),
       enableHiding: true,
       meta: {
         label: "City",
@@ -238,7 +254,15 @@ export function getMembersTableColumns(
       header: ({ column }) => (
         <DataTableColumnHeader column={column} label="Country" />
       ),
-      cell: ({ row }) => row.getValue("country") || "-",
+      cell: ({ row }) => (
+        <EditableCell
+          value={row.getValue("country")}
+          memberId={row.original.id}
+          field="country"
+          onSave={handlers.onUpdateMember}
+          placeholder="Country"
+        />
+      ),
       enableHiding: true,
       meta: {
         label: "Country",
@@ -250,7 +274,15 @@ export function getMembersTableColumns(
       header: ({ column }) => (
         <DataTableColumnHeader column={column} label="Phone" />
       ),
-      cell: ({ row }) => row.getValue("phone") || "-",
+      cell: ({ row }) => (
+        <EditableCell
+          value={row.getValue("phone")}
+          memberId={row.original.id}
+          field="phone"
+          onSave={handlers.onUpdateMember}
+          placeholder="Phone"
+        />
+      ),
       enableHiding: true,
       meta: {
         label: "Phone",
@@ -262,7 +294,15 @@ export function getMembersTableColumns(
       header: ({ column }) => (
         <DataTableColumnHeader column={column} label="Address" />
       ),
-      cell: ({ row }) => row.getValue("address") || "-",
+      cell: ({ row }) => (
+        <EditableCell
+          value={row.getValue("address")}
+          memberId={row.original.id}
+          field="address"
+          onSave={handlers.onUpdateMember}
+          placeholder="Address"
+        />
+      ),
       enableHiding: true,
       meta: {
         label: "Address",
