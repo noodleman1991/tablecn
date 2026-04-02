@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Download, Mail, RefreshCw } from "lucide-react";
+import { Download, Mail } from "lucide-react";
 import type { Member } from "@/db/schema";
 import {
   exportMembersToCSV,
@@ -15,8 +15,6 @@ import { toast } from "sonner";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { MembersTable } from "./members-table";
 import { AddManualMemberDialog } from "./add-manual-member-dialog";
-import { resyncAllEvents } from "@/app/actions";
-import { BatchProgressIndicator } from "./batch-progress-indicator";
 
 interface MembersPageProps {
   members: Member[];
@@ -26,8 +24,6 @@ interface MembersPageProps {
 export function MembersPage({ members, activeMemberCount }: MembersPageProps) {
   const [isDownloading, setIsDownloading] = React.useState(false);
   const [isEmailing, setIsEmailing] = React.useState(false);
-  const [isResyncing, setIsResyncing] = React.useState(false);
-  const [showBatchProgress, setShowBatchProgress] = React.useState(false);
 
   const activeMembers = activeMemberCount;
   const totalMembers = members.length;
@@ -43,33 +39,6 @@ export function MembersPage({ members, activeMemberCount }: MembersPageProps) {
       toast.error("Failed to download CSV");
     } finally {
       setIsDownloading(false);
-    }
-  };
-
-  const handleResyncAll = async () => {
-    setIsResyncing(true);
-    try {
-      const result = await resyncAllEvents();
-      if (!result.success) {
-        toast.error(`Failed to start re-sync: ${result.error ?? "Unknown error"}`);
-        return;
-      }
-      if (result.progressTrackable) {
-        setShowBatchProgress(true);
-        toast.success(
-          "Batch re-sync started. Events will be processed in the background."
-        );
-      } else {
-        toast.success(
-          "Batch re-sync started. Progress tracking is unavailable — the job is running in the background."
-        );
-      }
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to re-sync events"
-      );
-    } finally {
-      setIsResyncing(false);
     }
   };
 
@@ -135,29 +104,11 @@ export function MembersPage({ members, activeMemberCount }: MembersPageProps) {
         </Card>
       </div>
 
-      <BatchProgressIndicator isActive={showBatchProgress} />
-
       <Card>
         <CardHeader className="flex flex-col gap-4 space-y-0 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle>Members List</CardTitle>
           <div className="flex flex-col gap-2 sm:flex-row">
             <AddManualMemberDialog />
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleResyncAll}
-                  disabled={isResyncing}
-                  className="min-h-[44px] w-full sm:w-auto gap-2"
-                >
-                  <RefreshCw className={`size-4 ${isResyncing ? "animate-spin" : ""}`} />
-                  <span className="sm:hidden">Re-sync</span>
-                  <span className="hidden sm:inline">{isResyncing ? "Re-syncing..." : "Re-sync All Events"}</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Pulls the latest ticket data from WooCommerce for every event, then recalculates all membership statuses. Runs in the background — may take a few minutes.</TooltipContent>
-            </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

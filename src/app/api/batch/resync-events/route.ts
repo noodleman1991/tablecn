@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { env } from "@/env";
 import { db } from "@/db";
-import { events } from "@/db/schema";
+import { events, resyncRuns } from "@/db/schema";
 import { and, isNotNull, isNull, sql } from "drizzle-orm";
 import { syncAttendeesForEvent } from "@/lib/sync-attendees";
 import {
@@ -23,6 +23,31 @@ const TIME_BUDGET_MS = 720_000; // stop 80s before maxDuration
 
 const JOB_TYPE = "event-resync";
 
+async function saveResyncHistory(
+  status: "completed" | "failed",
+  total: number,
+  processed: number,
+  errors: number,
+  startedAt: string,
+  startOffset: number = 0,
+  errorMessage?: string,
+) {
+  try {
+    await db.insert(resyncRuns).values({
+      jobType: JOB_TYPE,
+      status,
+      total,
+      processed,
+      errors,
+      startOffset,
+      errorMessage: errorMessage || null,
+      startedAt: new Date(startedAt),
+    });
+  } catch (err) {
+    console.error("[batch/resync-events] Failed to save resync history:", err);
+  }
+}
+
 export async function POST(request: NextRequest) {
   console.log(`[batch/resync-events] === ENTRY === ${new Date().toISOString()}`);
 
@@ -34,17 +59,36 @@ export async function POST(request: NextRequest) {
 
   const startTime = Date.now();
 
-  // Parse optional startFromOffset from request body
+  // Parse optional parameters from request body
   let requestedOffset = 0;
+  let dateFrom: string | undefined;
+  let dateTo: string | undefined;
   try {
     const body = await request.json().catch(() => ({})) as Record<string, unknown>;
     if (body.startFromOffset && typeof body.startFromOffset === "number" && body.startFromOffset > 0) {
       requestedOffset = body.startFromOffset;
       console.log(`[batch/resync-events] Requested start offset: ${requestedOffset}`);
     }
+    if (body.dateFrom && typeof body.dateFrom === "string") {
+      dateFrom = body.dateFrom;
+    }
+    if (body.dateTo && typeof body.dateTo === "string") {
+      dateTo = body.dateTo;
+    }
+    if (dateFrom || dateTo) {
+      console.log(`[batch/resync-events] Date filter: ${dateFrom ?? 'any'} to ${dateTo ?? 'any'}`);
+    }
   } catch {
-    // No body or invalid JSON — use default offset 0
+    // No body or invalid JSON — use defaults
   }
+
+  // Build WHERE conditions (shared between count and chunk queries)
+  const whereConditions = [
+    isNotNull(events.woocommerceProductId),
+    isNull(events.mergedIntoEventId),
+    ...(dateFrom ? [sql`${events.eventDate} >= ${dateFrom}::date`] : []),
+    ...(dateTo ? [sql`${events.eventDate} <= ${dateTo}::date`] : []),
+  ];
 
   try {
     let job = await getBatchJob(JOB_TYPE);
@@ -55,9 +99,7 @@ export async function POST(request: NextRequest) {
       const [countResult] = await db
         .select({ count: sql<number>`COUNT(*)::int` })
         .from(events)
-        .where(
-          and(isNotNull(events.woocommerceProductId), isNull(events.mergedIntoEventId)),
-        );
+        .where(and(...whereConditions));
       const total = countResult?.count ?? 0;
 
       if (total === 0) {
@@ -82,9 +124,7 @@ export async function POST(request: NextRequest) {
       const chunk = await db
         .select({ id: events.id, name: events.name })
         .from(events)
-        .where(
-          and(isNotNull(events.woocommerceProductId), isNull(events.mergedIntoEventId)),
-        )
+        .where(and(...whereConditions))
         .orderBy(events.createdAt)
         .offset(job.offset)
         .limit(CHUNK_SIZE);
@@ -94,8 +134,10 @@ export async function POST(request: NextRequest) {
         console.log(
           `[batch/resync-events] Job complete: ${completed?.processed} processed, ${completed?.errors} errors`,
         );
+        if (completed) {
+          await saveResyncHistory("completed", completed.total, completed.processed, completed.errors, completed.startedAt, requestedOffset);
+        }
         revalidatePath("/community-members-list");
-        // Kick off membership sync after all events are resynced
         console.log("[batch/resync-events] Triggering membership sync...");
         try {
           const syncRes = await triggerNextChunk("/api/batch/sync-memberships");
@@ -149,6 +191,9 @@ export async function POST(request: NextRequest) {
         console.log(
           `[batch/resync-events] Job complete: ${completed?.processed} processed, ${completed?.errors} errors. Starting membership sync...`,
         );
+        if (completed) {
+          await saveResyncHistory("completed", completed.total, completed.processed, completed.errors, completed.startedAt, requestedOffset);
+        }
         revalidatePath("/community-members-list");
         try {
           const syncRes = await triggerNextChunk("/api/batch/sync-memberships");
@@ -173,14 +218,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(job);
   } catch (error) {
     console.error("[batch/resync-events] Fatal error:", error);
-    await failBatchJob(
-      JOB_TYPE,
-      error instanceof Error ? error.message : "Unknown error",
-    );
+    const errMsg = error instanceof Error ? error.message : "Unknown error";
+    const failedJob = await failBatchJob(JOB_TYPE, errMsg);
+    if (failedJob) {
+      await saveResyncHistory("failed", failedJob.total, failedJob.processed, failedJob.errors, failedJob.startedAt, requestedOffset, errMsg);
+    }
     return NextResponse.json(
       {
         error: "Batch resync failed",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: errMsg,
       },
       { status: 500 },
     );

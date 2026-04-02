@@ -229,6 +229,25 @@ export const validationResults = pgTable("validation_results", {
 export type ValidationResult = typeof validationResults.$inferSelect;
 export type NewValidationResult = typeof validationResults.$inferInsert;
 
+// Resync run history table — persists batch job outcomes for review
+export const resyncRuns = pgTable("resync_runs", {
+  id: varchar("id", { length: 30 })
+    .$defaultFn(() => generateId())
+    .primaryKey(),
+  jobType: varchar("job_type", { length: 30 }).notNull(), // 'event-resync', 'membership-sync', 'loops-sync'
+  status: varchar("status", { length: 20 }).notNull(), // 'completed', 'failed'
+  total: integer("total").notNull().default(0),
+  processed: integer("processed").notNull().default(0),
+  errors: integer("errors").notNull().default(0),
+  startOffset: integer("start_offset").notNull().default(0),
+  errorMessage: varchar("error_message", { length: 500 }),
+  startedAt: timestamp("started_at").notNull(),
+  completedAt: timestamp("completed_at").defaultNow().notNull(),
+});
+
+export type ResyncRun = typeof resyncRuns.$inferSelect;
+export type NewResyncRun = typeof resyncRuns.$inferInsert;
+
 // Product swap map table - tracks which WooCommerce products have swapped first/last name fields
 export const productSwapMap = pgTable("product_swap_map", {
   productId: varchar("product_id", { length: 128 }).primaryKey(),

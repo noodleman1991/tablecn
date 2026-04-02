@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { attendees, events, members, validationResults } from "@/db/schema";
+import { attendees, events, members, validationResults, resyncRuns } from "@/db/schema";
 import { eq, and, gte, lte, isNull, isNotNull, sql, desc } from "drizzle-orm";
 import { getActiveCommunityMemberCount } from "@/lib/community-count";
 import type {
@@ -1849,4 +1849,16 @@ export async function getLastValidationRuns(
       summary: data.summary ?? { passed: 0, warnings: 0, failures: 0 },
     };
   });
+}
+
+// ─── Resync History ──────────────────────────────────────────────────────────
+
+export async function getResyncHistory(limit: number = 10) {
+  const rows = await db
+    .select()
+    .from(resyncRuns)
+    .orderBy(desc(resyncRuns.completedAt))
+    .limit(limit);
+
+  return rows;
 }

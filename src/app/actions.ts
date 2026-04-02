@@ -668,6 +668,24 @@ export async function resyncAllEvents() {
 }
 
 /**
+ * Re-sync events within a specific date range
+ */
+export async function resyncByPeriod(dateFrom: string, dateTo: string) {
+  "use server";
+
+  const { redis } = await import("@/lib/redis");
+
+  try {
+    const res = await triggerNextChunk("/api/batch/resync-events", { dateFrom, dateTo });
+    console.log(`[resyncByPeriod] Trigger response: ${res.status} (${dateFrom} to ${dateTo})`);
+    return { success: true, batchJobStarted: true, progressTrackable: !!redis };
+  } catch (error) {
+    console.error("[resyncByPeriod] Failed to trigger batch:", error);
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+  }
+}
+
+/**
  * Re-sync events starting from a specific offset (resume after failure)
  */
 export async function resyncFromOffset(startFromOffset: number) {
