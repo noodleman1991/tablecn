@@ -161,8 +161,8 @@ export async function triggerNextChunk(path: string, body?: Record<string, unkno
       });
 
       if (!res.ok) {
-        const body = await res.text().catch(() => "(unreadable)");
-        console.error(`[batch] triggerNextChunk ${isRetry ? "retry " : ""}failed: ${res.status} ${res.statusText} for ${url} — body: ${body}`);
+        const errorBody = await res.text().catch(() => "(unreadable)");
+        console.error(`[batch] triggerNextChunk ${isRetry ? "retry " : ""}failed: ${res.status} ${res.statusText} for ${url} — body: ${errorBody}`);
 
         // Retry once on non-success (e.g. 508 recursion protection, 502 cold start)
         if (!isRetry) {

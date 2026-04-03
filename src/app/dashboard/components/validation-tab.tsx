@@ -65,6 +65,12 @@ export function ValidationTab({ period }: ValidationTabProps) {
   const [resyncPeriodTo, setResyncPeriodTo] = React.useState("");
   const [resyncFromEvent, setResyncFromEvent] = React.useState("");
 
+  const isStaleJob = (job: BatchJobState | null) => {
+    if (!job || job.status !== "running") return false;
+    const lastHeartbeat = new Date(job.lastHeartbeat).getTime();
+    return Date.now() - lastHeartbeat > 30 * 60 * 1000; // 30 minutes
+  };
+
   const pollResyncStatus = React.useCallback(async () => {
     const [eventResync, membershipSync, loopsSync] = await Promise.all([
       getBatchStatus("event-resync"),
@@ -72,6 +78,19 @@ export function ValidationTab({ period }: ValidationTabProps) {
       getBatchStatus("loops-sync"),
     ]);
     setResyncJobs({ eventResync, membershipSync, loopsSync });
+
+    // Detect stale jobs — mark them as not running so UI shows failure state
+    const allJobs = [eventResync, membershipSync, loopsSync];
+    const anyStale = allJobs.some(j => isStaleJob(j));
+    if (anyStale) {
+      if (resyncIntervalRef.current) {
+        clearInterval(resyncIntervalRef.current);
+        resyncIntervalRef.current = null;
+      }
+      setIsResyncing(false);
+      getResyncHistory(10).then(setResyncHistory).catch(console.error);
+      return;
+    }
 
     const anyRunning = eventResync?.status === "running" || membershipSync?.status === "running" || loopsSync?.status === "running";
     if (!anyRunning && (eventResync || membershipSync || loopsSync)) {
@@ -176,7 +195,14 @@ export function ValidationTab({ period }: ValidationTabProps) {
   ].filter((j) => j.state !== null);
 
   const lastFailedJob = [resyncJobs.eventResync, resyncJobs.membershipSync, resyncJobs.loopsSync]
-    .find((j) => j?.status === "failed");
+    .find((j) => j?.status === "failed" || isStaleJob(j));
+
+  const getJobDisplayStatus = (state: BatchJobState) => {
+    if (isStaleJob(state)) return { label: "Stalled", className: "border-orange-300 text-orange-700" };
+    if (state.status === "running") return { label: "Running", className: "border-blue-300 text-blue-700" };
+    if (state.status === "completed") return { label: "Completed", className: "border-green-300 text-green-700" };
+    return { label: "Failed", className: "border-red-300 text-red-700" };
+  };
 
   return (
     <div className="space-y-4">
@@ -305,18 +331,14 @@ export function ValidationTab({ period }: ValidationTabProps) {
                             ({state.errors} {state.errors === 1 ? "error" : "errors"})
                           </span>
                         )}
-                        <Badge
-                          variant="outline"
-                          className={
-                            state.status === "running"
-                              ? "border-blue-300 text-blue-700"
-                              : state.status === "completed"
-                              ? "border-green-300 text-green-700"
-                              : "border-red-300 text-red-700"
-                          }
-                        >
-                          {state.status === "running" ? "Running" : state.status === "completed" ? "Completed" : "Failed"}
-                        </Badge>
+                        {(() => {
+                          const display = getJobDisplayStatus(state);
+                          return (
+                            <Badge variant="outline" className={display.className}>
+                              {display.label}
+                            </Badge>
+                          );
+                        })()}
                       </div>
                     </div>
                     <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
@@ -333,8 +355,9 @@ export function ValidationTab({ period }: ValidationTabProps) {
               {lastFailedJob && (
                 <div className="flex items-center justify-between gap-2 rounded border border-destructive/30 bg-destructive/5 p-2">
                   <p className="text-xs text-destructive">
-                    Failed at event {lastFailedJob.processed} of {lastFailedJob.total}.
-                    {lastFailedJob.error && ` Error: ${lastFailedJob.error}`}
+                    {isStaleJob(lastFailedJob)
+                      ? `Stalled at event ${lastFailedJob.processed} of ${lastFailedJob.total} \u2014 no progress for 30+ minutes.`
+                      : `Failed at event ${lastFailedJob.processed} of ${lastFailedJob.total}.${lastFailedJob.error ? ` Error: ${lastFailedJob.error}` : ""}`}
                   </p>
                   <div className="flex gap-2 shrink-0">
                     <Button
