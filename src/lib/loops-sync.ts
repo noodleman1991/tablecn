@@ -148,7 +148,7 @@ function formatMemberForLoops(member: Member) {
  * Log sync operation to database
  */
 async function logLoopsSync(
-  operation: "sync" | "remove",
+  operation: "sync" | "remove" | "recreate",
   email: string,
   status: "success" | "failed",
   memberId?: string | null,
@@ -203,20 +203,60 @@ export async function syncMemberToLoops(member: Member): Promise<boolean> {
       "GET"
     );
     if (verifyResponse.ok) {
-      const contacts = await verifyResponse.json() as Array<{ mailingLists?: Record<string, boolean> }>;
+      const contacts = await verifyResponse.json() as Array<{ mailingLists?: Record<string, boolean>; source?: string }>;
       const inList = contacts[0]?.mailingLists?.[env.LOOPS_ACTIVE_MEMBERS_LIST_ID] === true;
 
       if (!inList) {
-        console.warn(`[Loops] Contact ${member.email} synced but NOT in mailing list — deleting and recreating`);
-        // Delete the stuck contact
-        await loopsApiRequest("/contacts/delete", "POST", { email: member.email });
-        // Recreate with list membership
-        const createResponse = await loopsApiRequest("/contacts/create", "POST", contactData);
-        if (!createResponse.ok) {
-          const createError = await createResponse.text();
-          throw new Error(`Recreate failed after stuck list detection: ${createError}`);
+        const originalSource = contacts[0]?.source || "";
+
+        // First: retry update — the contact might just need re-subscribing
+        console.warn(`[Loops] Contact ${member.email} not in mailing list after update — retrying update`);
+        await loopsApiRequest("/contacts/update", "POST", {
+          ...contactData,
+          subscribed: true,
+        });
+
+        // Verify again
+        const retryVerify = await loopsApiRequest(
+          `/contacts/find?email=${encodeURIComponent(member.email)}`,
+          "GET"
+        );
+        let fixedByRetry = false;
+        if (retryVerify.ok) {
+          const retryContacts = await retryVerify.json() as Array<{ mailingLists?: Record<string, boolean> }>;
+          fixedByRetry = retryContacts[0]?.mailingLists?.[env.LOOPS_ACTIVE_MEMBERS_LIST_ID] === true;
         }
-        console.log(`[Loops] Recreated contact ${member.email} — now in mailing list`);
+
+        if (fixedByRetry) {
+          console.log(`[Loops] Retry update fixed list membership for ${member.email}`);
+          await logLoopsSync("sync", member.email, "success", member.id, "Fixed by retry update (was not in list initially)", null);
+        } else {
+          // Last resort: delete and recreate (will trigger "Contact added" Loop)
+          console.warn(`[Loops] Retry failed for ${member.email} — deleting and recreating`);
+          await loopsApiRequest("/contacts/delete", "POST", { email: member.email });
+
+          // Preserve original source: merge with "community_member"
+          let mergedSource = "community_member";
+          if (originalSource && originalSource !== "community_member") {
+            if (originalSource.includes("community_member")) {
+              mergedSource = originalSource;
+            } else {
+              mergedSource = `${originalSource}, community_member`;
+            }
+          }
+
+          const createResponse = await loopsApiRequest("/contacts/create", "POST", {
+            ...contactData,
+            source: mergedSource,
+          });
+          if (!createResponse.ok) {
+            const createError = await createResponse.text();
+            await logLoopsSync("recreate", member.email, "failed", member.id, `Recreate failed: ${createError}. Original source: ${originalSource || "none"}`, null);
+            throw new Error(`Recreate failed after stuck list detection: ${createError}`);
+          }
+          console.log(`[Loops] Recreated contact ${member.email} with source: ${mergedSource}`);
+          await logLoopsSync("recreate", member.email, "success", member.id, `Deleted and recreated. Original source: ${originalSource || "none"}`, null);
+        }
       }
     }
 
