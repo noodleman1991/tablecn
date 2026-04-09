@@ -112,9 +112,8 @@ async function loopsApiRequest(
 /**
  * Format member data for Loops API
  *
- * NOTE: We set `subscribed: true` because Loops requires contacts to be
- * subscribed before they can be added to mailing lists. Per Loops docs:
- * "You cannot add contacts to mailing lists if they are unsubscribed."
+ * SAFETY: We do NOT set `subscribed` — new contacts default to true,
+ * and sending it explicitly would re-subscribe contacts who opted out (GDPR risk).
  *
  * We do NOT set `source` to preserve the contact's original source
  * (e.g., "CSV Import", "Newsletter Signup Form"). This ensures newsletter
@@ -135,9 +134,9 @@ function formatMemberForLoops(member: Member) {
     postcode: member.postcode || "",
     country: member.country || "",
     phone: member.phone || "",
-    subscribed: true, // Required for mailing list membership
-    // source: intentionally not set - preserve original source
-    // Add to "Active Community Members" list
+    // subscribed: intentionally NOT set — new contacts default to true,
+    // and setting it explicitly re-subscribes contacts who unsubscribed
+    // source: intentionally not set — preserve original source
     mailingLists: {
       [env.LOOPS_ACTIVE_MEMBERS_LIST_ID]: true,
     },
@@ -209,12 +208,10 @@ export async function syncMemberToLoops(member: Member): Promise<boolean> {
       if (!inList) {
         const originalSource = contacts[0]?.source || "";
 
-        // First: retry update — the contact might just need re-subscribing
+        // First: retry update — the contact might need the list re-applied
+        // Do NOT send subscribed: true — it re-subscribes contacts who opted out
         console.warn(`[Loops] Contact ${member.email} not in mailing list after update — retrying update`);
-        await loopsApiRequest("/contacts/update", "POST", {
-          ...contactData,
-          subscribed: true,
-        });
+        await loopsApiRequest("/contacts/update", "POST", contactData);
 
         // Verify again
         const retryVerify = await loopsApiRequest(
@@ -289,25 +286,64 @@ export async function syncMemberToLoops(member: Member): Promise<boolean> {
 }
 
 /**
- * Remove a member from Loops.so
- * First removes from mailing list, then optionally deletes contact entirely
+ * Remove a member from the Active Community Members mailing list in Loops.so.
  *
- * @param email - Email address to remove
+ * SAFETY: Checks if the contact exists before calling /contacts/update,
+ * because /contacts/update silently creates contacts that don't exist —
+ * which triggers the "Contact added" Loop and sends unwanted welcome emails.
+ *
+ * Only removes from the active members list. Never deletes the contact,
+ * never touches other lists, never changes subscription status.
+ *
+ * @param email - Email address to remove from the active members list
  * @param memberId - Optional member ID for logging
- * @param deleteContact - Whether to delete the contact entirely (default: false, just remove from list)
- * @returns true if successful, false otherwise
+ * @returns true if successful (including skipped), false on error
  */
 export async function removeMemberFromLoops(
   email: string,
   memberId?: string,
-  deleteContact: boolean = false
 ): Promise<boolean> {
   try {
-    // Strategy 1: Remove from mailing list (keeps contact, just unsubscribes from list)
+    // Check if contact exists in Loops before doing anything.
+    // /contacts/update CREATES contacts that don't exist, which triggers
+    // the "Contact added" Loop and sends unwanted welcome emails.
+    const findResponse = await loopsApiRequest(
+      `/contacts/find?email=${encodeURIComponent(email)}`,
+      "GET"
+    );
+
+    if (!findResponse.ok) {
+      throw new Error(`Find contact failed: HTTP ${findResponse.status}`);
+    }
+
+    const contacts = await findResponse.json() as Array<{
+      id?: string;
+      source?: string;
+      subscribed?: boolean;
+      mailingLists?: Record<string, boolean>;
+    }>;
+
+    if (contacts.length === 0) {
+      console.log(`[Loops] Skipping remove for ${email} — not in Loops`);
+      await logLoopsSync("remove", email, "success", memberId || null, "Skipped: not in Loops", null);
+      return true;
+    }
+
+    const contact = contacts[0]!;
+    const onActiveList = contact.mailingLists?.[env.LOOPS_ACTIVE_MEMBERS_LIST_ID] === true;
+
+    if (!onActiveList) {
+      console.log(`[Loops] Skipping remove for ${email} — not on active members list`);
+      await logLoopsSync("remove", email, "success", memberId || null, "Skipped: not on active list", null);
+      return true;
+    }
+
+    // Contact exists and is on the active list — remove them from it.
+    // Only send mailingLists — do not touch source, subscribed, or any other field.
     const updateResponse = await loopsApiRequest("/contacts/update", "POST", {
       email,
       mailingLists: {
-        [env.LOOPS_ACTIVE_MEMBERS_LIST_ID]: false, // Unsubscribe from list
+        [env.LOOPS_ACTIVE_MEMBERS_LIST_ID]: false,
       },
     });
 
@@ -316,41 +352,15 @@ export async function removeMemberFromLoops(
       throw new Error(`HTTP ${updateResponse.status}: ${errorText}`);
     }
 
-    await logLoopsSync(
-      "remove",
-      email,
-      "success",
-      memberId || null,
-      null,
-      null
-    );
-
-    console.log(`[Loops] Successfully removed member from list: ${email}`);
-
-    // Strategy 2: Optionally delete contact entirely (use with caution)
-    if (deleteContact) {
-      const deleteResponse = await loopsApiRequest("/contacts/delete", "POST", { email });
-
-      if (!deleteResponse.ok) {
-        console.warn(`[Loops] Failed to delete contact ${email}, but list removal succeeded`);
-      } else {
-        console.log(`[Loops] Also deleted contact entirely: ${email}`);
-      }
-    }
+    await logLoopsSync("remove", email, "success", memberId || null,
+      `Removed from active list. Source: ${contact.source || "none"}`, null);
+    console.log(`[Loops] Removed ${email} from active members list`);
 
     return true;
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-
-    await logLoopsSync(
-      "remove",
-      email,
-      "failed",
-      memberId || null,
-      errorMessage
-    );
-
+    await logLoopsSync("remove", email, "failed", memberId || null, errorMessage);
     console.error(`[Loops] Failed to remove member ${email}:`, errorMessage);
     return false;
   }

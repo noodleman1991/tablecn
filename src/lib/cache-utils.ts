@@ -120,16 +120,11 @@ export async function getCacheAge(key: string): Promise<number | null> {
  * Useful for cron jobs
  */
 export async function cleanupExpiredCache(): Promise<number> {
-  try {
-    const result = await db
-      .delete(woocommerceCache)
-      .where(lt(woocommerceCache.expiresAt, new Date()));
+  const result = await db
+    .delete(woocommerceCache)
+    .where(lt(woocommerceCache.expiresAt, new Date()));
 
-    const deletedCount = (result as any).rowCount ?? 0;
-    console.log(`[cache] Cleaned up ${deletedCount} expired cache entries`);
-    return deletedCount;
-  } catch (error) {
-    console.error("[cache] Error cleaning up expired cache:", error);
-    return 0;
-  }
+  const deletedCount = (result as any).rowCount ?? 0;
+  console.log(`[cache] Cleaned up ${deletedCount} expired cache entries`);
+  return deletedCount;
 }

@@ -58,6 +58,7 @@ backup-*.json
 
 # Local files
 skills.md
+CLAUDE.md
 
 # manual fix scripts (one-time data fixes, not part of the app)
 /scripts/

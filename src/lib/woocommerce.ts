@@ -214,6 +214,10 @@ export async function getCompletedOrders() {
 export function extractEventDate(product: any): Date | null {
   // Try to extract date from product name
   const name = product.name as string;
+  if (!name || typeof name !== "string") {
+    console.warn(`[woocommerce] Product ${product.id ?? "unknown"} has no name, skipping date extraction`);
+    return null;
+  }
 
   // Pattern 1: "Event Name - DD/MM/YYYY"
   const datePattern1 = /(\d{1,2})\/(\d{1,2})\/(\d{4})/;
@@ -267,8 +271,8 @@ export function isEventProduct(product: any): boolean {
   if (product.categories) {
     const hasEventCategory = product.categories.some(
       (cat: any) =>
-        cat.name.toLowerCase().includes("event") ||
-        cat.slug.toLowerCase().includes("event"),
+        cat.name?.toLowerCase().includes("event") ||
+        cat.slug?.toLowerCase().includes("event"),
     );
     if (hasEventCategory) return true;
   }
@@ -281,8 +285,8 @@ export function isEventProduct(product: any): boolean {
   if (product.tags) {
     const hasEventTag = product.tags.some(
       (tag: any) =>
-        tag.name.toLowerCase().includes("event") ||
-        tag.slug.toLowerCase().includes("event"),
+        tag.name?.toLowerCase().includes("event") ||
+        tag.slug?.toLowerCase().includes("event"),
     );
     if (hasEventTag) return true;
   }

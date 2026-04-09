@@ -29,7 +29,7 @@ import { isMembersOnlyProduct } from "@/lib/event-patterns";
  *   }]
  * }
  */
-export const maxDuration = 300;
+export const maxDuration = 800;
 
 export async function GET(request: NextRequest) {
   // Verify cron secret

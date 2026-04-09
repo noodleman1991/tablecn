@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { env } from "@/env";
 import { cleanupExpiredCache } from "@/lib/cache-utils";
 
 /**
@@ -7,7 +8,12 @@ import { cleanupExpiredCache } from "@/lib/cache-utils";
  */
 export const maxDuration = 60;
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authHeader = request.headers.get("authorization");
+  if (authHeader !== `Bearer ${env.CRON_SECRET}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     console.log("[cron] Starting cache cleanup...");
     const deletedCount = await cleanupExpiredCache();
