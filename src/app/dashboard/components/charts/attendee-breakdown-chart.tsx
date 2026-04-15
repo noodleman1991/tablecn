@@ -62,12 +62,35 @@ export function AttendeeBreakdownChart({ byEvent, byMonth }: Props) {
   const data = React.useMemo(() => {
     return rawData.map((row) => {
       const total = row.newCount + row.returningCount + row.communityCount;
+      if (total === 0) {
+        return { ...row, total, newPct: 0, returningPct: 0, communityPct: 0 };
+      }
+      // Largest Remainder Method — guarantees integer percentages sum to 100.
+      const exactNew = (row.newCount / total) * 100;
+      const exactRet = (row.returningCount / total) * 100;
+      const exactCom = (row.communityCount / total) * 100;
+      let flNew = Math.floor(exactNew);
+      let flRet = Math.floor(exactRet);
+      let flCom = Math.floor(exactCom);
+      const remainder = 100 - flNew - flRet - flCom;
+      const fracs = [
+        { key: "new" as const, frac: exactNew - flNew },
+        { key: "ret" as const, frac: exactRet - flRet },
+        { key: "com" as const, frac: exactCom - flCom },
+      ].sort((a, b) => b.frac - a.frac);
+      for (let j = 0; j < remainder; j++) {
+        const f = fracs[j];
+        if (!f) break;
+        if (f.key === "new") flNew++;
+        else if (f.key === "ret") flRet++;
+        else flCom++;
+      }
       return {
         ...row,
         total,
-        newPct: total > 0 ? (row.newCount / total) * 100 : 0,
-        returningPct: total > 0 ? (row.returningCount / total) * 100 : 0,
-        communityPct: total > 0 ? (row.communityCount / total) * 100 : 0,
+        newPct: flNew,
+        returningPct: flRet,
+        communityPct: flCom,
       };
     });
   }, [rawData]);
@@ -291,8 +314,7 @@ function BreakdownTooltip({
   };
   if (!d) return null;
 
-  const fmtPct = (v: number) =>
-    v < 0.05 ? "0%" : `${v.toFixed(v < 10 ? 1 : 0)}%`;
+  const fmtPct = (v: number) => `${v}%`;
 
   return (
     <div className="rounded border bg-background p-2 text-sm shadow-sm">

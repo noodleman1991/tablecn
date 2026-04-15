@@ -32,10 +32,41 @@ export function NewVsReturningChart({ data, bucket }: Props) {
 
   const chartData = React.useMemo(() => {
     return data.map((r) => {
-      // Use cohort sum as denominator so percentages always total 100% even if
-      // totalCount is 0 (empty bucket) or drifts from cohort sum.
       const denom = r.newCount + r.returningCount + r.communityCount;
-      const pct = (n: number) => (denom > 0 ? (n / denom) * 100 : 0);
+      if (denom === 0) {
+        return {
+          label: r.bucketLabel,
+          bucket: r.bucket,
+          newCount: r.newCount,
+          returningCount: r.returningCount,
+          communityCount: r.communityCount,
+          totalCount: r.totalCount,
+          newPct: 0,
+          returningPct: 0,
+          communityPct: 0,
+        };
+      }
+      // Largest Remainder Method — guarantees the three integer percentages
+      // always sum to exactly 100, regardless of rounding direction.
+      const exactNew = (r.newCount / denom) * 100;
+      const exactRet = (r.returningCount / denom) * 100;
+      const exactCom = (r.communityCount / denom) * 100;
+      let flNew = Math.floor(exactNew);
+      let flRet = Math.floor(exactRet);
+      let flCom = Math.floor(exactCom);
+      const remainder = 100 - flNew - flRet - flCom;
+      const fracs = [
+        { key: "new" as const, frac: exactNew - flNew },
+        { key: "ret" as const, frac: exactRet - flRet },
+        { key: "com" as const, frac: exactCom - flCom },
+      ].sort((a, b) => b.frac - a.frac);
+      for (let j = 0; j < remainder; j++) {
+        const f = fracs[j];
+        if (!f) break;
+        if (f.key === "new") flNew++;
+        else if (f.key === "ret") flRet++;
+        else flCom++;
+      }
       return {
         label: r.bucketLabel,
         bucket: r.bucket,
@@ -43,15 +74,14 @@ export function NewVsReturningChart({ data, bucket }: Props) {
         returningCount: r.returningCount,
         communityCount: r.communityCount,
         totalCount: r.totalCount,
-        newPct: pct(r.newCount),
-        returningPct: pct(r.returningCount),
-        communityPct: pct(r.communityCount),
+        newPct: flNew,
+        returningPct: flRet,
+        communityPct: flCom,
       };
     });
   }, [data]);
 
-  const fmtPct = (v: number) =>
-    v < 0.05 ? "0%" : `${v.toFixed(v < 10 ? 1 : 0)}%`;
+  const fmtPct = (v: number) => `${v}%`;
 
   if (chartData.length === 0) {
     return (
@@ -105,7 +135,11 @@ export function NewVsReturningChart({ data, bucket }: Props) {
           <YAxis
             tick={{ fontSize: 11 }}
             domain={display === "percent" ? [0, 100] : undefined}
-            tickFormatter={display === "percent" ? (v) => `${v}%` : undefined}
+            tickFormatter={
+              display === "percent"
+                ? (v) => `${Math.round(v)}%`
+                : undefined
+            }
             allowDecimals={false}
           />
           <Tooltip

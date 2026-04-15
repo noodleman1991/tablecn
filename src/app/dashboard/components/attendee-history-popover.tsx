@@ -1,7 +1,6 @@
 "use client";
 
-import { Check, ExternalLink, X } from "lucide-react";
-import Link from "next/link";
+import { Check, X } from "lucide-react";
 import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -51,12 +50,6 @@ export function AttendeeHistoryPopover({
           </div>
           {isCommunityMember && <Badge variant="secondary">Community</Badge>}
         </div>
-        <Link
-          href={`/members?email=${encodeURIComponent(email)}`}
-          className="inline-flex items-center gap-1 text-primary text-xs hover:underline"
-        >
-          Open in Members <ExternalLink className="size-3" />
-        </Link>
       </div>
 
       <div className="max-h-64 overflow-y-auto pt-2">
