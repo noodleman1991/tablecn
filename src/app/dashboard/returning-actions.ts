@@ -138,7 +138,11 @@ export async function getRetentionRateTrend(
     );
   }
 
-  // Monthly bucket
+  // Monthly bucket — first-cohort-per-month rule.
+  // Each email gets one cohort per month based on their EARLIEST appearance that
+  // month. Guarantees new + returning + community == total (a person can't be
+  // both "new in June" and "returning in June" — they get classified once by
+  // their first June event).
   const rows = await db.execute<{
     month: string;
     new_count: string;
@@ -147,14 +151,23 @@ export async function getRetentionRateTrend(
     total_count: string;
   }>(sql`
     ${baseCTE}
+    , first_in_month AS (
+      SELECT DISTINCT ON (to_char(event_date, 'YYYY-MM'), email)
+        to_char(event_date, 'YYYY-MM') AS month,
+        email,
+        cohort
+      FROM base
+      WHERE email IS NOT NULL
+      ORDER BY to_char(event_date, 'YYYY-MM'), email, event_date
+    )
     SELECT
-      to_char(event_date, 'YYYY-MM') AS month,
-      COUNT(DISTINCT email) FILTER (WHERE cohort = 'new')::text AS new_count,
-      COUNT(DISTINCT email) FILTER (WHERE cohort = 'returning')::text AS returning_count,
-      COUNT(DISTINCT email) FILTER (WHERE cohort = 'community')::text AS community_count,
-      COUNT(DISTINCT email)::text AS total_count
-    FROM base
-    GROUP BY to_char(event_date, 'YYYY-MM')
+      month,
+      COUNT(*) FILTER (WHERE cohort = 'new')::text AS new_count,
+      COUNT(*) FILTER (WHERE cohort = 'returning')::text AS returning_count,
+      COUNT(*) FILTER (WHERE cohort = 'community')::text AS community_count,
+      COUNT(*)::text AS total_count
+    FROM first_in_month
+    GROUP BY month
     ORDER BY month
   `);
 

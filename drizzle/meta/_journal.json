@@ -92,6 +92,13 @@
       "when": 1776181189915,
       "tag": "0012_backfill_qualifying_events",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1776238282413,
+      "tag": "0013_event_status",
+      "breakpoints": true
     }
   ]
 }

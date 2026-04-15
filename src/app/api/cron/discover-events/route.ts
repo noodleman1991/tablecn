@@ -7,8 +7,9 @@ import {
   isEventProduct,
   extractEventDate,
   isQualifyingEventProduct,
+  getProductStatus,
 } from "@/lib/woocommerce";
-import { eq } from "drizzle-orm";
+import { and, eq, gt, isNull, isNotNull } from "drizzle-orm";
 import { mergeDuplicateEvents } from "@/lib/merge-events";
 import { isMembersOnlyProduct } from "@/lib/event-patterns";
 
@@ -114,6 +115,45 @@ export async function GET(request: NextRequest) {
 
     console.log(`[discover-events] Processed: ${createdCount} created, ${updatedCount} updated, ${skippedCount} skipped`);
 
+    // Reconcile upcoming events against WooCommerce. getProducts() is filtered
+    // to status=publish; anything currently-active in our DB that didn't show
+    // up there might be draft/trash/deleted. Probe each and soft-cancel if so.
+    // Past events are intentionally untouched.
+    const reconcileStart = Date.now();
+    const ingestedIds = new Set(eventProducts.map((p: any) => p.id.toString()));
+    const upcoming = await db
+      .select({ id: events.id, name: events.name, woocommerceProductId: events.woocommerceProductId })
+      .from(events)
+      .where(
+        and(
+          isNull(events.mergedIntoEventId),
+          eq(events.status, "active"),
+          gt(events.eventDate, new Date()),
+          isNotNull(events.woocommerceProductId),
+        ),
+      );
+
+    let cancelledCount = 0;
+    let probeErrorCount = 0;
+    for (const row of upcoming) {
+      if (ingestedIds.has(row.woocommerceProductId!)) continue;
+
+      const wcStatus = await getProductStatus(row.woocommerceProductId!);
+      if (wcStatus === "draft" || wcStatus === "trash" || wcStatus === "deleted") {
+        await db
+          .update(events)
+          .set({ status: "cancelled", updatedAt: new Date() })
+          .where(eq(events.id, row.id));
+        console.log(`[discover-events] Cancelled ${row.name} (WC product ${row.woocommerceProductId}) — WC status: ${wcStatus}`);
+        cancelledCount++;
+      } else if (wcStatus === "error") {
+        probeErrorCount++;
+      }
+    }
+    console.log(
+      `[discover-events] Reconciled ${upcoming.length} upcoming events in ${Date.now() - reconcileStart}ms — ${cancelledCount} cancelled, ${probeErrorCount} probe errors`,
+    );
+
     // Merge any duplicate events (standard + members-only pairs)
     console.log("[discover-events] Starting merge process...");
     const mergeResult = await mergeDuplicateEvents();
@@ -126,6 +166,11 @@ export async function GET(request: NextRequest) {
         created: createdCount,
         updated: updatedCount,
         skipped: skippedCount,
+      },
+      reconcile: {
+        upcoming: upcoming.length,
+        cancelled: cancelledCount,
+        probeErrors: probeErrorCount,
       },
       merges: {
         groupsFound: mergeResult.groupsFound,

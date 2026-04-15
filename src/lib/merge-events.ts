@@ -295,6 +295,7 @@ export async function findDuplicateEvents(): Promise<DuplicateEventGroup[]> {
     LEFT JOIN tablecn_attendees a ON e.id = a.event_id
     WHERE e.woocommerce_product_id IS NOT NULL
       AND e.merged_into_event_id IS NULL
+      AND e.status = 'active'
       AND LENGTH(TRIM(e.name)) > 0
     GROUP BY e.id, e.name, e.event_date, e.woocommerce_product_id, e.is_qualifying_event, e.created_at, e.updated_at
     ORDER BY e.event_date DESC
@@ -309,6 +310,7 @@ export async function findDuplicateEvents(): Promise<DuplicateEventGroup[]> {
     mergedProductIds: [] as string[],
     isMembersOnlyProduct: isMembersOnlyProduct(row.name),
     isQualifyingEvent: row.is_qualifying_event ?? true,
+    status: "active" as const,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
     attendeeCount: parseInt(row.attendee_count || "0"),

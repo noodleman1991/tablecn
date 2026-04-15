@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { events, attendees } from "@/db/schema";
-import { like, sql, and, isNull } from "drizzle-orm";
+import { like, sql, and, isNull, eq } from "drizzle-orm";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -14,7 +14,8 @@ export async function GET(request: Request) {
     .where(
       and(
         like(events.name, `%${query}%`),
-        isNull(events.mergedIntoEventId)
+        isNull(events.mergedIntoEventId),
+        eq(events.status, "active"),
       )
     )
     .orderBy(sql`${events.eventDate} DESC`)

@@ -31,6 +31,12 @@ export const events = pgTable("events", {
   // (present → true, absent → false). On update: left untouched by the
   // discover-events cron, so manual DB fixes are sticky.
   isQualifyingEvent: boolean("is_qualifying_event").default(true),
+  // Lifecycle status. "cancelled" = soft-deleted because the WC product moved
+  // to draft/trash or was hard-deleted (404). Only upcoming events are ever
+  // auto-cancelled; past events are immutable.
+  status: varchar("status", { length: 20, enum: ["active", "cancelled"] })
+    .default("active")
+    .notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .default(sql`current_timestamp`)

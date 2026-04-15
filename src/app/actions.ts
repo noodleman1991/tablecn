@@ -17,7 +17,7 @@ export async function getEvents() {
   return await db
     .select()
     .from(events)
-    .where(isNull(events.mergedIntoEventId))
+    .where(and(isNull(events.mergedIntoEventId), eq(events.status, "active")))
     .orderBy(desc(events.eventDate));
 }
 
@@ -35,7 +35,8 @@ export async function getFutureEvents() {
     .where(
       and(
         gte(events.eventDate, today),
-        isNull(events.mergedIntoEventId)
+        isNull(events.mergedIntoEventId),
+        eq(events.status, "active"),
       )
     )
     .orderBy(events.eventDate);
@@ -55,7 +56,8 @@ export async function getPastEvents() {
     .where(
       and(
         lt(events.eventDate, today),
-        isNull(events.mergedIntoEventId)
+        isNull(events.mergedIntoEventId),
+        eq(events.status, "active"),
       )
     )
     .orderBy(desc(events.eventDate));

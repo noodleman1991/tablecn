@@ -26,6 +26,7 @@ export async function getActiveCommunityMemberCount(
         AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
         AND e.merged_into_event_id IS NULL
         AND e.is_qualifying_event = true
+        AND e.status = 'active'
       ORDER BY LOWER(a.email), e.id
     ),
     countable_checkins AS (

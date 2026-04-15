@@ -2,16 +2,19 @@
 
 import * as React from "react";
 import {
+  Area,
+  AreaChart,
   Bar,
-  Line,
+  CartesianGrid,
   ComposedChart,
+  Legend,
+  Line,
+  Tooltip,
   XAxis,
   YAxis,
-  Tooltip,
-  Legend,
 } from "recharts";
-import { ChartContainer, type ChartConfig } from "@/components/ui/chart";
-import { Button } from "@/components/ui/button";
+import { type ChartConfig, ChartContainer } from "@/components/ui/chart";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 const chartConfig = {
   newCount: { label: "New", color: "var(--chart-2)" },
@@ -41,130 +44,287 @@ interface ByMonth {
   cumulativeCommunity: number;
 }
 
+type ViewMode = "event" | "month";
+type Display = "count" | "percent";
+
 interface Props {
   byEvent: ByEvent[];
   byMonth: ByMonth[];
 }
 
 export function AttendeeBreakdownChart({ byEvent, byMonth }: Props) {
-  const [viewMode, setViewMode] = React.useState<"event" | "month">("event");
+  const [viewMode, setViewMode] = React.useState<ViewMode>("event");
+  const [display, setDisplay] = React.useState<Display>("count");
 
-  const data = viewMode === "event" ? byEvent : byMonth;
-
-  if (data.length === 0) {
-    return <p className="text-sm text-muted-foreground text-center py-8">No data available</p>;
-  }
-
+  const rawData = viewMode === "event" ? byEvent : byMonth;
   const xKey = viewMode === "event" ? "date" : "month";
 
-  return (
-    <div>
-      <p className="text-xs text-muted-foreground mb-2">
-        Total Community = people with 3+ countable events (within 9 months of last event) plus manually added members
+  const data = React.useMemo(() => {
+    return rawData.map((row) => {
+      const total = row.newCount + row.returningCount + row.communityCount;
+      return {
+        ...row,
+        total,
+        newPct: total > 0 ? (row.newCount / total) * 100 : 0,
+        returningPct: total > 0 ? (row.returningCount / total) * 100 : 0,
+        communityPct: total > 0 ? (row.communityCount / total) * 100 : 0,
+      };
+    });
+  }, [rawData]);
+
+  if (data.length === 0) {
+    return (
+      <p className="py-8 text-center text-muted-foreground text-sm">
+        No data available
       </p>
-      <div className="flex gap-1 mb-4">
-        <Button
-          variant={viewMode === "event" ? "default" : "outline"}
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <ToggleGroup
+          type="single"
+          value={viewMode}
+          onValueChange={(v) => {
+            if (v) setViewMode(v as ViewMode);
+          }}
           size="sm"
-          onClick={() => setViewMode("event")}
+          variant="outline"
         >
-          By Event
-        </Button>
-        <Button
-          variant={viewMode === "month" ? "default" : "outline"}
+          <ToggleGroupItem value="event">By Event</ToggleGroupItem>
+          <ToggleGroupItem value="month">By Month</ToggleGroupItem>
+        </ToggleGroup>
+        <ToggleGroup
+          type="single"
+          value={display}
+          onValueChange={(v) => {
+            if (v) setDisplay(v as Display);
+          }}
           size="sm"
-          onClick={() => setViewMode("month")}
+          variant="outline"
         >
-          By Month
-        </Button>
+          <ToggleGroupItem value="count">Count</ToggleGroupItem>
+          <ToggleGroupItem value="percent">%</ToggleGroupItem>
+        </ToggleGroup>
       </div>
-      <ChartContainer config={chartConfig} className="h-[300px] w-full">
-        <ComposedChart data={data}>
-          <XAxis
-            dataKey={xKey}
-            tick={{ fontSize: 10 }}
-            tickFormatter={(v) => {
-              if (viewMode === "event") {
-                const d = new Date(v);
-                return `${d.getDate()}/${d.getMonth() + 1}`;
+      <p className="text-muted-foreground text-xs">
+        {display === "count"
+          ? "Stacked bars: attendees by cohort. Line: running total of active community members."
+          : "100% stacked: each bar shows the mix of new / returning / community among attendees."}
+      </p>
+      <ChartContainer config={chartConfig} className="h-[320px] w-full">
+        {display === "count" ? (
+          <ComposedChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} />
+            <XAxis
+              dataKey={xKey}
+              tick={{ fontSize: 10 }}
+              tickFormatter={(v) => {
+                if (viewMode === "event") {
+                  const d = new Date(v);
+                  return `${d.getDate()}/${d.getMonth() + 1}`;
+                }
+                return v;
+              }}
+              angle={-45}
+              textAnchor="end"
+              height={70}
+              interval={data.length > 30 ? Math.floor(data.length / 15) : 0}
+            />
+            <YAxis
+              yAxisId="left"
+              tick={{ fontSize: 11 }}
+              allowDecimals={false}
+              label={{
+                value: "Attendees",
+                angle: -90,
+                position: "insideLeft",
+                style: { fontSize: 11, fill: "var(--muted-foreground)" },
+              }}
+            />
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              tick={{ fontSize: 11 }}
+              allowDecimals={false}
+              label={{
+                value: "Community total",
+                angle: 90,
+                position: "insideRight",
+                style: { fontSize: 11, fill: "var(--muted-foreground)" },
+              }}
+            />
+            <Tooltip
+              content={
+                <BreakdownTooltip viewMode={viewMode} display={display} />
               }
-              return v;
-            }}
-            angle={-45}
-            textAnchor="end"
-            height={60}
-            interval={data.length > 30 ? Math.floor(data.length / 15) : 0}
-          />
-          <YAxis
-            yAxisId="left"
-            tick={{ fontSize: 11 }}
-            allowDecimals={false}
-          />
-          <YAxis
-            yAxisId="right"
-            orientation="right"
-            tick={{ fontSize: 11 }}
-            allowDecimals={false}
-          />
-          <Tooltip
-            content={({ active, payload }) => {
-              if (!active || !payload?.length) return null;
-              const d = payload[0]?.payload;
-              return (
-                <div className="rounded border bg-background p-2 text-sm shadow-sm">
-                  {viewMode === "event" ? (
-                    <>
-                      <p className="font-medium">{d.eventName}</p>
-                      <p className="text-muted-foreground">{d.date}</p>
-                    </>
-                  ) : (
-                    <p className="font-medium">{d.month}</p>
-                  )}
-                  <p style={{ color: "var(--chart-2)" }}>New: {d.newCount}</p>
-                  <p style={{ color: "var(--chart-3)" }}>Returning: {d.returningCount}</p>
-                  <p style={{ color: "var(--chart-4)" }}>Community: {d.communityCount}</p>
-                  <hr className="my-1 border-border" />
-                  <p>Community gained: +{d.communityGained}</p>
-                  <p>Community lost: −{d.communityLost}</p>
-                  <p style={{ color: "var(--chart-1)" }}>Total community: {d.cumulativeCommunity}</p>
-                </div>
-              );
-            }}
-          />
-          <Legend />
-          <Bar
-            yAxisId="left"
-            dataKey="newCount"
-            fill="var(--color-newCount)"
-            stackId="stack"
-            name="New"
-          />
-          <Bar
-            yAxisId="left"
-            dataKey="returningCount"
-            fill="var(--color-returningCount)"
-            stackId="stack"
-            name="Returning"
-          />
-          <Bar
-            yAxisId="left"
-            dataKey="communityCount"
-            fill="var(--color-communityCount)"
-            stackId="stack"
-            radius={[4, 4, 0, 0]}
-            name="Community"
-          />
-          <Line
-            yAxisId="right"
-            type="monotone"
-            dataKey="cumulativeCommunity"
-            stroke="var(--color-cumulativeCommunity)"
-            strokeWidth={2}
-            dot={{ r: 3 }}
-            name="Total Community"
-          />
-        </ComposedChart>
+            />
+            <Legend />
+            <Bar
+              yAxisId="left"
+              dataKey="newCount"
+              fill="var(--color-newCount)"
+              stackId="stack"
+              name="New"
+            />
+            <Bar
+              yAxisId="left"
+              dataKey="returningCount"
+              fill="var(--color-returningCount)"
+              stackId="stack"
+              name="Returning"
+            />
+            <Bar
+              yAxisId="left"
+              dataKey="communityCount"
+              fill="var(--color-communityCount)"
+              stackId="stack"
+              radius={[4, 4, 0, 0]}
+              name="Community"
+            />
+            <Line
+              yAxisId="right"
+              type="monotone"
+              dataKey="cumulativeCommunity"
+              stroke="var(--color-cumulativeCommunity)"
+              strokeWidth={2}
+              dot={{ r: 3 }}
+              name="Total Community"
+            />
+          </ComposedChart>
+        ) : (
+          <AreaChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} />
+            <XAxis
+              dataKey={xKey}
+              tick={{ fontSize: 10 }}
+              tickFormatter={(v) => {
+                if (viewMode === "event") {
+                  const d = new Date(v);
+                  return `${d.getDate()}/${d.getMonth() + 1}`;
+                }
+                return v;
+              }}
+              angle={-45}
+              textAnchor="end"
+              height={70}
+              interval={data.length > 30 ? Math.floor(data.length / 15) : 0}
+            />
+            <YAxis
+              tick={{ fontSize: 11 }}
+              domain={[0, 100]}
+              tickFormatter={(v) => `${v}%`}
+              label={{
+                value: "Share of attendees",
+                angle: -90,
+                position: "insideLeft",
+                style: { fontSize: 11, fill: "var(--muted-foreground)" },
+              }}
+            />
+            <Tooltip
+              content={
+                <BreakdownTooltip viewMode={viewMode} display={display} />
+              }
+            />
+            <Legend />
+            <Area
+              type="monotone"
+              dataKey="newPct"
+              stackId="1"
+              stroke="var(--color-newCount)"
+              fill="var(--color-newCount)"
+              fillOpacity={0.75}
+              name="New"
+            />
+            <Area
+              type="monotone"
+              dataKey="returningPct"
+              stackId="1"
+              stroke="var(--color-returningCount)"
+              fill="var(--color-returningCount)"
+              fillOpacity={0.75}
+              name="Returning"
+            />
+            <Area
+              type="monotone"
+              dataKey="communityPct"
+              stackId="1"
+              stroke="var(--color-communityCount)"
+              fill="var(--color-communityCount)"
+              fillOpacity={0.75}
+              name="Community"
+            />
+          </AreaChart>
+        )}
       </ChartContainer>
+    </div>
+  );
+}
+
+function BreakdownTooltip({
+  active,
+  payload,
+  viewMode,
+  display,
+}: {
+  active?: boolean;
+  payload?: Array<{ payload: Record<string, unknown> }>;
+  viewMode: ViewMode;
+  display: Display;
+}) {
+  if (!active || !payload?.length) return null;
+  const d = payload[0]?.payload as {
+    eventName?: string;
+    date?: string;
+    month?: string;
+    newCount: number;
+    returningCount: number;
+    communityCount: number;
+    total: number;
+    newPct: number;
+    returningPct: number;
+    communityPct: number;
+    communityGained: number;
+    communityLost: number;
+    cumulativeCommunity: number;
+  };
+  if (!d) return null;
+
+  const fmtPct = (v: number) =>
+    v < 0.05 ? "0%" : `${v.toFixed(v < 10 ? 1 : 0)}%`;
+
+  return (
+    <div className="rounded border bg-background p-2 text-sm shadow-sm">
+      {viewMode === "event" ? (
+        <>
+          <p className="font-medium">{d.eventName}</p>
+          <p className="text-muted-foreground text-xs">{d.date}</p>
+        </>
+      ) : (
+        <p className="font-medium">{d.month}</p>
+      )}
+      <p className="text-muted-foreground text-xs">Total: {d.total}</p>
+      <hr className="my-1 border-border" />
+      <p style={{ color: "var(--chart-2)" }}>
+        New: {d.newCount} ({fmtPct(d.newPct)})
+      </p>
+      <p style={{ color: "var(--chart-3)" }}>
+        Returning: {d.returningCount} ({fmtPct(d.returningPct)})
+      </p>
+      <p style={{ color: "var(--chart-4)" }}>
+        Community: {d.communityCount} ({fmtPct(d.communityPct)})
+      </p>
+      {display === "count" && (
+        <>
+          <hr className="my-1 border-border" />
+          <p className="text-xs">Community gained: +{d.communityGained}</p>
+          <p className="text-xs">Community lost: −{d.communityLost}</p>
+          <p style={{ color: "var(--chart-1)" }}>
+            Total community: {d.cumulativeCommunity}
+          </p>
+        </>
+      )}
     </div>
   );
 }

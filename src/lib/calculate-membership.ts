@@ -42,6 +42,7 @@ export async function recalculateMembershipForMember(memberId: string) {
         not(inArray(attendees.orderStatus, ["cancelled", "refunded", "deleted", "failed"])),
         isNull(events.mergedIntoEventId),
         eq(events.isQualifyingEvent, true),
+        eq(events.status, "active"),
       ),
     )
     .orderBy(sql`${events.eventDate} DESC`);
@@ -62,6 +63,7 @@ export async function recalculateMembershipForMember(memberId: string) {
         not(inArray(attendees.orderStatus, ["cancelled", "refunded", "deleted", "failed"])),
         isNull(events.mergedIntoEventId),
         eq(events.isQualifyingEvent, true),
+        eq(events.status, "active"),
         gte(events.eventDate, nineMonthsAgo),
       ),
     );

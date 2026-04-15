@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Download, X } from "lucide-react";
+import { Download } from "lucide-react";
 import dynamic from "next/dynamic";
 import * as React from "react";
 import { toast } from "sonner";
@@ -16,7 +16,6 @@ import {
 import { getReturningAttendeesForExport } from "../actions";
 import {
   getNewVsReturningEnhanced,
-  getRetentionRateTrend,
   getSuperAttendees,
 } from "../returning-actions";
 import type {
@@ -28,14 +27,6 @@ import type {
 } from "../types";
 import { ReturningDefinitionsPanel } from "./returning-definitions-panel";
 import { SuperAttendeesLeaderboard } from "./super-attendees-leaderboard";
-
-const RetentionRateTrendChart = dynamic(
-  () =>
-    import("./charts/retention-rate-trend-chart").then(
-      (m) => m.RetentionRateTrendChart,
-    ),
-  { ssr: false, loading: () => <Skeleton className="h-[320px] w-full" /> },
-);
 
 const NewVsReturningChart = dynamic(
   () =>
@@ -50,7 +41,7 @@ const AttendeeBreakdownChart = dynamic(
     import("./charts/attendee-breakdown-chart").then(
       (m) => m.AttendeeBreakdownChart,
     ),
-  { ssr: false, loading: () => <Skeleton className="h-[300px] w-full" /> },
+  { ssr: false, loading: () => <Skeleton className="h-[320px] w-full" /> },
 );
 
 interface Props {
@@ -64,36 +55,13 @@ interface Props {
 
 export function ReturningSection({ period, analytics }: Props) {
   const [mode, setMode] = React.useState<ReturningMode>("attendance");
-  const [trendBucket, setTrendBucket] = React.useState<"event" | "month">(
-    "event",
-  );
   const [nvrBucket, setNvrBucket] = React.useState<"event" | "month">("event");
 
-  const [retentionData, setRetentionData] = React.useState<CohortRow[] | null>(
-    null,
-  );
   const [nvrData, setNvrData] = React.useState<CohortRow[] | null>(null);
   const [leaderboard, setLeaderboard] = React.useState<SuperAttendee[] | null>(
     null,
   );
-  const [bannerDismissed, setBannerDismissed] = React.useState(false);
   const [downloading, setDownloading] = React.useState(false);
-
-  // Fetch retention trend when period/mode/bucket change
-  React.useEffect(() => {
-    let cancelled = false;
-    setRetentionData(null);
-    getRetentionRateTrend(period, mode, trendBucket)
-      .then((d) => {
-        if (!cancelled) setRetentionData(d);
-      })
-      .catch((e) =>
-        console.error("[returning] retention trend load failed:", e),
-      );
-    return () => {
-      cancelled = true;
-    };
-  }, [period, mode, trendBucket]);
 
   // Fetch new-vs-returning when period/mode/bucket change
   React.useEffect(() => {
@@ -124,17 +92,6 @@ export function ReturningSection({ period, analytics }: Props) {
       cancelled = true;
     };
   }, [period, mode]);
-
-  // Reset dismissed banner when mode/period changes
-  React.useEffect(() => {
-    setBannerDismissed(false);
-  }, [mode, period]);
-
-  const hasMismatch = React.useMemo(() => {
-    const rowsA = retentionData ?? [];
-    const rowsB = nvrData ?? [];
-    return rowsA.some((r) => r.hasMismatch) || rowsB.some((r) => r.hasMismatch);
-  }, [retentionData, nvrData]);
 
   const handleDownloadCSV = async () => {
     setDownloading(true);
@@ -173,68 +130,14 @@ export function ReturningSection({ period, analytics }: Props) {
         </p>
       </div>
 
-      {hasMismatch && !bannerDismissed && (
-        <div className="flex items-start gap-3 rounded border border-destructive/60 bg-destructive/10 p-3 md:col-span-2">
-          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
-          <div className="flex-1 text-sm">
-            <p className="font-medium text-destructive">
-              Data consistency warning
-            </p>
-            <p className="text-muted-foreground">
-              One or more events have cohort sums that don&apos;t match the
-              total attendee count. Check server logs for details, then re-sync
-              affected events.
-            </p>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setBannerDismissed(true)}
-            className="h-6 w-6 shrink-0 p-0"
-            aria-label="Dismiss warning"
-          >
-            <X className="size-4" />
-          </Button>
-        </div>
-      )}
-
       <ReturningDefinitionsPanel mode={mode} onModeChange={setMode} />
 
       <Card className="md:col-span-2">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">Retention Rate Trend</CardTitle>
-          <ToggleGroup
-            type="single"
-            value={trendBucket}
-            onValueChange={(v) => {
-              if (v) setTrendBucket(v as "event" | "month");
-            }}
-            size="sm"
-            variant="outline"
-          >
-            <ToggleGroupItem value="event">By Event</ToggleGroupItem>
-            <ToggleGroupItem value="month">By Month</ToggleGroupItem>
-          </ToggleGroup>
-        </CardHeader>
-        <CardContent>
-          {retentionData === null ? (
-            <Skeleton className="h-[320px] w-full" />
-          ) : (
-            <RetentionRateTrendChart
-              data={retentionData}
-              bucket={trendBucket}
-            />
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
         <CardHeader>
-          <CardTitle className="text-base">
-            Super-Attendees Leaderboard
-          </CardTitle>
+          <CardTitle className="text-base">Most Frequent Attendees</CardTitle>
           <p className="text-muted-foreground text-xs">
-            Most frequent attendees in the selected period (min. 2 events).
+            Top 20 by events attended in the selected period (min. 2 events).
+            Click a row to see their event history.
           </p>
         </CardHeader>
         <CardContent>
@@ -242,8 +145,8 @@ export function ReturningSection({ period, analytics }: Props) {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+      <Card className="md:col-span-2">
+        <CardHeader className="flex flex-row items-center justify-between gap-3">
           <CardTitle className="text-base">New vs Returning</CardTitle>
           <ToggleGroup
             type="single"
@@ -268,7 +171,7 @@ export function ReturningSection({ period, analytics }: Props) {
       </Card>
 
       <Card className="md:col-span-2">
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-row items-center justify-between gap-3">
           <CardTitle className="text-base">Attendee Breakdown</CardTitle>
           <Button
             variant="outline"

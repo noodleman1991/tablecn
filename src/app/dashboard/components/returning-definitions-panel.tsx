@@ -1,5 +1,6 @@
 "use client";
 
+import { Info } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import type { ReturningMode } from "../types";
@@ -12,84 +13,83 @@ interface Props {
 export function ReturningDefinitionsPanel({ mode, onModeChange }: Props) {
   return (
     <Card className="md:col-span-2">
-      <CardContent className="space-y-4 pt-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h3 className="font-semibold text-base">
+      <CardContent className="space-y-5 pt-6">
+        <div className="flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="space-y-0.5">
+            <h3 className="flex items-center gap-1.5 font-semibold text-sm">
+              <Info className="size-3.5 text-muted-foreground" />
               How these metrics are calculated
             </h3>
             <p className="text-muted-foreground text-xs">
               Definitions apply to every chart in this section.
             </p>
           </div>
-          <ToggleGroup
-            type="single"
-            value={mode}
-            onValueChange={(v) => {
-              if (v) onModeChange(v as ReturningMode);
-            }}
-            size="sm"
-            variant="outline"
-          >
-            <ToggleGroupItem value="attendance" aria-label="Attendance-based">
-              Attendance-based
-            </ToggleGroupItem>
-            <ToggleGroupItem value="purchase" aria-label="Purchase-based">
-              Purchase-based
-            </ToggleGroupItem>
-          </ToggleGroup>
+          <div className="flex flex-col items-start gap-1 sm:items-end">
+            <ToggleGroup
+              type="single"
+              value={mode}
+              onValueChange={(v) => {
+                if (v) onModeChange(v as ReturningMode);
+              }}
+              size="sm"
+              variant="outline"
+            >
+              <ToggleGroupItem
+                value="attendance"
+                aria-label="Count by attendance"
+              >
+                Attended
+              </ToggleGroupItem>
+              <ToggleGroupItem value="purchase" aria-label="Count by purchase">
+                Purchased
+              </ToggleGroupItem>
+            </ToggleGroup>
+            <p className="text-muted-foreground text-xs">
+              {mode === "attendance"
+                ? "Counts only people who checked in."
+                : "Counts all ticket buyers (check-in not required)."}
+            </p>
+          </div>
         </div>
 
-        <dl className="grid gap-3 text-sm sm:grid-cols-2">
-          <div>
-            <dt className="font-medium">New attendee</dt>
-            <dd className="text-muted-foreground">
-              First time attending a Kairos event in the selected period.
-              Identified by email (case-insensitive).
+        <dl className="grid gap-x-6 gap-y-4 text-sm sm:grid-cols-2">
+          <div className="space-y-0.5">
+            <dt className="font-medium">New</dt>
+            <dd className="text-muted-foreground text-xs leading-relaxed">
+              First-ever Kairos event in the selected period. Matched by email
+              (case-insensitive).
             </dd>
           </div>
-          <div>
-            <dt className="font-medium">Returning attendee</dt>
-            <dd className="text-muted-foreground">
-              Has attended at least one earlier Kairos event (before the current
-              event&apos;s date). Excludes community members, who are counted
-              separately.
+          <div className="space-y-0.5">
+            <dt className="font-medium">Returning</dt>
+            <dd className="text-muted-foreground text-xs leading-relaxed">
+              Attended at least one earlier Kairos event. Not currently an
+              active community member.
             </dd>
           </div>
-          <div>
-            <dt className="font-medium">Community member</dt>
-            <dd className="text-muted-foreground">
-              Returning attendee currently marked as an active community member.
+          <div className="space-y-0.5">
+            <dt className="font-medium">Community</dt>
+            <dd className="text-muted-foreground text-xs leading-relaxed">
+              Returning attendee who is currently an active community member.
             </dd>
           </div>
-          <div>
+          <div className="space-y-0.5">
             <dt className="font-medium">
-              Denominator (&ldquo;all ticket holders&rdquo;)
+              Denominator (&ldquo;all attendees&rdquo;)
             </dt>
-            <dd className="text-muted-foreground">
-              {mode === "attendance" ? (
-                <>
-                  All <span className="font-medium">checked-in</span> attendees
-                  for the event. Tickets bought but never checked in are not
-                  counted.
-                </>
-              ) : (
-                <>
-                  All ticket <span className="font-medium">purchasers</span> for
-                  the event, regardless of whether they checked in.
-                </>
-              )}
-            </dd>
-          </div>
-          <div className="sm:col-span-2">
-            <dt className="font-medium">Excluded orders</dt>
-            <dd className="text-muted-foreground">
-              Cancelled, refunded, soft-deleted, and payment-failed orders.
-              Merged duplicate events are also excluded &mdash; only the
-              surviving event counts.
+            <dd className="text-muted-foreground text-xs leading-relaxed">
+              {mode === "attendance"
+                ? "Distinct checked-in people per event (or per month, using each person's first cohort of the month)."
+                : "Distinct ticket buyers per event (or per month, using each person's first cohort of the month)."}
             </dd>
           </div>
         </dl>
+
+        <p className="border-t pt-3 text-[11px] text-muted-foreground leading-relaxed">
+          Excludes cancelled, refunded, soft-deleted, and payment-failed orders,
+          and merged duplicate events. Monthly view uses first-cohort-per-month
+          so each person is classified once per month.
+        </p>
       </CardContent>
     </Card>
   );

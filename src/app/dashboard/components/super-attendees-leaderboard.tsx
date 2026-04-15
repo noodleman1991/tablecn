@@ -58,11 +58,23 @@ export function SuperAttendeesLeaderboard({ data }: Props) {
     }
   };
 
+  // Rank map — preserved from the default eventsAttended-desc order so rank
+  // doesn't flip when user re-sorts by name or last-seen.
+  const rankByEmail = React.useMemo(() => {
+    if (!data) return new Map<string, number>();
+    const rankSorted = [...data].sort(
+      (a, b) => b.eventsAttended - a.eventsAttended,
+    );
+    const m = new Map<string, number>();
+    rankSorted.forEach((s, i) => m.set(s.email, i + 1));
+    return m;
+  }, [data]);
+
   if (data === null) {
     return (
       <div className="space-y-2">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <Skeleton key={i} className="h-9 w-full" />
+        {Array.from({ length: 12 }).map((_, i) => (
+          <Skeleton key={i} className="h-11 w-full" />
         ))}
       </div>
     );
@@ -77,8 +89,9 @@ export function SuperAttendeesLeaderboard({ data }: Props) {
   }
 
   return (
-    <div className="space-y-1">
-      <div className="grid grid-cols-[1fr_auto_auto] gap-3 border-b px-2 pb-1 font-medium text-muted-foreground text-xs uppercase tracking-wide">
+    <div>
+      <div className="grid grid-cols-[2.25rem_1fr_6rem_5rem] items-center gap-3 border-b px-2 pb-1.5 font-medium text-muted-foreground text-xs uppercase tracking-wide">
+        <span className="text-right">#</span>
         <SortButton
           label="Attendee"
           active={sortKey === "name"}
@@ -100,41 +113,55 @@ export function SuperAttendeesLeaderboard({ data }: Props) {
           className="justify-end"
         />
       </div>
-      <ul className="space-y-0.5">
+      <ul className="divide-y">
         {sorted?.map((s) => {
           const name = `${s.firstName} ${s.lastName}`.trim();
           const displayName = name || s.email;
           const barWidth = (s.eventsAttended / maxEvents) * 100;
+          const rank = rankByEmail.get(s.email) ?? 0;
           return (
             <li key={s.email}>
               <Popover>
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    className="grid w-full grid-cols-[1fr_auto_auto] items-center gap-3 rounded px-2 py-1.5 text-left transition-colors hover:bg-accent"
+                    className="grid w-full grid-cols-[2.25rem_1fr_6rem_5rem] items-center gap-3 px-2 py-2 text-left transition-colors hover:bg-accent/60 focus-visible:bg-accent focus-visible:outline-none"
                   >
+                    <span
+                      className={cn(
+                        "text-right font-medium text-sm tabular-nums",
+                        rank <= 3 ? "text-foreground" : "text-muted-foreground",
+                      )}
+                    >
+                      {rank}
+                    </span>
                     <div className="relative min-w-0">
                       <span
-                        className="absolute inset-y-0 left-0 rounded bg-primary/10"
+                        className={cn(
+                          "absolute inset-y-1 left-0 rounded-sm transition-colors",
+                          rank <= 3 ? "bg-primary/20" : "bg-primary/10",
+                        )}
                         style={{ width: `${barWidth}%` }}
                         aria-hidden="true"
                       />
-                      <span className="relative flex items-center gap-2">
-                        <span className="truncate text-sm">{displayName}</span>
+                      <span className="relative flex items-center gap-2 px-1">
+                        <span className="truncate font-medium text-sm">
+                          {displayName}
+                        </span>
                         {s.isCommunityMember && (
                           <Badge
                             variant="secondary"
-                            className="h-4 px-1 text-[10px]"
+                            className="h-5 shrink-0 px-1.5 text-[10px]"
                           >
                             Community
                           </Badge>
                         )}
                       </span>
                     </div>
-                    <span className="font-medium text-sm tabular-nums">
+                    <span className="text-right font-semibold text-sm tabular-nums">
                       {s.eventsAttended}
                     </span>
-                    <span className="text-muted-foreground text-xs tabular-nums">
+                    <span className="text-right text-muted-foreground text-xs tabular-nums">
                       {formatShortDate(s.lastEventDate)}
                     </span>
                   </button>

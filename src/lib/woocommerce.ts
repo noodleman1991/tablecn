@@ -37,6 +37,7 @@ export async function getProducts() {
       const response = await woocommerce.get("products", {
         per_page: perPage,
         page: page,
+        status: "publish",
       });
 
       const products = response.data;
@@ -58,6 +59,32 @@ export async function getProducts() {
   } catch (error) {
     console.error("Error fetching WooCommerce products:", error);
     throw error;
+  }
+}
+
+/**
+ * Probe the current WC status of a single product.
+ * Returns "deleted" for a 404 (product hard-deleted), "error" for any other
+ * failure so callers can skip reconciliation instead of acting on a transient
+ * blip.
+ */
+export type WooProductStatus =
+  | "publish"
+  | "draft"
+  | "pending"
+  | "private"
+  | "trash"
+  | "deleted"
+  | "error";
+
+export async function getProductStatus(productId: string): Promise<WooProductStatus> {
+  try {
+    const res = await woocommerce.get(`products/${productId}`);
+    return (res.data?.status as WooProductStatus) ?? "error";
+  } catch (error: any) {
+    if (error?.response?.status === 404) return "deleted";
+    console.warn(`[woocommerce] getProductStatus(${productId}) failed:`, error?.message ?? error);
+    return "error";
   }
 }
 

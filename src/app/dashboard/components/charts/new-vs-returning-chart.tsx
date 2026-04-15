@@ -32,7 +32,10 @@ export function NewVsReturningChart({ data, bucket }: Props) {
 
   const chartData = React.useMemo(() => {
     return data.map((r) => {
-      const total = r.totalCount || 1; // avoid div/0 in percent mode display
+      // Use cohort sum as denominator so percentages always total 100% even if
+      // totalCount is 0 (empty bucket) or drifts from cohort sum.
+      const denom = r.newCount + r.returningCount + r.communityCount;
+      const pct = (n: number) => (denom > 0 ? (n / denom) * 100 : 0);
       return {
         label: r.bucketLabel,
         bucket: r.bucket,
@@ -40,12 +43,15 @@ export function NewVsReturningChart({ data, bucket }: Props) {
         returningCount: r.returningCount,
         communityCount: r.communityCount,
         totalCount: r.totalCount,
-        newPct: (r.newCount / total) * 100,
-        returningPct: (r.returningCount / total) * 100,
-        communityPct: (r.communityCount / total) * 100,
+        newPct: pct(r.newCount),
+        returningPct: pct(r.returningCount),
+        communityPct: pct(r.communityCount),
       };
     });
   }, [data]);
+
+  const fmtPct = (v: number) =>
+    v < 0.05 ? "0%" : `${v.toFixed(v < 10 ? 1 : 0)}%`;
 
   if (chartData.length === 0) {
     return (
@@ -113,13 +119,13 @@ export function NewVsReturningChart({ data, bucket }: Props) {
                   <p className="text-muted-foreground">Total: {d.totalCount}</p>
                   <hr className="my-1 border-border" />
                   <p style={{ color: "var(--chart-2)" }}>
-                    New: {d.newCount} ({d.newPct.toFixed(1)}%)
+                    New: {d.newCount} ({fmtPct(d.newPct)})
                   </p>
                   <p style={{ color: "var(--chart-3)" }}>
-                    Returning: {d.returningCount} ({d.returningPct.toFixed(1)}%)
+                    Returning: {d.returningCount} ({fmtPct(d.returningPct)})
                   </p>
                   <p style={{ color: "var(--chart-4)" }}>
-                    Community: {d.communityCount} ({d.communityPct.toFixed(1)}%)
+                    Community: {d.communityCount} ({fmtPct(d.communityPct)})
                   </p>
                 </div>
               );

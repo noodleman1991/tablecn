@@ -28,10 +28,6 @@ const TopEventsChart = dynamic(
   () => import("./charts/top-events-chart").then((m) => m.TopEventsChart),
   { ssr: false, loading: () => <Skeleton className="h-[300px] w-full" /> },
 );
-const TopBuyersChart = dynamic(
-  () => import("./charts/top-buyers-chart").then((m) => m.TopBuyersChart),
-  { ssr: false, loading: () => <Skeleton className="h-[300px] w-full" /> },
-);
 
 interface AnalyticsTabProps {
   period: PeriodFilter;
@@ -105,21 +101,12 @@ export function AnalyticsTab({ period }: AnalyticsTabProps) {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="md:col-span-2">
         <CardHeader>
           <CardTitle className="text-base">Top Events by Attendance</CardTitle>
         </CardHeader>
         <CardContent>
           <TopEventsChart data={data.topEvents} />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Top Buyers by Orders</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <TopBuyersChart data={data.topBuyers} />
         </CardContent>
       </Card>
 

@@ -61,6 +61,7 @@ export async function getDashboardStats(
       WHERE ${events.eventDate} >= ${isoDate(from)}
         AND ${events.eventDate} <= ${isoDate(to)}
         AND ${events.mergedIntoEventId} IS NULL
+        AND ${events.status} = 'active'
     )
     SELECT
       COUNT(DISTINCT pe.id)::text AS events_count,
@@ -129,6 +130,7 @@ export async function getFunnelByEvent(
     WHERE e.event_date >= ${isoDate(from)}
       AND e.event_date <= ${isoDate(to)}
       AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
     GROUP BY e.id
     ORDER BY e.event_date DESC
   `);
@@ -145,6 +147,7 @@ export async function getFunnelByEvent(
     WHERE e.event_date >= ${isoDate(from)}
       AND e.event_date <= ${isoDate(to)}
       AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
       AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
     GROUP BY a.event_id, INITCAP(REPLACE(COALESCE(a.ticket_type, 'unknown'), '-', ' '))
   `);
@@ -166,6 +169,7 @@ export async function getFunnelByEvent(
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
         AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
       GROUP BY LOWER(a.email)
     )
     SELECT a.event_id, COUNT(DISTINCT LOWER(a.email))::text AS cnt
@@ -176,6 +180,7 @@ export async function getFunnelByEvent(
       AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
       AND e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
       AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
       AND fe.first_date < e.event_date
     GROUP BY a.event_id
   `);
@@ -196,6 +201,7 @@ export async function getFunnelByEvent(
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
         AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
       GROUP BY LOWER(a.email)
     )
     SELECT a.event_id, COUNT(DISTINCT LOWER(a.email))::text AS new_count
@@ -206,6 +212,7 @@ export async function getFunnelByEvent(
       AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
       AND e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
       AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
       AND fe.first_date = e.event_date
     GROUP BY a.event_id
   `);
@@ -229,6 +236,7 @@ export async function getFunnelByEvent(
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
         AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
         AND e.is_qualifying_event = true
       ORDER BY LOWER(a.email), e.id
     ),
@@ -265,6 +273,8 @@ export async function getFunnelByEvent(
       FROM ${events}
       WHERE event_date >= ${isoDate(from)} AND event_date <= ${isoDate(to)}
         AND merged_into_event_id IS NULL
+      AND status = 'active'
+        AND status = 'active'
     ),
     member_last_countable AS (
       SELECT LOWER(a.email) AS email, MAX(e.event_date) AS last_countable_date
@@ -273,6 +283,7 @@ export async function getFunnelByEvent(
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
         AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
         AND e.is_qualifying_event = true
       GROUP BY LOWER(a.email)
       HAVING COUNT(DISTINCT e.id) >= 3
@@ -342,6 +353,7 @@ export async function getFunnelByMonth(
     WHERE e.event_date >= ${isoDate(from)}
       AND e.event_date <= ${isoDate(to)}
       AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
     GROUP BY TO_CHAR(e.event_date, 'YYYY-MM')
     ORDER BY month DESC
   `);
@@ -361,6 +373,7 @@ export async function getFunnelByMonth(
     WHERE e.event_date >= ${isoDate(from)}
       AND e.event_date <= ${isoDate(to)}
       AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
       AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
     GROUP BY TO_CHAR(e.event_date, 'YYYY-MM'), INITCAP(REPLACE(COALESCE(a.ticket_type, 'unknown'), '-', ' '))
   `);
@@ -382,6 +395,7 @@ export async function getFunnelByMonth(
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
         AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
       GROUP BY LOWER(a.email)
     )
     SELECT
@@ -394,6 +408,7 @@ export async function getFunnelByMonth(
       AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
       AND e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
       AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
       AND fe.first_date < e.event_date
     GROUP BY TO_CHAR(e.event_date, 'YYYY-MM')
   `);
@@ -414,6 +429,7 @@ export async function getFunnelByMonth(
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
         AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
       GROUP BY LOWER(a.email)
     )
     SELECT
@@ -426,6 +442,7 @@ export async function getFunnelByMonth(
       AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
       AND e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
       AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
       AND fe.first_date = e.event_date
     GROUP BY TO_CHAR(e.event_date, 'YYYY-MM')
   `);
@@ -449,6 +466,7 @@ export async function getFunnelByMonth(
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
         AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
         AND e.is_qualifying_event = true
       ORDER BY LOWER(a.email), e.id
     ),
@@ -483,6 +501,7 @@ export async function getFunnelByMonth(
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
         AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
         AND e.is_qualifying_event = true
       GROUP BY LOWER(a.email)
       HAVING COUNT(DISTINCT e.id) >= 3
@@ -542,6 +561,7 @@ export async function getAnalyticsData(
     LEFT JOIN ${attendees} a ON a.event_id = e.id
     WHERE e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
       AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
     GROUP BY e.id, e.name, e.event_date
     ORDER BY e.event_date
   `);
@@ -556,6 +576,7 @@ export async function getAnalyticsData(
     INNER JOIN ${events} e ON e.id = a.event_id
     WHERE e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
       AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
       AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
     GROUP BY INITCAP(REPLACE(COALESCE(a.ticket_type, 'unknown'), '-', ' '))
     ORDER BY COUNT(*) DESC
@@ -572,6 +593,7 @@ export async function getAnalyticsData(
     LEFT JOIN ${attendees} a ON a.event_id = e.id
     WHERE e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
       AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
     GROUP BY TO_CHAR(e.event_date, 'YYYY-MM')
     ORDER BY month
   `);
@@ -588,6 +610,7 @@ export async function getAnalyticsData(
     LEFT JOIN ${attendees} a ON a.event_id = e.id
     WHERE e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
       AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
     GROUP BY e.id, e.name, e.event_date
     ORDER BY COUNT(a.id) FILTER (WHERE a.checked_in = true AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')) DESC
     LIMIT 10
@@ -606,6 +629,7 @@ export async function getAnalyticsData(
     INNER JOIN ${events} e ON e.id = a.event_id
     WHERE e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
       AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
       AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
       AND a.booker_email IS NOT NULL AND a.booker_email != ''
     GROUP BY a.booker_email
@@ -627,6 +651,7 @@ export async function getAnalyticsData(
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
         AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
       GROUP BY a.email
     )
     SELECT e.name, e.event_date::text,
@@ -639,6 +664,7 @@ export async function getAnalyticsData(
     LEFT JOIN first_events fe ON LOWER(fe.email) = LOWER(a.email)
     WHERE e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
       AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
     GROUP BY e.id, e.name, e.event_date
     ORDER BY e.event_date
   `);
@@ -660,6 +686,7 @@ export async function getAnalyticsData(
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
         AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
       GROUP BY a.email
     )
     SELECT e.name, e.event_date::text,
@@ -674,6 +701,7 @@ export async function getAnalyticsData(
     LEFT JOIN ${members} m ON LOWER(m.email) = LOWER(a.email)
     WHERE e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
       AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
     GROUP BY e.id, e.name, e.event_date
     ORDER BY e.event_date
   `);
@@ -694,6 +722,7 @@ export async function getAnalyticsData(
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
         AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
         AND e.is_qualifying_event = true
       ORDER BY LOWER(a.email), e.id
     ),
@@ -733,6 +762,8 @@ export async function getAnalyticsData(
       FROM ${events}
       WHERE event_date >= ${isoDate(from)} AND event_date <= ${isoDate(to)}
         AND merged_into_event_id IS NULL
+      AND status = 'active'
+        AND status = 'active'
     ),
     member_last_countable AS (
       SELECT LOWER(a.email) AS email, MAX(e.event_date) AS last_countable_date
@@ -741,6 +772,7 @@ export async function getAnalyticsData(
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
         AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
         AND e.is_qualifying_event = true
       GROUP BY LOWER(a.email)
       HAVING COUNT(DISTINCT e.id) >= 3
@@ -776,6 +808,7 @@ export async function getAnalyticsData(
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
         AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
         AND e.is_qualifying_event = true
       ORDER BY LOWER(a.email), e.id
     ),
@@ -806,6 +839,8 @@ export async function getAnalyticsData(
       FROM ${events}
       WHERE event_date >= ${isoDate(from)} AND event_date <= ${isoDate(to)}
         AND merged_into_event_id IS NULL
+      AND status = 'active'
+        AND status = 'active'
       ORDER BY event_date
     )
     SELECT pe.event_date::text,
@@ -850,6 +885,9 @@ export async function getAnalyticsData(
   });
 
   // Attendee breakdown by month
+  // Monthly breakdown uses first-cohort-per-month rule so new+returning+community==total.
+  // Same rule as returning-actions.ts::getRetentionRateTrend monthly branch — keeps
+  // Attendee Breakdown numbers aligned with New-vs-Returning across all views.
   const breakdownByMonthRows = await db.execute<{
     month: string;
     new_count: string;
@@ -857,27 +895,51 @@ export async function getAnalyticsData(
     community_count: string;
   }>(sql`
     WITH first_events AS (
-      SELECT a.email, MIN(e.event_date) AS first_date
+      SELECT LOWER(a.email) AS email, MIN(e.event_date) AS first_date
       FROM ${attendees} a
       INNER JOIN ${events} e ON e.id = a.event_id
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
+        AND a.email IS NOT NULL AND a.email != ''
         AND e.merged_into_event_id IS NULL
-      GROUP BY a.email
+        AND e.status = 'active'
+      GROUP BY LOWER(a.email)
+    ),
+    base AS (
+      SELECT
+        e.event_date,
+        LOWER(a.email) AS email,
+        CASE
+          WHEN fe.first_date = e.event_date THEN 'new'
+          WHEN m.is_active_member = true    THEN 'community'
+          ELSE 'returning'
+        END AS cohort
+      FROM ${events} e
+      LEFT JOIN ${attendees} a ON a.event_id = e.id
+        AND a.checked_in = true
+        AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
+        AND a.email IS NOT NULL AND a.email != ''
+      LEFT JOIN first_events fe ON fe.email = LOWER(a.email)
+      LEFT JOIN ${members} m ON LOWER(m.email) = LOWER(a.email)
+      WHERE e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
+        AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
+    ),
+    first_in_month AS (
+      SELECT DISTINCT ON (TO_CHAR(event_date, 'YYYY-MM'), email)
+        TO_CHAR(event_date, 'YYYY-MM') AS month,
+        email,
+        cohort
+      FROM base
+      WHERE email IS NOT NULL
+      ORDER BY TO_CHAR(event_date, 'YYYY-MM'), email, event_date
     )
-    SELECT TO_CHAR(e.event_date, 'YYYY-MM') AS month,
-      COUNT(DISTINCT a.email) FILTER (WHERE fe.first_date = e.event_date)::text AS new_count,
-      COUNT(DISTINCT a.email) FILTER (WHERE fe.first_date < e.event_date AND (m.is_active_member IS NULL OR m.is_active_member = false))::text AS returning_count,
-      COUNT(DISTINCT a.email) FILTER (WHERE fe.first_date < e.event_date AND m.is_active_member = true)::text AS community_count
-    FROM ${events} e
-    LEFT JOIN ${attendees} a ON a.event_id = e.id
-      AND a.checked_in = true
-      AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
-    LEFT JOIN first_events fe ON LOWER(fe.email) = LOWER(a.email)
-    LEFT JOIN ${members} m ON LOWER(m.email) = LOWER(a.email)
-    WHERE e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
-      AND e.merged_into_event_id IS NULL
-    GROUP BY TO_CHAR(e.event_date, 'YYYY-MM')
+    SELECT month,
+      COUNT(*) FILTER (WHERE cohort = 'new')::text AS new_count,
+      COUNT(*) FILTER (WHERE cohort = 'returning')::text AS returning_count,
+      COUNT(*) FILTER (WHERE cohort = 'community')::text AS community_count
+    FROM first_in_month
+    GROUP BY month
     ORDER BY month
   `);
 
@@ -896,6 +958,7 @@ export async function getAnalyticsData(
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
         AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
         AND e.is_qualifying_event = true
       ORDER BY LOWER(a.email), e.id
     ),
@@ -930,6 +993,7 @@ export async function getAnalyticsData(
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
         AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
         AND e.is_qualifying_event = true
       GROUP BY LOWER(a.email)
       HAVING COUNT(DISTINCT e.id) >= 3
@@ -962,6 +1026,7 @@ export async function getAnalyticsData(
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
         AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
         AND e.is_qualifying_event = true
       ORDER BY LOWER(a.email), e.id
     ),
@@ -1130,6 +1195,7 @@ export async function getReturningAttendeesForExport(
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
         AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
       GROUP BY a.email
     )
     SELECT
@@ -1146,6 +1212,7 @@ export async function getReturningAttendeesForExport(
     WHERE a.checked_in = true
       AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
       AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
       AND e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
       AND fe.first_date < e.event_date
     GROUP BY a.email
@@ -1184,6 +1251,7 @@ export async function getReturningDetailsForEvent(eventId: string): Promise<
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
         AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
       GROUP BY LOWER(a.email)
     )
     SELECT DISTINCT ON (LOWER(a.email))
@@ -1224,6 +1292,7 @@ export async function getNewAttendeesForEvent(
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
         AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
       GROUP BY a.email
     )
     SELECT DISTINCT
@@ -1268,6 +1337,7 @@ export async function getCommunityDetailsForEvent(eventId: string): Promise<{
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
         AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
         AND e.is_qualifying_event = true
       ORDER BY LOWER(a.email), e.id
     ),
@@ -1306,6 +1376,7 @@ export async function getCommunityDetailsForEvent(eventId: string): Promise<{
     FROM ${events}
     WHERE event_date < ${eventDate}
       AND merged_into_event_id IS NULL
+      AND status = 'active'
   `);
   const prevArr = prevEventRow as any[];
   const prevDate = prevArr[0]?.prev_date;
@@ -1322,6 +1393,7 @@ export async function getCommunityDetailsForEvent(eventId: string): Promise<{
       WHERE a.checked_in = true
         AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
         AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
         AND e.is_qualifying_event = true
       GROUP BY LOWER(a.email)
       HAVING COUNT(DISTINCT e.id) >= 3
@@ -1363,6 +1435,7 @@ export async function runQuickValidation(
     FROM ${events} e
     WHERE e.woocommerce_product_id IS NOT NULL
       AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
       AND e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
       AND NOT EXISTS (SELECT 1 FROM ${attendees} a WHERE a.event_id = e.id)
   `);
@@ -1392,6 +1465,7 @@ export async function runQuickValidation(
     INNER JOIN ${events} e ON e.id = a.event_id
     WHERE e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
       AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
     GROUP BY a.event_id, e.name
     HAVING COUNT(*) FILTER (WHERE a.ticket_id LIKE '%-fallback-%') > 0
   `);
@@ -1423,6 +1497,7 @@ export async function runQuickValidation(
     WHERE a.checked_in = true
       AND e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
       AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
       AND NOT EXISTS (SELECT 1 FROM ${members} m WHERE LOWER(m.email) = LOWER(a.email))
   `);
   const gaps = memberGapRows as any[];
@@ -1552,11 +1627,13 @@ export async function runQuickValidation(
       (SELECT COUNT(*)::text FROM ${attendees} a INNER JOIN ${events} e ON e.id = a.event_id
        WHERE (a.email IS NULL OR a.email = '')
          AND e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
-         AND e.merged_into_event_id IS NULL) AS empty_email,
+         AND e.merged_into_event_id IS NULL
+        AND e.status = 'active') AS empty_email,
       (SELECT COUNT(*)::text FROM ${attendees} a INNER JOIN ${events} e ON e.id = a.event_id
        WHERE (a.first_name IS NULL OR a.first_name = '') AND (a.last_name IS NULL OR a.last_name = '')
          AND e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
-         AND e.merged_into_event_id IS NULL) AS empty_name,
+         AND e.merged_into_event_id IS NULL
+        AND e.status = 'active') AS empty_name,
       (SELECT COUNT(*)::text FROM ${members} m
        WHERE NOT EXISTS (SELECT 1 FROM ${attendees} a WHERE LOWER(a.email) = LOWER(m.email))) AS orphan_members
   `);
@@ -1603,6 +1680,7 @@ export async function runQuickValidation(
     INNER JOIN ${events} e ON e.id = a.event_id
     WHERE e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
       AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
   `);
   const ra = revenueAuditRows[0] as any;
   const raTotalAttendees = parseInt(ra?.total_attendees ?? "0");
@@ -1629,7 +1707,11 @@ export async function runQuickValidation(
     ],
   });
 
-  // 8. Returning Attendees Consistency — verify cohort invariant holds across every event
+  // 8. Returning Attendees Consistency — per-event cohort invariant.
+  // Only checked per-event: the invariant is mathematical truth at the event
+  // grain (each email has exactly one cohort per event). Monthly buckets use
+  // first-cohort-per-month in the UI and don't need a parallel check — the
+  // SQL structure makes a mismatch impossible there too.
   const cohortRows = await db.execute<{
     event_name: string;
     new_count: string;
@@ -1642,6 +1724,8 @@ export async function runQuickValidation(
       FROM ${attendees} a
       INNER JOIN ${events} e ON e.id = a.event_id
       WHERE e.merged_into_event_id IS NULL
+        AND e.status = 'active'
+      AND e.status = 'active'
         AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
         AND a.email IS NOT NULL AND a.email != ''
         AND a.checked_in = true
@@ -1667,6 +1751,7 @@ export async function runQuickValidation(
       LEFT JOIN ${members} m ON LOWER(m.email) = LOWER(a.email)
       WHERE e.event_date >= ${isoDate(from)} AND e.event_date <= ${isoDate(to)}
         AND e.merged_into_event_id IS NULL
+        AND e.status = 'active'
     )
     SELECT
       event_name,
@@ -1768,6 +1853,7 @@ export async function runDeepValidation(
       and(
         isNotNull(events.woocommerceProductId),
         isNull(events.mergedIntoEventId),
+        eq(events.status, "active"),
         gte(events.eventDate, from),
         lte(events.eventDate, to),
       ),
@@ -1945,6 +2031,7 @@ export async function runDeepValidation(
     FROM ${attendees} a
     INNER JOIN ${events} e ON e.id = a.event_id
     WHERE e.merged_into_event_id IS NULL
+      AND e.status = 'active'
       AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
       AND a.email IS NOT NULL AND a.email != ''
     GROUP BY LOWER(a.email)
