@@ -80,6 +80,34 @@ export interface AnalyticsData {
   }>;
 }
 
+export type ReturningMode = "attendance" | "purchase";
+
+export interface CohortRow {
+  bucket: string;
+  bucketLabel: string;
+  newCount: number;
+  returningCount: number;
+  communityCount: number;
+  totalCount: number;
+  hasMismatch: boolean;
+}
+
+export interface SuperAttendee {
+  email: string;
+  firstName: string;
+  lastName: string;
+  eventsAttended: number;
+  lastEventDate: string;
+  isCommunityMember: boolean;
+}
+
+export interface AttendeeHistoryEntry {
+  eventId: string;
+  eventName: string;
+  eventDate: string;
+  checkedIn: boolean;
+}
+
 export interface ValidationCheck {
   name: string;
   status: "pass" | "warn" | "fail";

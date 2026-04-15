@@ -120,38 +120,34 @@ product {
   tags: [{ id, name, slug }]
   attributes: [{
     id: number
-    name: string                 // e.g., "Qualifying event for community membership"
-    slug: string                 // e.g., "pa_qualifying-event"
+    name: string                 // e.g., "Ticket Type"
+    slug: string                 // e.g., "pa_ticket-type"
     position: number
     visible: boolean
     variation: boolean
-    options: string[]            // e.g., ["True"] or ["False"]
+    options: string[]
   }]
   variations: number[]           // Array of variation IDs (for variable products)
   meta_data: [{ key, value }]    // Includes event_date in various formats
 }
 ```
 
-### Qualifying Event Signals
+### Qualifying Event Signal
 
-Two independent WooCommerce signals determine if an event qualifies for community membership:
+A single WooCommerce signal determines if an event qualifies for community membership:
 
-**1. Product Attribute: `pa_qualifying-event`** — "Qualifying event for community membership"
-- Options: `"True"` or `"False"` (string values, not booleans)
-- Explicit opt-in/opt-out per product
-- Attribute `"False"` takes precedence over category (explicit non-qualifying)
-
-**2. Product Category: `qualifying-for-community-membership`** (id: 128)
+**Product Category: `qualifying-for-community-membership`** (id: 128)
 - Slug: `qualifying-for-community-membership`
-- Presence of this category = event qualifies
-- Can be used as a batch signal (assign category to multiple products at once)
+- Presence of this category on the product → event qualifies.
+- Absence → does not qualify.
 
-**Resolution logic** (in `extractQualifyingEventAttribute()`):
-- Attribute `"False"` → not qualifying (takes precedence)
-- Attribute `"True"` OR category present → qualifying
-- Neither set → null (defaults to qualifying, unless legacy backfill marked otherwise)
+Resolution (in `isQualifyingEventProduct()` in `src/lib/woocommerce.ts`): returns `true` iff the category is present, otherwise `false`.
 
 Stored as `is_qualifying_event` boolean in the `events` DB table.
+
+**Insert-only from cron.** The `discover-events` cron sets `is_qualifying_event` only when creating a new row. On subsequent runs, the column is left untouched — manual DB fixes and the backfill migration (`0012_backfill_qualifying_events.sql`) are sticky.
+
+> The previous `pa_qualifying-event` product attribute is retired (2026-04-14); the category is now the sole signal.
 
 **`pa_ticket-type`** — "Ticket Type"
 - Options: `"Standard"`, `"Under 30"`, `"Under 25"`, `"Struggling Financially"`, `"With Donation"`, `"Supporter"`, `"I Have a Credit"`

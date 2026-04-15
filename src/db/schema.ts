@@ -26,9 +26,10 @@ export const events = pgTable("events", {
   mergedProductIds: jsonb("merged_product_ids").$type<string[]>().default([]),
   // NEW: Track if this was a members-only product in WooCommerce
   isMembersOnlyProduct: boolean("is_members_only_product").default(false),
-  // Whether this event qualifies for community membership calculation
-  // Driven by WooCommerce product attribute "pa_qualifying-event"
-  // Default true: events qualify unless explicitly marked otherwise
+  // Whether this event qualifies for community membership calculation.
+  // On insert: set from the WooCommerce category "qualifying-for-community-membership"
+  // (present → true, absent → false). On update: left untouched by the
+  // discover-events cron, so manual DB fixes are sticky.
   isQualifyingEvent: boolean("is_qualifying_event").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")

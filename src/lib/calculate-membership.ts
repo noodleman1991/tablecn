@@ -39,7 +39,7 @@ export async function recalculateMembershipForMember(memberId: string) {
       and(
         eq(attendees.email, memberData.email),
         eq(attendees.checkedIn, true),
-        not(inArray(attendees.orderStatus, ["cancelled", "refunded", "deleted"])),
+        not(inArray(attendees.orderStatus, ["cancelled", "refunded", "deleted", "failed"])),
         isNull(events.mergedIntoEventId),
         eq(events.isQualifyingEvent, true),
       ),
@@ -59,7 +59,7 @@ export async function recalculateMembershipForMember(memberId: string) {
       and(
         eq(attendees.email, memberData.email),
         eq(attendees.checkedIn, true),
-        not(inArray(attendees.orderStatus, ["cancelled", "refunded", "deleted"])),
+        not(inArray(attendees.orderStatus, ["cancelled", "refunded", "deleted", "failed"])),
         isNull(events.mergedIntoEventId),
         eq(events.isQualifyingEvent, true),
         gte(events.eventDate, nineMonthsAgo),

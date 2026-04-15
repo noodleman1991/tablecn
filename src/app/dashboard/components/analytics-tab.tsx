@@ -1,22 +1,18 @@
 "use client";
 
-import * as React from "react";
 import dynamic from "next/dynamic";
+import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Download } from "lucide-react";
-import { toast } from "sonner";
-import { getAnalyticsData, getReturningAttendeesForExport } from "../actions";
-import {
-  exportReturningAttendeesToCSV,
-  generateReturningFilename,
-  downloadCSV,
-} from "@/lib/csv-export";
-import type { PeriodFilter, AnalyticsData } from "../types";
+import { getAnalyticsData } from "../actions";
+import type { AnalyticsData, PeriodFilter } from "../types";
+import { ReturningSection } from "./returning-section";
 
 const AttendanceTrendChart = dynamic(
-  () => import("./charts/attendance-trend-chart").then((m) => m.AttendanceTrendChart),
+  () =>
+    import("./charts/attendance-trend-chart").then(
+      (m) => m.AttendanceTrendChart,
+    ),
   { ssr: false, loading: () => <Skeleton className="h-[300px] w-full" /> },
 );
 
@@ -36,14 +32,6 @@ const TopBuyersChart = dynamic(
   () => import("./charts/top-buyers-chart").then((m) => m.TopBuyersChart),
   { ssr: false, loading: () => <Skeleton className="h-[300px] w-full" /> },
 );
-const NewVsReturningChart = dynamic(
-  () => import("./charts/new-vs-returning-chart").then((m) => m.NewVsReturningChart),
-  { ssr: false, loading: () => <Skeleton className="h-[300px] w-full" /> },
-);
-const AttendeeBreakdownChart = dynamic(
-  () => import("./charts/attendee-breakdown-chart").then((m) => m.AttendeeBreakdownChart),
-  { ssr: false, loading: () => <Skeleton className="h-[300px] w-full" /> },
-);
 
 interface AnalyticsTabProps {
   period: PeriodFilter;
@@ -52,7 +40,6 @@ interface AnalyticsTabProps {
 export function AnalyticsTab({ period }: AnalyticsTabProps) {
   const [data, setData] = React.useState<AnalyticsData | null>(null);
   const [loading, setLoading] = React.useState(true);
-  const [downloading, setDownloading] = React.useState(false);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -67,30 +54,10 @@ export function AnalyticsTab({ period }: AnalyticsTabProps) {
         if (!cancelled) setLoading(false);
       });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [period]);
-
-  const handleDownloadCSV = async () => {
-    setDownloading(true);
-    try {
-      const attendees = await getReturningAttendeesForExport(period);
-      if (attendees.length === 0) {
-        toast.error("No returning attendees found for this period");
-        return;
-      }
-      const csv = exportReturningAttendeesToCSV(attendees);
-      const fromDate = period.from instanceof Date ? period.from : new Date(period.from);
-      const toDate = period.to instanceof Date ? period.to : new Date(period.to);
-      const filename = generateReturningFilename(fromDate, toDate);
-      downloadCSV(csv, filename);
-      toast.success(`Downloaded ${attendees.length} returning attendees`);
-    } catch (err) {
-      console.error("Failed to export returning attendees:", err);
-      toast.error("Failed to export returning attendees");
-    } finally {
-      setDownloading(false);
-    }
-  };
 
   if (loading || !data) {
     return (
@@ -156,30 +123,13 @@ export function AnalyticsTab({ period }: AnalyticsTabProps) {
         </CardContent>
       </Card>
 
-      <Card className="md:col-span-2">
-        <CardHeader>
-          <CardTitle className="text-base">New vs Returning Attendees</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <NewVsReturningChart data={data.newVsReturning} />
-        </CardContent>
-      </Card>
-
-      <Card className="md:col-span-2">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">Attendee Breakdown</CardTitle>
-          <Button variant="outline" size="sm" onClick={handleDownloadCSV} disabled={downloading}>
-            <Download className="size-4" />
-            <span className="hidden sm:inline">Download Returning CSV</span>
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <AttendeeBreakdownChart
-            byEvent={data.attendeeBreakdownByEvent}
-            byMonth={data.attendeeBreakdownByMonth}
-          />
-        </CardContent>
-      </Card>
+      <ReturningSection
+        period={period}
+        analytics={{
+          attendeeBreakdownByEvent: data.attendeeBreakdownByEvent,
+          attendeeBreakdownByMonth: data.attendeeBreakdownByMonth,
+        }}
+      />
     </div>
   );
 }

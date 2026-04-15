@@ -23,7 +23,7 @@ export async function getActiveCommunityMemberCount(
       FROM ${attendees} a
       INNER JOIN ${events} e ON e.id = a.event_id
       WHERE a.checked_in = true
-        AND a.order_status NOT IN ('cancelled','refunded','deleted')
+        AND a.order_status NOT IN ('cancelled','refunded','deleted','failed')
         AND e.merged_into_event_id IS NULL
         AND e.is_qualifying_event = true
       ORDER BY LOWER(a.email), e.id

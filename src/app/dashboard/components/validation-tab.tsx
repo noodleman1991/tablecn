@@ -1,25 +1,38 @@
 "use client";
 
+import { RefreshCw } from "lucide-react";
 import * as React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import {
+  getBatchStatus,
+  resyncAllEvents,
+  resyncByPeriod,
+  resyncFromOffset,
+} from "@/app/actions";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Skeleton } from "@/components/ui/skeleton";
-import { RefreshCw } from "lucide-react";
-import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { runQuickValidation, getLastValidationRuns, getResyncHistory } from "../actions";
-import { resyncAllEvents, resyncFromOffset, resyncByPeriod, getBatchStatus } from "@/app/actions";
-import type { PeriodFilter, ValidationCheck, ValidationRunResult } from "../types";
-import type { BatchJobState } from "@/lib/batch-processor";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { ResyncRun } from "@/db/schema";
+import type { BatchJobState } from "@/lib/batch-processor";
+import {
+  getLastValidationRuns,
+  getResyncHistory,
+  runQuickValidation,
+} from "../actions";
+import type {
+  PeriodFilter,
+  ValidationCheck,
+  ValidationRunResult,
+} from "../types";
 import { ValidationResultCard } from "./validation-result-card";
 
 const QUICK_CHECK_NAMES = [
@@ -30,6 +43,7 @@ const QUICK_CHECK_NAMES = [
   "Active Status Accuracy",
   "Data Quality",
   "Revenue Audit",
+  "Returning Attendees Consistency",
 ];
 
 const DEEP_CHECK_NAMES = [
@@ -37,6 +51,7 @@ const DEEP_CHECK_NAMES = [
   "WC/DB Order Reconciliation",
   "Revenue Comparison",
   "Order Status Sync",
+  "First-Event Integrity",
 ];
 
 interface ValidationTabProps {
@@ -49,8 +64,12 @@ export function ValidationTab({ period }: ValidationTabProps) {
   const [result, setResult] = React.useState<ValidationRunResult | null>(null);
   const [lastRuns, setLastRuns] = React.useState<ValidationRunResult[]>([]);
   const [loadingHistory, setLoadingHistory] = React.useState(true);
-  const [completedChecks, setCompletedChecks] = React.useState<ValidationCheck[]>([]);
-  const [currentPhase, setCurrentPhase] = React.useState<"idle" | "quick" | "deep">("idle");
+  const [completedChecks, setCompletedChecks] = React.useState<
+    ValidationCheck[]
+  >([]);
+  const [currentPhase, setCurrentPhase] = React.useState<
+    "idle" | "quick" | "deep"
+  >("idle");
 
   // Resync state
   const [isResyncing, setIsResyncing] = React.useState(false);
@@ -59,7 +78,9 @@ export function ValidationTab({ period }: ValidationTabProps) {
     membershipSync: BatchJobState | null;
     loopsSync: BatchJobState | null;
   }>({ eventResync: null, membershipSync: null, loopsSync: null });
-  const resyncIntervalRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
+  const resyncIntervalRef = React.useRef<ReturnType<typeof setInterval> | null>(
+    null,
+  );
   const [resyncHistory, setResyncHistory] = React.useState<ResyncRun[]>([]);
   const [resyncPeriodFrom, setResyncPeriodFrom] = React.useState("");
   const [resyncPeriodTo, setResyncPeriodTo] = React.useState("");
@@ -81,7 +102,7 @@ export function ValidationTab({ period }: ValidationTabProps) {
 
     // Detect stale jobs — mark them as not running so UI shows failure state
     const allJobs = [eventResync, membershipSync, loopsSync];
-    const anyStale = allJobs.some(j => isStaleJob(j));
+    const anyStale = allJobs.some((j) => isStaleJob(j));
     if (anyStale) {
       if (resyncIntervalRef.current) {
         clearInterval(resyncIntervalRef.current);
@@ -92,7 +113,10 @@ export function ValidationTab({ period }: ValidationTabProps) {
       return;
     }
 
-    const anyRunning = eventResync?.status === "running" || membershipSync?.status === "running" || loopsSync?.status === "running";
+    const anyRunning =
+      eventResync?.status === "running" ||
+      membershipSync?.status === "running" ||
+      loopsSync?.status === "running";
     if (!anyRunning && (eventResync || membershipSync || loopsSync)) {
       if (resyncIntervalRef.current) {
         clearInterval(resyncIntervalRef.current);
@@ -106,7 +130,8 @@ export function ValidationTab({ period }: ValidationTabProps) {
   // Check for running jobs on mount and load history
   React.useEffect(() => {
     pollResyncStatus().then(() => {
-      const hasRunning = resyncJobs.eventResync?.status === "running" ||
+      const hasRunning =
+        resyncJobs.eventResync?.status === "running" ||
         resyncJobs.membershipSync?.status === "running" ||
         resyncJobs.loopsSync?.status === "running";
       if (hasRunning) {
@@ -130,14 +155,20 @@ export function ValidationTab({ period }: ValidationTabProps) {
     try {
       const result = await resyncAllEvents();
       if (!result.success) {
-        toast.error(`Failed to start re-sync: ${result.error ?? "Unknown error"}`);
+        toast.error(
+          `Failed to start re-sync: ${result.error ?? "Unknown error"}`,
+        );
         setIsResyncing(false);
         return;
       }
-      toast.success("Re-sync started. This runs in the background and may take several hours.");
+      toast.success(
+        "Re-sync started. This runs in the background and may take several hours.",
+      );
       startPolling();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to start re-sync");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to start re-sync",
+      );
       setIsResyncing(false);
     }
   };
@@ -194,13 +225,25 @@ export function ValidationTab({ period }: ValidationTabProps) {
     { label: "Syncing to Loops.so", state: resyncJobs.loopsSync },
   ].filter((j) => j.state !== null);
 
-  const lastFailedJob = [resyncJobs.eventResync, resyncJobs.membershipSync, resyncJobs.loopsSync]
-    .find((j) => j?.status === "failed" || isStaleJob(j));
+  const lastFailedJob = [
+    resyncJobs.eventResync,
+    resyncJobs.membershipSync,
+    resyncJobs.loopsSync,
+  ].find((j) => j?.status === "failed" || isStaleJob(j));
 
   const getJobDisplayStatus = (state: BatchJobState) => {
-    if (isStaleJob(state)) return { label: "Stalled", className: "border-orange-300 text-orange-700" };
-    if (state.status === "running") return { label: "Running", className: "border-blue-300 text-blue-700" };
-    if (state.status === "completed") return { label: "Completed", className: "border-green-300 text-green-700" };
+    if (isStaleJob(state))
+      return {
+        label: "Stalled",
+        className: "border-orange-300 text-orange-700",
+      };
+    if (state.status === "running")
+      return { label: "Running", className: "border-blue-300 text-blue-700" };
+    if (state.status === "completed")
+      return {
+        label: "Completed",
+        className: "border-green-300 text-green-700",
+      };
     return { label: "Failed", className: "border-red-300 text-red-700" };
   };
 
@@ -210,20 +253,24 @@ export function ValidationTab({ period }: ValidationTabProps) {
       <Card>
         <CardHeader>
           <CardTitle>WooCommerce Re-sync</CardTitle>
-          <p className="text-xs text-muted-foreground mt-1">
-            Pulls latest ticket data from WooCommerce, recalculates memberships, and syncs contacts to Loops.so. Runs in the background — a full resync may take several hours.
+          <p className="mt-1 text-muted-foreground text-xs">
+            Pulls latest ticket data from WooCommerce, recalculates memberships,
+            and syncs contacts to Loops.so. Runs in the background — a full
+            resync may take several hours.
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Resync options */}
-          <div className="flex flex-wrap gap-3 items-end">
+          <div className="flex flex-wrap items-end gap-3">
             <Button
               onClick={handleResync}
               disabled={isResyncing}
               size="sm"
               className="gap-2"
             >
-              <RefreshCw className={`size-4 ${isResyncing ? "animate-spin" : ""}`} />
+              <RefreshCw
+                className={`size-4 ${isResyncing ? "animate-spin" : ""}`}
+              />
               {isResyncing ? "Re-syncing..." : "Re-sync All Events"}
             </Button>
 
@@ -236,7 +283,7 @@ export function ValidationTab({ period }: ValidationTabProps) {
                   placeholder="0"
                   value={resyncFromEvent}
                   onChange={(e) => setResyncFromEvent(e.target.value)}
-                  className="w-[80px] h-8"
+                  className="h-8 w-[80px]"
                 />
               </div>
               <Button
@@ -257,7 +304,9 @@ export function ValidationTab({ period }: ValidationTabProps) {
                     toast.success(`Resuming from event #${offset}...`);
                     startPolling();
                   } catch (error) {
-                    toast.error(error instanceof Error ? error.message : "Failed");
+                    toast.error(
+                      error instanceof Error ? error.message : "Failed",
+                    );
                     setIsResyncing(false);
                   }
                 }}
@@ -273,7 +322,7 @@ export function ValidationTab({ period }: ValidationTabProps) {
                   type="date"
                   value={resyncPeriodFrom}
                   onChange={(e) => setResyncPeriodFrom(e.target.value)}
-                  className="w-[140px] h-8"
+                  className="h-8 w-[140px]"
                 />
               </div>
               <div>
@@ -282,7 +331,7 @@ export function ValidationTab({ period }: ValidationTabProps) {
                   type="date"
                   value={resyncPeriodTo}
                   onChange={(e) => setResyncPeriodTo(e.target.value)}
-                  className="w-[140px] h-8"
+                  className="h-8 w-[140px]"
                 />
               </div>
               <Button
@@ -293,16 +342,23 @@ export function ValidationTab({ period }: ValidationTabProps) {
                   if (!resyncPeriodFrom || !resyncPeriodTo) return;
                   setIsResyncing(true);
                   try {
-                    const result = await resyncByPeriod(resyncPeriodFrom, resyncPeriodTo);
+                    const result = await resyncByPeriod(
+                      resyncPeriodFrom,
+                      resyncPeriodTo,
+                    );
                     if (!result.success) {
                       toast.error(`Failed: ${result.error ?? "Unknown error"}`);
                       setIsResyncing(false);
                       return;
                     }
-                    toast.success(`Re-syncing events from ${resyncPeriodFrom} to ${resyncPeriodTo}...`);
+                    toast.success(
+                      `Re-syncing events from ${resyncPeriodFrom} to ${resyncPeriodTo}...`,
+                    );
                     startPolling();
                   } catch (error) {
-                    toast.error(error instanceof Error ? error.message : "Failed");
+                    toast.error(
+                      error instanceof Error ? error.message : "Failed",
+                    );
                     setIsResyncing(false);
                   }
                 }}
@@ -317,7 +373,10 @@ export function ValidationTab({ period }: ValidationTabProps) {
             <div className="space-y-3">
               {resyncJobRows.map(({ label, state }) => {
                 if (!state) return null;
-                const pct = state.total > 0 ? Math.round((state.processed / state.total) * 100) : 0;
+                const pct =
+                  state.total > 0
+                    ? Math.round((state.processed / state.total) * 100)
+                    : 0;
                 return (
                   <div key={state.type} className="space-y-1.5">
                     <div className="flex items-center justify-between text-sm">
@@ -328,23 +387,29 @@ export function ValidationTab({ period }: ValidationTabProps) {
                         </span>
                         {state.errors > 0 && (
                           <span className="text-destructive text-xs">
-                            ({state.errors} {state.errors === 1 ? "error" : "errors"})
+                            ({state.errors}{" "}
+                            {state.errors === 1 ? "error" : "errors"})
                           </span>
                         )}
                         {(() => {
                           const display = getJobDisplayStatus(state);
                           return (
-                            <Badge variant="outline" className={display.className}>
+                            <Badge
+                              variant="outline"
+                              className={display.className}
+                            >
                               {display.label}
                             </Badge>
                           );
                         })()}
                       </div>
                     </div>
-                    <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
                       <div
                         className={`h-full rounded-full transition-all ${
-                          state.status === "failed" ? "bg-destructive" : "bg-primary"
+                          state.status === "failed"
+                            ? "bg-destructive"
+                            : "bg-primary"
                         }`}
                         style={{ width: `${pct}%` }}
                       />
@@ -354,30 +419,38 @@ export function ValidationTab({ period }: ValidationTabProps) {
               })}
               {lastFailedJob && (
                 <div className="flex items-center justify-between gap-2 rounded border border-destructive/30 bg-destructive/5 p-2">
-                  <p className="text-xs text-destructive">
+                  <p className="text-destructive text-xs">
                     {isStaleJob(lastFailedJob)
                       ? `Stalled at event ${lastFailedJob.processed} of ${lastFailedJob.total} \u2014 no progress for 30+ minutes.`
                       : `Failed at event ${lastFailedJob.processed} of ${lastFailedJob.total}.${lastFailedJob.error ? ` Error: ${lastFailedJob.error}` : ""}`}
                   </p>
-                  <div className="flex gap-2 shrink-0">
+                  <div className="flex shrink-0 gap-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      className="text-xs h-7"
+                      className="h-7 text-xs"
                       disabled={isResyncing}
                       onClick={async () => {
                         setIsResyncing(true);
                         try {
-                          const result = await resyncFromOffset(lastFailedJob.processed);
+                          const result = await resyncFromOffset(
+                            lastFailedJob.processed,
+                          );
                           if (!result.success) {
-                            toast.error(`Failed: ${result.error ?? "Unknown error"}`);
+                            toast.error(
+                              `Failed: ${result.error ?? "Unknown error"}`,
+                            );
                             setIsResyncing(false);
                             return;
                           }
-                          toast.success(`Resuming from event ${lastFailedJob.processed}...`);
+                          toast.success(
+                            `Resuming from event ${lastFailedJob.processed}...`,
+                          );
                           startPolling();
                         } catch (error) {
-                          toast.error(error instanceof Error ? error.message : "Failed");
+                          toast.error(
+                            error instanceof Error ? error.message : "Failed",
+                          );
                           setIsResyncing(false);
                         }
                       }}
@@ -387,7 +460,7 @@ export function ValidationTab({ period }: ValidationTabProps) {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="text-xs h-7"
+                      className="h-7 text-xs"
                       disabled={isResyncing}
                       onClick={handleResync}
                     >
@@ -402,34 +475,48 @@ export function ValidationTab({ period }: ValidationTabProps) {
           {/* Persistent history */}
           {resyncHistory.length > 0 && (
             <div>
-              <p className="text-xs font-medium text-muted-foreground mb-2">Resync History</p>
+              <p className="mb-2 font-medium text-muted-foreground text-xs">
+                Resync History
+              </p>
               <div className="space-y-1.5">
                 {resyncHistory.map((run) => (
-                  <div key={run.id} className="flex items-center justify-between text-xs rounded border p-2">
+                  <div
+                    key={run.id}
+                    className="flex items-center justify-between rounded border p-2 text-xs"
+                  >
                     <div className="flex items-center gap-2">
                       <Badge
                         variant="outline"
                         className={
                           run.status === "completed"
-                            ? "border-green-300 text-green-700 text-[10px]"
-                            : "border-red-300 text-red-700 text-[10px]"
+                            ? "border-green-300 text-[10px] text-green-700"
+                            : "border-red-300 text-[10px] text-red-700"
                         }
                       >
                         {run.status}
                       </Badge>
                       <span className="text-muted-foreground">
                         {new Date(run.completedAt).toLocaleString("en-GB", {
-                          day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+                          day: "numeric",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
                         })}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="tabular-nums">{run.processed}/{run.total} events</span>
+                      <span className="tabular-nums">
+                        {run.processed}/{run.total} events
+                      </span>
                       {run.errors > 0 && (
-                        <span className="text-destructive">({run.errors} errors)</span>
+                        <span className="text-destructive">
+                          ({run.errors} errors)
+                        </span>
                       )}
                       {run.startOffset > 0 && (
-                        <span className="text-muted-foreground">(from #{run.startOffset})</span>
+                        <span className="text-muted-foreground">
+                          (from #{run.startOffset})
+                        </span>
                       )}
                     </div>
                   </div>
@@ -446,10 +533,13 @@ export function ValidationTab({ period }: ValidationTabProps) {
           <div>
             <CardTitle className="flex items-center gap-2">
               Data Validation
-              <Badge variant="outline" className="text-xs font-normal">WIP</Badge>
+              <Badge variant="outline" className="font-normal text-xs">
+                WIP
+              </Badge>
             </CardTitle>
-            <p className="text-xs text-muted-foreground mt-1">
-              Validation is read-only — it analyzes data but never modifies records.
+            <p className="mt-1 text-muted-foreground text-xs">
+              Validation is read-only — it analyzes data but never modifies
+              records.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -477,42 +567,67 @@ export function ValidationTab({ period }: ValidationTabProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">
+          <p className="mb-4 text-muted-foreground text-sm">
             {mode === "quick"
               ? "Database checks only. Verifies data integrity using local records. ~5 seconds, 7 checks."
               : "Includes all Quick checks + live WooCommerce comparison. ~30-60 seconds, 10 checks."}
           </p>
 
           {running && (
-            <div className="space-y-1 mb-4">
+            <div className="mb-4 space-y-1">
               {checkNames.map((name) => {
                 const completed = completedChecks.find((c) => c.name === name);
                 const isDeepCheck = !QUICK_CHECK_NAMES.includes(name);
-                const isWaiting = !completed && (isDeepCheck ? currentPhase !== "deep" : currentPhase === "idle");
+                const isWaiting =
+                  !completed &&
+                  (isDeepCheck
+                    ? currentPhase !== "deep"
+                    : currentPhase === "idle");
                 const isRunning = !completed && !isWaiting;
 
                 return (
-                  <div key={name} className="flex items-center gap-2 text-sm py-0.5">
+                  <div
+                    key={name}
+                    className="flex items-center gap-2 py-0.5 text-sm"
+                  >
                     {completed ? (
-                      <span className={
-                        completed.status === "pass"
-                          ? "text-green-600"
+                      <span
+                        className={
+                          completed.status === "pass"
+                            ? "text-green-600"
+                            : completed.status === "warn"
+                              ? "text-yellow-600"
+                              : "text-red-600"
+                        }
+                      >
+                        {completed.status === "pass"
+                          ? "\u2713"
                           : completed.status === "warn"
-                          ? "text-yellow-600"
-                          : "text-red-600"
-                      }>
-                        {completed.status === "pass" ? "\u2713" : completed.status === "warn" ? "\u26A0" : "\u2717"}
+                            ? "\u26A0"
+                            : "\u2717"}
                       </span>
                     ) : isRunning ? (
-                      <span className="text-blue-500 animate-pulse">\u25CF</span>
+                      <span className="animate-pulse text-blue-500">
+                        \u25CF
+                      </span>
                     ) : (
                       <span className="text-muted-foreground">\u25CB</span>
                     )}
-                    <span className={completed ? "" : isRunning ? "text-foreground" : "text-muted-foreground"}>
+                    <span
+                      className={
+                        completed
+                          ? ""
+                          : isRunning
+                            ? "text-foreground"
+                            : "text-muted-foreground"
+                      }
+                    >
                       {name}
                     </span>
                     {completed && completed.count > 0 && (
-                      <span className="text-xs text-muted-foreground">({completed.count})</span>
+                      <span className="text-muted-foreground text-xs">
+                        ({completed.count})
+                      </span>
                     )}
                   </div>
                 );
@@ -523,16 +638,25 @@ export function ValidationTab({ period }: ValidationTabProps) {
           {result && !running && (
             <div className="space-y-4">
               <div className="flex gap-2">
-                <Badge variant="outline" className="border-green-500 bg-green-50 text-green-700">
+                <Badge
+                  variant="outline"
+                  className="border-green-500 bg-green-50 text-green-700"
+                >
                   {result.summary.passed} passed
                 </Badge>
                 {result.summary.warnings > 0 && (
-                  <Badge variant="outline" className="border-yellow-500 bg-yellow-50 text-yellow-700">
+                  <Badge
+                    variant="outline"
+                    className="border-yellow-500 bg-yellow-50 text-yellow-700"
+                  >
                     {result.summary.warnings} warnings
                   </Badge>
                 )}
                 {result.summary.failures > 0 && (
-                  <Badge variant="outline" className="border-red-500 bg-red-50 text-red-700">
+                  <Badge
+                    variant="outline"
+                    className="border-red-500 bg-red-50 text-red-700"
+                  >
                     {result.summary.failures} failures
                   </Badge>
                 )}
@@ -547,7 +671,7 @@ export function ValidationTab({ period }: ValidationTabProps) {
           )}
 
           {!result && !running && (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Run a validation to check data integrity for the selected period.
             </p>
           )}
@@ -567,13 +691,13 @@ export function ValidationTab({ period }: ValidationTabProps) {
               ))}
             </div>
           ) : lastRuns.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No previous runs.</p>
+            <p className="text-muted-foreground text-sm">No previous runs.</p>
           ) : (
             <div className="space-y-2">
               {lastRuns.map((run) => (
                 <div
                   key={run.id}
-                  className="flex items-center justify-between rounded border p-2 text-sm cursor-pointer hover:bg-muted/50"
+                  className="flex cursor-pointer items-center justify-between rounded border p-2 text-sm hover:bg-muted/50"
                   onClick={() => setResult(run)}
                 >
                   <div className="flex items-center gap-2">
@@ -590,16 +714,25 @@ export function ValidationTab({ period }: ValidationTabProps) {
                     </span>
                   </div>
                   <div className="flex gap-1">
-                    <Badge variant="outline" className="border-green-500 text-green-700 text-xs">
+                    <Badge
+                      variant="outline"
+                      className="border-green-500 text-green-700 text-xs"
+                    >
                       {run.summary.passed}
                     </Badge>
                     {run.summary.warnings > 0 && (
-                      <Badge variant="outline" className="border-yellow-500 text-yellow-700 text-xs">
+                      <Badge
+                        variant="outline"
+                        className="border-yellow-500 text-xs text-yellow-700"
+                      >
                         {run.summary.warnings}
                       </Badge>
                     )}
                     {run.summary.failures > 0 && (
-                      <Badge variant="outline" className="border-red-500 text-red-700 text-xs">
+                      <Badge
+                        variant="outline"
+                        className="border-red-500 text-red-700 text-xs"
+                      >
                         {run.summary.failures}
                       </Badge>
                     )}

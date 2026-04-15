@@ -296,48 +296,17 @@ export function isEventProduct(product: any): boolean {
 
 /**
  * Determine whether a WooCommerce product qualifies for community membership.
- * Checks two independent sources:
- *   1. Product attribute "pa_qualifying-event" (True/False)
- *   2. Product category "qualifying-for-community-membership" (presence = qualifies)
+ * Signal: presence of the category slug `qualifying-for-community-membership`
+ * on the product. Absence ⇒ does not qualify.
  *
- * Logic:
- *   - If the attribute explicitly says False → not qualifying (attribute takes precedence)
- *   - If the category is present → qualifying
- *   - If the attribute explicitly says True → qualifying
- *   - If neither is set → null (caller decides fallback)
- *
- * @returns true if qualifying, false if not, null if neither signal is set
+ * Only consulted on insert by the discover-events cron; existing rows in
+ * tablecn_events are never updated from this value.
  */
-export function extractQualifyingEventAttribute(product: any): boolean | null {
-  // Check attribute (explicit True/False)
-  let attrValue: boolean | null = null;
-  if (Array.isArray(product.attributes)) {
-    const qualifyingAttr = product.attributes.find(
-      (attr: any) => attr.slug === 'pa_qualifying-event' || attr.slug === 'qualifying-event'
-    );
-    if (qualifyingAttr?.options && Array.isArray(qualifyingAttr.options)) {
-      const optionLower = qualifyingAttr.options.map((o: string) => o.toLowerCase());
-      if (optionLower.includes('true') || optionLower.includes('qualifying-event-true')) attrValue = true;
-      if (optionLower.includes('false') || optionLower.includes('qualifying-event-false')) attrValue = false;
-    }
-  }
-
-  // Check category (presence means qualifying)
-  let hasCat = false;
-  if (Array.isArray(product.categories)) {
-    hasCat = product.categories.some(
-      (cat: any) => cat.slug === 'qualifying-for-community-membership'
-    );
-  }
-
-  // Attribute "False" takes precedence (explicit non-qualifying)
-  if (attrValue === false) return false;
-
-  // Either signal says qualifying → qualifying
-  if (attrValue === true || hasCat) return true;
-
-  // Neither set
-  return null;
+export function isQualifyingEventProduct(product: any): boolean {
+  if (!Array.isArray(product.categories)) return false;
+  return product.categories.some(
+    (cat: any) => cat.slug === 'qualifying-for-community-membership'
+  );
 }
 
 /**
