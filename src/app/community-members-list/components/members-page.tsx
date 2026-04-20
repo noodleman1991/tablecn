@@ -1,27 +1,40 @@
 "use client";
 
+import { Download, Mail } from "lucide-react";
 import * as React from "react";
+import { toast } from "sonner";
+import type { OrphanBooker } from "@/app/actions";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Download, Mail } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { Member } from "@/db/schema";
 import {
-  exportMembersToCSV,
   downloadCSV,
-  generateMembersFilename,
   emailCSVViaServer,
+  exportMembersToCSV,
+  generateMembersFilename,
 } from "@/lib/csv-export";
-import { toast } from "sonner";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { MembersTable } from "./members-table";
 import { AddManualMemberDialog } from "./add-manual-member-dialog";
+import { MembersTable } from "./members-table";
+import { ReviewTab } from "./review-tab";
 
 interface MembersPageProps {
   members: Member[];
   activeMemberCount: number;
+  orphans: OrphanBooker[];
 }
 
-export function MembersPage({ members, activeMemberCount }: MembersPageProps) {
+export function MembersPage({
+  members,
+  activeMemberCount,
+  orphans,
+}: MembersPageProps) {
   const [isDownloading, setIsDownloading] = React.useState(false);
   const [isEmailing, setIsEmailing] = React.useState(false);
 
@@ -35,7 +48,7 @@ export function MembersPage({ members, activeMemberCount }: MembersPageProps) {
       const filename = generateMembersFilename();
       downloadCSV(csv, filename);
       toast.success("CSV downloaded successfully");
-    } catch (error) {
+    } catch (_error) {
       toast.error("Failed to download CSV");
     } finally {
       setIsDownloading(false);
@@ -51,7 +64,7 @@ export function MembersPage({ members, activeMemberCount }: MembersPageProps) {
       toast.success("Email sent successfully");
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to send email"
+        error instanceof Error ? error.message : "Failed to send email",
       );
     } finally {
       setIsEmailing(false);
@@ -61,9 +74,7 @@ export function MembersPage({ members, activeMemberCount }: MembersPageProps) {
   return (
     <div className="container flex flex-col gap-6 py-8">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">
-          Community Members
-        </h1>
+        <h1 className="font-bold text-3xl tracking-tight">Community Members</h1>
         <p className="text-muted-foreground">
           View all community members and their membership status
         </p>
@@ -72,32 +83,30 @@ export function MembersPage({ members, activeMemberCount }: MembersPageProps) {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Members
-            </CardTitle>
+            <CardTitle className="font-medium text-sm">Total Members</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalMembers}</div>
+            <div className="font-bold text-2xl">{totalMembers}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="font-medium text-sm">
               Active Members
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{activeMembers}</div>
+            <div className="font-bold text-2xl">{activeMembers}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="font-medium text-sm">
               Inactive Members
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="font-bold text-2xl">
               {totalMembers - activeMembers}
             </div>
           </CardContent>
@@ -116,14 +125,16 @@ export function MembersPage({ members, activeMemberCount }: MembersPageProps) {
                   size="sm"
                   onClick={handleDownloadCSV}
                   disabled={isDownloading}
-                  className="min-h-[44px] w-full sm:w-auto gap-2"
+                  className="min-h-[44px] w-full gap-2 sm:w-auto"
                 >
                   <Download className="size-4" />
                   <span className="sm:hidden">CSV</span>
                   <span className="hidden sm:inline">Download CSV</span>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Download the full members list as a spreadsheet file.</TooltipContent>
+              <TooltipContent>
+                Download the full members list as a spreadsheet file.
+              </TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -132,19 +143,39 @@ export function MembersPage({ members, activeMemberCount }: MembersPageProps) {
                   size="sm"
                   onClick={handleEmailCSV}
                   disabled={isEmailing}
-                  className="min-h-[44px] w-full sm:w-auto gap-2"
+                  className="min-h-[44px] w-full gap-2 sm:w-auto"
                 >
                   <Mail className="size-4" />
                   <span className="sm:hidden">Email</span>
                   <span className="hidden sm:inline">Send Email</span>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Email the members list as a CSV attachment.</TooltipContent>
+              <TooltipContent>
+                Email the members list as a CSV attachment.
+              </TooltipContent>
             </Tooltip>
           </div>
         </CardHeader>
         <CardContent>
-          <MembersTable members={members} />
+          <Tabs defaultValue="members">
+            <TabsList className="mb-4">
+              <TabsTrigger value="members">All members</TabsTrigger>
+              <TabsTrigger value="review" className="gap-2">
+                Needs review
+                {orphans.length > 0 && (
+                  <Badge variant="secondary" className="ml-1">
+                    {orphans.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="members">
+              <MembersTable members={members} />
+            </TabsContent>
+            <TabsContent value="review">
+              <ReviewTab orphans={orphans} members={members} />
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>

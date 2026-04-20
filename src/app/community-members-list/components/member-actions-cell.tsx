@@ -1,7 +1,7 @@
 "use client";
 
-import * as React from "react";
 import { MoreVertical } from "lucide-react";
+import * as React from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -17,10 +17,17 @@ interface MemberActionsCellProps {
   onStatusChange: (member: Member) => void;
   onSwapName: (member: Member) => void;
   onDelete: (member: Member) => void;
+  onManageEmails: (member: Member) => void;
 }
 
 export const MemberActionsCell = React.memo(
-  ({ member, onStatusChange, onSwapName, onDelete }: MemberActionsCellProps) => {
+  ({
+    member,
+    onStatusChange,
+    onSwapName,
+    onDelete,
+    onManageEmails,
+  }: MemberActionsCellProps) => {
     const [isPending, startTransition] = React.useTransition();
 
     return (
@@ -43,6 +50,11 @@ export const MemberActionsCell = React.memo(
             Change Status
           </DropdownMenuItem>
           <DropdownMenuItem
+            onClick={() => startTransition(() => onManageEmails(member))}
+          >
+            Manage alternative emails
+          </DropdownMenuItem>
+          <DropdownMenuItem
             onClick={() => startTransition(() => onSwapName(member))}
           >
             Swap First/Last Name
@@ -60,7 +72,7 @@ export const MemberActionsCell = React.memo(
   },
   (prevProps, nextProps) => {
     return prevProps.member.id === nextProps.member.id;
-  }
+  },
 );
 
 MemberActionsCell.displayName = "MemberActionsCell";

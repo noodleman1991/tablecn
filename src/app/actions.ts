@@ -1,13 +1,17 @@
 "use server";
 
-import { db } from "@/db";
-import { attendees, events, members } from "@/db/schema";
-import { eq, desc, gte, lt, isNull, and, sql } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { syncAttendeesForEvent } from "@/lib/sync-attendees";
+import { db } from "@/db";
+import { attendees, events, memberEmailAliases, members } from "@/db/schema";
+import {
+  type BatchJobState,
+  getBatchJob,
+  triggerNextChunk,
+} from "@/lib/batch-processor";
 import { getCacheAge, invalidateCache } from "@/lib/cache-utils";
-import { syncMemberToLoops, removeMemberFromLoops } from "@/lib/loops-sync";
-import { triggerNextChunk, getBatchJob, type BatchJobState } from "@/lib/batch-processor";
+import { removeMemberFromLoops, syncMemberToLoops } from "@/lib/loops-sync";
+import { syncAttendeesForEvent } from "@/lib/sync-attendees";
 
 /**
  * Get all events sorted by date (most recent first)
@@ -37,7 +41,7 @@ export async function getFutureEvents() {
         gte(events.eventDate, today),
         isNull(events.mergedIntoEventId),
         eq(events.status, "active"),
-      )
+      ),
     )
     .orderBy(events.eventDate);
 }
@@ -58,7 +62,7 @@ export async function getPastEvents() {
         lt(events.eventDate, today),
         isNull(events.mergedIntoEventId),
         eq(events.status, "active"),
-      )
+      ),
     )
     .orderBy(desc(events.eventDate));
 }
@@ -85,7 +89,10 @@ export async function getAttendeesForEvent(eventId: string) {
   try {
     await syncAttendeesForEvent(eventId);
   } catch (error) {
-    console.error(`[getAttendeesForEvent] Sync failed for event ${eventId}, using existing DB data:`, error);
+    console.error(
+      `[getAttendeesForEvent] Sync failed for event ${eventId}, using existing DB data:`,
+      error,
+    );
   }
 
   // ALWAYS return fresh data from database
@@ -107,7 +114,12 @@ async function matchOrCreateMember(data: {
 }): Promise<{
   memberId?: string;
   ambiguous?: boolean;
-  possibleMatches?: Array<{ id: string; email: string; firstName: string; lastName: string }>;
+  possibleMatches?: Array<{
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+  }>;
   swapDetected?: boolean;
 }> {
   const { email, firstName, lastName } = data;
@@ -131,8 +143,8 @@ async function matchOrCreateMember(data: {
       .where(
         and(
           sql`LOWER(${members.firstName}) = LOWER(${firstName})`,
-          sql`LOWER(${members.lastName}) = LOWER(${lastName})`
-        )
+          sql`LOWER(${members.lastName}) = LOWER(${lastName})`,
+        ),
       );
 
     if (nameMatches.length === 1) {
@@ -140,7 +152,7 @@ async function matchOrCreateMember(data: {
       // Return as ambiguous for manual confirmation
       return {
         ambiguous: true,
-        possibleMatches: nameMatches.map(m => ({
+        possibleMatches: nameMatches.map((m) => ({
           id: m.id,
           email: m.email,
           firstName: m.firstName || "",
@@ -151,7 +163,7 @@ async function matchOrCreateMember(data: {
       // Multiple name matches
       return {
         ambiguous: true,
-        possibleMatches: nameMatches.map(m => ({
+        possibleMatches: nameMatches.map((m) => ({
           id: m.id,
           email: m.email,
           firstName: m.firstName || "",
@@ -169,14 +181,14 @@ async function matchOrCreateMember(data: {
       .where(
         and(
           sql`LOWER(${members.firstName}) = LOWER(${lastName})`,
-          sql`LOWER(${members.lastName}) = LOWER(${firstName})`
-        )
+          sql`LOWER(${members.lastName}) = LOWER(${firstName})`,
+        ),
       );
 
     if (swappedMatches.length > 0) {
       return {
         ambiguous: true,
-        possibleMatches: swappedMatches.map(m => ({
+        possibleMatches: swappedMatches.map((m) => ({
           id: m.id,
           email: m.email,
           firstName: m.firstName || "",
@@ -262,7 +274,9 @@ export async function checkInAttendee(attendeeId: string) {
 
   // Step 4: Recalculate membership status
   if (memberResult.memberId) {
-    const { recalculateMembershipForMember } = await import("@/lib/calculate-membership");
+    const { recalculateMembershipForMember } = await import(
+      "@/lib/calculate-membership"
+    );
     await recalculateMembershipForMember(memberResult.memberId);
   }
 
@@ -315,7 +329,9 @@ export async function confirmMemberMatch(data: {
     .where(eq(attendees.id, attendeeId));
 
   // Recalculate membership status
-  const { recalculateMembershipForMember } = await import("@/lib/calculate-membership");
+  const { recalculateMembershipForMember } = await import(
+    "@/lib/calculate-membership"
+  );
   await recalculateMembershipForMember(memberId);
 
   revalidatePath("/");
@@ -353,6 +369,607 @@ export async function getMembers() {
     .select()
     .from(members)
     .orderBy(desc(members.isActiveMember), desc(members.totalEventsAttended));
+}
+
+export interface OrphanBooker {
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  bookerEmail: string | null;
+  bookingCount: number;
+  latestBooking: Date | null;
+  nameMatchMemberId: string | null;
+  nameMatchEmail: string | null;
+  localPartMatchMemberId: string | null;
+  localPartMatchEmail: string | null;
+  nameMatchCandidateCount: number;
+}
+
+/**
+ * Get booking emails that don't match any member and aren't in the alias
+ * table. These are the emails that need manual review — genuinely new
+ * bookers, typos, or old merged-away emails that haven't been recorded yet.
+ *
+ * Includes name-match and local-part-match hints computed in SQL (no N+1).
+ */
+export async function getOrphanBookers(): Promise<OrphanBooker[]> {
+  const rows = await db.execute(sql`
+    WITH orphan_attendees AS (
+      SELECT
+        a.email,
+        MAX(a.first_name) AS first_name,
+        MAX(a.last_name)  AS last_name,
+        MAX(a.booker_email) AS booker_email,
+        COUNT(*)::int AS booking_count,
+        MAX(a.woocommerce_order_date) AS latest_booking
+      FROM tablecn_attendees a
+      LEFT JOIN tablecn_members m ON m.email = a.email
+      LEFT JOIN tablecn_member_email_aliases e ON e.email = a.email
+      WHERE m.id IS NULL AND e.id IS NULL
+      GROUP BY a.email
+    ),
+    name_matches AS (
+      SELECT
+        o.email AS orphan_email,
+        (ARRAY_AGG(m2.id))[1] AS member_id,
+        (ARRAY_AGG(m2.email))[1] AS member_email,
+        COUNT(DISTINCT m2.id)::int AS candidate_count
+      FROM orphan_attendees o
+      JOIN tablecn_members m2
+        ON LOWER(m2.first_name) = LOWER(o.first_name)
+       AND LOWER(m2.last_name)  = LOWER(o.last_name)
+      WHERE o.first_name IS NOT NULL AND o.last_name IS NOT NULL
+      GROUP BY o.email
+    ),
+    local_part_matches AS (
+      SELECT DISTINCT ON (o.email)
+        o.email AS orphan_email,
+        m3.id AS member_id,
+        m3.email AS member_email
+      FROM orphan_attendees o
+      JOIN tablecn_members m3
+        ON SPLIT_PART(m3.email, '@', 1) = SPLIT_PART(o.email, '@', 1)
+      ORDER BY o.email, m3.id
+    )
+    SELECT
+      o.email,
+      o.first_name,
+      o.last_name,
+      o.booker_email,
+      o.booking_count,
+      o.latest_booking,
+      n.member_id AS name_match_member_id,
+      n.member_email AS name_match_email,
+      n.candidate_count AS name_match_candidate_count,
+      l.member_id AS local_part_match_member_id,
+      l.member_email AS local_part_match_email
+    FROM orphan_attendees o
+    LEFT JOIN name_matches n ON n.orphan_email = o.email
+    LEFT JOIN local_part_matches l ON l.orphan_email = o.email
+    ORDER BY o.latest_booking DESC NULLS LAST, o.booking_count DESC
+  `);
+
+  return rows.map((r: any) => ({
+    email: r.email,
+    firstName: r.first_name,
+    lastName: r.last_name,
+    bookerEmail: r.booker_email,
+    bookingCount: Number(r.booking_count),
+    latestBooking: r.latest_booking ? new Date(r.latest_booking) : null,
+    nameMatchMemberId: r.name_match_member_id,
+    nameMatchEmail: r.name_match_email,
+    localPartMatchMemberId: r.local_part_match_member_id,
+    localPartMatchEmail: r.local_part_match_email,
+    nameMatchCandidateCount: r.name_match_candidate_count
+      ? Number(r.name_match_candidate_count)
+      : 0,
+  }));
+}
+
+export async function getOrphanBookerCount(): Promise<number> {
+  const [row] = await db.execute<{ c: string }>(sql`
+    SELECT COUNT(DISTINCT a.email)::text AS c
+    FROM tablecn_attendees a
+    LEFT JOIN tablecn_members m ON m.email = a.email
+    LEFT JOIN tablecn_member_email_aliases e ON e.email = a.email
+    WHERE m.id IS NULL AND e.id IS NULL
+  `);
+  return row ? Number(row.c) : 0;
+}
+
+/**
+ * Mark an orphan email as "ignored" — not a real member, don't re-surface
+ * in review, don't auto-create a member for it at ingest time. Used for
+ * typos, test bookings, or people who asked to be forgotten.
+ */
+export async function ignoreOrphanEmail(email: string, notes?: string) {
+  "use server";
+  const normalized = email.trim().toLowerCase();
+
+  await db
+    .insert(memberEmailAliases)
+    .values({
+      email: normalized,
+      memberId: null,
+      status: "ignored",
+      source: "manual_add",
+      notes: notes ?? null,
+    })
+    .onConflictDoUpdate({
+      target: memberEmailAliases.email,
+      set: {
+        memberId: null,
+        status: "ignored",
+        source: "manual_add",
+        notes: notes ?? null,
+        updatedAt: new Date(),
+      },
+    });
+
+  revalidatePath("/community-members-list");
+  return { success: true };
+}
+
+/**
+ * Attribute an orphan booking email to an existing member: rewrite all
+ * attendee rows with this email to the target member's canonical email,
+ * and record the alias. Recalculates the target member's membership stats.
+ * Transactional so no half-merged state.
+ */
+export async function mergeOrphanIntoMember(data: {
+  orphanEmail: string;
+  targetMemberId: string;
+}) {
+  "use server";
+  const orphanEmail = data.orphanEmail.trim().toLowerCase();
+  const { targetMemberId } = data;
+
+  const [target] = await db
+    .select()
+    .from(members)
+    .where(eq(members.id, targetMemberId))
+    .limit(1);
+
+  if (!target) {
+    throw new Error("Target member not found");
+  }
+
+  if (target.email === orphanEmail) {
+    throw new Error(
+      "Orphan email matches the target member's canonical email — nothing to merge",
+    );
+  }
+
+  await db.transaction(async (tx) => {
+    // Transfer attendee rows: if the target already has an attendee for a
+    // given event, preserve the target's row (drop the orphan's) but
+    // promote check-in if the orphan was checked in.
+    const orphanAttendees = await tx
+      .select()
+      .from(attendees)
+      .where(eq(attendees.email, orphanEmail));
+
+    const targetAttendees = await tx
+      .select()
+      .from(attendees)
+      .where(eq(attendees.email, target.email));
+
+    const targetEventIds = new Set(targetAttendees.map((a) => a.eventId));
+
+    for (const orphan of orphanAttendees) {
+      if (targetEventIds.has(orphan.eventId)) {
+        const targetAttendee = targetAttendees.find(
+          (a) => a.eventId === orphan.eventId,
+        );
+        if (targetAttendee && orphan.checkedIn && !targetAttendee.checkedIn) {
+          await tx
+            .update(attendees)
+            .set({
+              checkedIn: true,
+              checkedInAt: orphan.checkedInAt,
+            })
+            .where(eq(attendees.id, targetAttendee.id));
+        }
+        await tx.delete(attendees).where(eq(attendees.id, orphan.id));
+      } else {
+        await tx
+          .update(attendees)
+          .set({ email: target.email })
+          .where(eq(attendees.id, orphan.id));
+      }
+    }
+
+    await tx
+      .insert(memberEmailAliases)
+      .values({
+        email: orphanEmail,
+        memberId: target.id,
+        status: "merged",
+        source: "manual_merge",
+      })
+      .onConflictDoUpdate({
+        target: memberEmailAliases.email,
+        set: {
+          memberId: target.id,
+          status: "merged",
+          source: "manual_merge",
+          updatedAt: new Date(),
+        },
+      });
+  });
+
+  // Recalculate target member's stats now that attendees have been transferred
+  const { recalculateMembershipForMember } = await import(
+    "@/lib/calculate-membership"
+  );
+  await recalculateMembershipForMember(targetMemberId);
+
+  revalidatePath("/community-members-list");
+  return { success: true };
+}
+
+/**
+ * Promote an orphan booking email into a new, standalone member record.
+ * For genuinely new bookers who don't match any existing member.
+ */
+export async function createMemberFromOrphan(email: string) {
+  "use server";
+  const normalized = email.trim().toLowerCase();
+
+  // Pick name/address from the most recent attendee record
+  const [latest] = await db
+    .select()
+    .from(attendees)
+    .where(eq(attendees.email, normalized))
+    .orderBy(desc(attendees.woocommerceOrderDate))
+    .limit(1);
+
+  if (!latest) {
+    throw new Error(`No attendee rows found for email ${normalized}`);
+  }
+
+  await db
+    .insert(members)
+    .values({
+      email: normalized,
+      firstName: latest.firstName,
+      lastName: latest.lastName,
+      isActiveMember: false,
+      totalEventsAttended: 0,
+      address: latest.billingAddress,
+      city: latest.billingCity,
+      postcode: latest.billingPostcode,
+      country: latest.billingCountry,
+      phone: latest.billingPhone,
+    })
+    .onConflictDoNothing({ target: members.email });
+
+  // Recalculate the newly-created member's stats (may pick up past bookings)
+  const { recalculateMembershipByEmail } = await import(
+    "@/lib/calculate-membership"
+  );
+  await recalculateMembershipByEmail(
+    normalized,
+    latest.firstName,
+    latest.lastName,
+  );
+
+  revalidatePath("/community-members-list");
+  return { success: true };
+}
+
+export interface MemberAlias {
+  email: string;
+  source: string;
+  notes: string | null;
+  createdAt: Date;
+}
+
+/**
+ * List all "merged" alias emails for a member — the alternative email
+ * addresses that past bookings have been attributed to this member.
+ */
+export async function getMemberAliases(
+  memberId: string,
+): Promise<MemberAlias[]> {
+  const rows = await db
+    .select({
+      email: memberEmailAliases.email,
+      source: memberEmailAliases.source,
+      notes: memberEmailAliases.notes,
+      createdAt: memberEmailAliases.createdAt,
+    })
+    .from(memberEmailAliases)
+    .where(
+      and(
+        eq(memberEmailAliases.memberId, memberId),
+        eq(memberEmailAliases.status, "merged"),
+      ),
+    )
+    .orderBy(desc(memberEmailAliases.createdAt));
+
+  return rows.map((r) => ({
+    email: r.email,
+    source: r.source,
+    notes: r.notes,
+    createdAt: r.createdAt,
+  }));
+}
+
+/**
+ * Attach an alternative email to an existing member. Rewrites any attendee
+ * rows currently under the alias email to the member's canonical email, so
+ * past bookings count toward the member immediately. Transactional.
+ */
+export async function addMemberAlias(data: {
+  memberId: string;
+  email: string;
+}) {
+  "use server";
+  const aliasEmail = data.email.trim().toLowerCase();
+  if (!aliasEmail.includes("@")) {
+    throw new Error("Enter a valid email address");
+  }
+
+  const [target] = await db
+    .select()
+    .from(members)
+    .where(eq(members.id, data.memberId))
+    .limit(1);
+  if (!target) throw new Error("Member not found");
+
+  if (target.email === aliasEmail) {
+    throw new Error("That is already this member's primary email");
+  }
+
+  const [existingMember] = await db
+    .select({ id: members.id, email: members.email })
+    .from(members)
+    .where(eq(members.email, aliasEmail))
+    .limit(1);
+  if (existingMember) {
+    throw new Error(
+      `Another member already uses ${aliasEmail} as their primary email. Merge them instead.`,
+    );
+  }
+
+  const [existingAlias] = await db
+    .select()
+    .from(memberEmailAliases)
+    .where(eq(memberEmailAliases.email, aliasEmail))
+    .limit(1);
+  if (
+    existingAlias &&
+    existingAlias.memberId &&
+    existingAlias.memberId !== data.memberId
+  ) {
+    throw new Error(
+      `${aliasEmail} is already linked to a different member. Unlink there first.`,
+    );
+  }
+
+  await db.transaction(async (tx) => {
+    const aliasAttendees = await tx
+      .select()
+      .from(attendees)
+      .where(eq(attendees.email, aliasEmail));
+
+    const targetAttendees = await tx
+      .select()
+      .from(attendees)
+      .where(eq(attendees.email, target.email));
+
+    const targetEventIds = new Set(targetAttendees.map((a) => a.eventId));
+
+    for (const orphan of aliasAttendees) {
+      if (targetEventIds.has(orphan.eventId)) {
+        const targetAttendee = targetAttendees.find(
+          (a) => a.eventId === orphan.eventId,
+        );
+        if (targetAttendee && orphan.checkedIn && !targetAttendee.checkedIn) {
+          await tx
+            .update(attendees)
+            .set({ checkedIn: true, checkedInAt: orphan.checkedInAt })
+            .where(eq(attendees.id, targetAttendee.id));
+        }
+        await tx.delete(attendees).where(eq(attendees.id, orphan.id));
+      } else {
+        await tx
+          .update(attendees)
+          .set({ email: target.email })
+          .where(eq(attendees.id, orphan.id));
+      }
+    }
+
+    await tx
+      .insert(memberEmailAliases)
+      .values({
+        email: aliasEmail,
+        memberId: target.id,
+        status: "merged",
+        source: "manual_add",
+      })
+      .onConflictDoUpdate({
+        target: memberEmailAliases.email,
+        set: {
+          memberId: target.id,
+          status: "merged",
+          source: "manual_add",
+          updatedAt: new Date(),
+        },
+      });
+  });
+
+  const { recalculateMembershipForMember } = await import(
+    "@/lib/calculate-membership"
+  );
+  await recalculateMembershipForMember(data.memberId);
+
+  revalidatePath("/community-members-list");
+  return { success: true };
+}
+
+/**
+ * Remove an alias row entirely. Treats unlink as "undo mistake" — if a
+ * booking arrives from this email later, it will reappear in Needs Review
+ * for fresh triage. Does NOT move attendees back: past bookings stay on the
+ * member (that rewrite is not reversible from here).
+ */
+export async function unlinkMemberAlias(email: string) {
+  "use server";
+  const normalized = email.trim().toLowerCase();
+
+  await db
+    .delete(memberEmailAliases)
+    .where(eq(memberEmailAliases.email, normalized));
+
+  revalidatePath("/community-members-list");
+  return { success: true };
+}
+
+/**
+ * Promote an existing alias to the member's primary email, demoting the old
+ * primary into an alias row. Keeps the canonical-email invariant on attendees:
+ * past bookings get rewritten to the new primary in the same transaction, so
+ * attendance counts stay correct. Loops contact is moved after commit when the
+ * member is active (remove old → sync new) since Loops keys contacts by email.
+ */
+export async function setMemberPrimaryEmail(data: {
+  memberId: string;
+  newPrimaryEmail: string;
+}) {
+  "use server";
+  const newPrimary = data.newPrimaryEmail.trim().toLowerCase();
+  if (!newPrimary.includes("@")) {
+    throw new Error("Enter a valid email address");
+  }
+
+  const [target] = await db
+    .select()
+    .from(members)
+    .where(eq(members.id, data.memberId))
+    .limit(1);
+  if (!target) throw new Error("Member not found");
+
+  const oldPrimary = target.email;
+  if (oldPrimary === newPrimary) {
+    throw new Error("That is already this member's primary email");
+  }
+
+  const [aliasRow] = await db
+    .select()
+    .from(memberEmailAliases)
+    .where(eq(memberEmailAliases.email, newPrimary))
+    .limit(1);
+  if (
+    !aliasRow ||
+    aliasRow.memberId !== data.memberId ||
+    aliasRow.status !== "merged"
+  ) {
+    throw new Error(
+      `${newPrimary} is not an alternative email for this member. Add it first, then set as primary.`,
+    );
+  }
+
+  const [conflictMember] = await db
+    .select({ id: members.id })
+    .from(members)
+    .where(eq(members.email, newPrimary))
+    .limit(1);
+  if (conflictMember && conflictMember.id !== data.memberId) {
+    throw new Error(
+      `Another member already uses ${newPrimary} as their primary email.`,
+    );
+  }
+
+  await db.transaction(async (tx) => {
+    const oldPrimaryAttendees = await tx
+      .select()
+      .from(attendees)
+      .where(eq(attendees.email, oldPrimary));
+
+    const newPrimaryAttendees = await tx
+      .select()
+      .from(attendees)
+      .where(eq(attendees.email, newPrimary));
+
+    const newPrimaryEventIds = new Set(
+      newPrimaryAttendees.map((a) => a.eventId),
+    );
+
+    for (const row of oldPrimaryAttendees) {
+      if (newPrimaryEventIds.has(row.eventId)) {
+        const keep = newPrimaryAttendees.find(
+          (a) => a.eventId === row.eventId,
+        );
+        if (keep && row.checkedIn && !keep.checkedIn) {
+          await tx
+            .update(attendees)
+            .set({ checkedIn: true, checkedInAt: row.checkedInAt })
+            .where(eq(attendees.id, keep.id));
+        }
+        await tx.delete(attendees).where(eq(attendees.id, row.id));
+      } else {
+        await tx
+          .update(attendees)
+          .set({ email: newPrimary })
+          .where(eq(attendees.id, row.id));
+      }
+    }
+
+    await tx
+      .update(members)
+      .set({ email: newPrimary })
+      .where(eq(members.id, data.memberId));
+
+    await tx
+      .delete(memberEmailAliases)
+      .where(eq(memberEmailAliases.email, newPrimary));
+
+    await tx
+      .insert(memberEmailAliases)
+      .values({
+        email: oldPrimary,
+        memberId: data.memberId,
+        status: "merged",
+        source: "manual_primary_swap",
+      })
+      .onConflictDoUpdate({
+        target: memberEmailAliases.email,
+        set: {
+          memberId: data.memberId,
+          status: "merged",
+          source: "manual_primary_swap",
+          updatedAt: new Date(),
+        },
+      });
+  });
+
+  const { recalculateMembershipForMember } = await import(
+    "@/lib/calculate-membership"
+  );
+  await recalculateMembershipForMember(data.memberId);
+
+  const [updatedMember] = await db
+    .select()
+    .from(members)
+    .where(eq(members.id, data.memberId))
+    .limit(1);
+
+  if (updatedMember?.isActiveMember) {
+    try {
+      await removeMemberFromLoops(oldPrimary, data.memberId);
+      await syncMemberToLoops(updatedMember);
+    } catch (error) {
+      console.error(
+        `[setMemberPrimaryEmail] Loops sync failed for ${data.memberId} (${oldPrimary} → ${newPrimary}):`,
+        error,
+      );
+    }
+  }
+
+  revalidatePath("/community-members-list");
+  return { success: true };
 }
 
 /**
@@ -441,16 +1058,25 @@ export async function updateMemberDetails(data: {
 
   // Build update object
   const updateData: any = {};
-  if (updates.email !== undefined) updateData.email = updates.email.toLowerCase().trim();
-  if (updates.firstName !== undefined) updateData.firstName = updates.firstName.trim();
-  if (updates.lastName !== undefined) updateData.lastName = updates.lastName.trim();
-  if (updates.address !== undefined) updateData.address = updates.address.trim() || null;
+  if (updates.email !== undefined)
+    updateData.email = updates.email.toLowerCase().trim();
+  if (updates.firstName !== undefined)
+    updateData.firstName = updates.firstName.trim();
+  if (updates.lastName !== undefined)
+    updateData.lastName = updates.lastName.trim();
+  if (updates.address !== undefined)
+    updateData.address = updates.address.trim() || null;
   if (updates.city !== undefined) updateData.city = updates.city.trim() || null;
-  if (updates.postcode !== undefined) updateData.postcode = updates.postcode.trim() || null;
-  if (updates.country !== undefined) updateData.country = updates.country.trim() || null;
-  if (updates.phone !== undefined) updateData.phone = updates.phone.trim() || null;
-  if (updates.notes !== undefined) updateData.notes = updates.notes?.trim() || null;
-  if (updates.manualExpiresAt !== undefined) updateData.manualExpiresAt = updates.manualExpiresAt;
+  if (updates.postcode !== undefined)
+    updateData.postcode = updates.postcode.trim() || null;
+  if (updates.country !== undefined)
+    updateData.country = updates.country.trim() || null;
+  if (updates.phone !== undefined)
+    updateData.phone = updates.phone.trim() || null;
+  if (updates.notes !== undefined)
+    updateData.notes = updates.notes?.trim() || null;
+  if (updates.manualExpiresAt !== undefined)
+    updateData.manualExpiresAt = updates.manualExpiresAt;
 
   const [updatedMember] = await db
     .update(members)
@@ -500,7 +1126,9 @@ export async function toggleMemberStatusOverride(data: {
       .limit(1);
 
     if (member.length > 0) {
-      const { recalculateMembershipForMember } = await import("@/lib/calculate-membership");
+      const { recalculateMembershipForMember } = await import(
+        "@/lib/calculate-membership"
+      );
       await recalculateMembershipForMember(memberId);
       revalidatePath("/community-members-list");
       return { success: true };
@@ -585,57 +1213,95 @@ export async function mergeMemberRecords(data: {
     throw new Error("One or both members not found");
   }
 
-  // Get all attendee records from secondary member
-  const secondaryAttendees = await db
-    .select()
-    .from(attendees)
-    .where(eq(attendees.email, secondary.email));
+  // Transactional block: attendee transfer + alias record + secondary delete
+  // run together. Loops removal happens AFTER commit because it's an external
+  // HTTP call and must not hold a DB transaction.
+  await db.transaction(async (tx) => {
+    // Get all attendee records from secondary member
+    const secondaryAttendees = await tx
+      .select()
+      .from(attendees)
+      .where(eq(attendees.email, secondary.email));
 
-  // Get all attendee records from primary member
-  const primaryAttendees = await db
-    .select()
-    .from(attendees)
-    .where(eq(attendees.email, primary.email));
+    // Get all attendee records from primary member
+    const primaryAttendees = await tx
+      .select()
+      .from(attendees)
+      .where(eq(attendees.email, primary.email));
 
-  // Create a set of event IDs the primary already has
-  const primaryEventIds = new Set(primaryAttendees.map(a => a.eventId));
+    // Create a set of event IDs the primary already has
+    const primaryEventIds = new Set(primaryAttendees.map((a) => a.eventId));
 
-  // For each secondary attendee, either transfer or merge into existing
-  for (const secondaryAttendee of secondaryAttendees) {
-    if (primaryEventIds.has(secondaryAttendee.eventId)) {
-      // Primary already has an attendee for this event - check if we need to preserve check-in
-      const primaryAttendee = primaryAttendees.find(a => a.eventId === secondaryAttendee.eventId);
+    // For each secondary attendee, either transfer or merge into existing
+    for (const secondaryAttendee of secondaryAttendees) {
+      if (primaryEventIds.has(secondaryAttendee.eventId)) {
+        // Primary already has an attendee for this event - check if we need to preserve check-in
+        const primaryAttendee = primaryAttendees.find(
+          (a) => a.eventId === secondaryAttendee.eventId,
+        );
 
-      if (primaryAttendee && secondaryAttendee.checkedIn && !primaryAttendee.checkedIn) {
-        // Secondary was checked in but primary wasn't - update primary's check-in status
-        await db
+        if (
+          primaryAttendee &&
+          secondaryAttendee.checkedIn &&
+          !primaryAttendee.checkedIn
+        ) {
+          // Secondary was checked in but primary wasn't - update primary's check-in status
+          await tx
+            .update(attendees)
+            .set({
+              checkedIn: true,
+              checkedInAt: secondaryAttendee.checkedInAt,
+            })
+            .where(eq(attendees.id, primaryAttendee.id));
+        }
+
+        // Delete the duplicate secondary attendee
+        await tx
+          .delete(attendees)
+          .where(eq(attendees.id, secondaryAttendee.id));
+      } else {
+        // No duplicate - just transfer the email
+        await tx
           .update(attendees)
-          .set({
-            checkedIn: true,
-            checkedInAt: secondaryAttendee.checkedInAt,
-          })
-          .where(eq(attendees.id, primaryAttendee.id));
+          .set({ email: primary.email })
+          .where(eq(attendees.id, secondaryAttendee.id));
       }
-
-      // Delete the duplicate secondary attendee
-      await db.delete(attendees).where(eq(attendees.id, secondaryAttendee.id));
-    } else {
-      // No duplicate - just transfer the email
-      await db
-        .update(attendees)
-        .set({ email: primary.email })
-        .where(eq(attendees.id, secondaryAttendee.id));
     }
-  }
 
-  // Remove from Loops before deletion
+    // Record the merge in the alias table so future bookings from the
+    // secondary email are auto-attributed to the primary member. Idempotent:
+    // re-merging updates the existing row instead of failing.
+    await tx
+      .insert(memberEmailAliases)
+      .values({
+        email: secondary.email,
+        memberId: primary.id,
+        status: "merged",
+        source: "manual_merge",
+      })
+      .onConflictDoUpdate({
+        target: memberEmailAliases.email,
+        set: {
+          memberId: primary.id,
+          status: "merged",
+          source: "manual_merge",
+          updatedAt: new Date(),
+        },
+      });
+
+    // Delete secondary member
+    await tx.delete(members).where(eq(members.id, secondaryMemberId));
+  });
+
+  // Remove from Loops AFTER the transaction commits. External HTTP calls
+  // must never run inside a DB transaction. If Loops removal fails, the DB
+  // state is already correct; Loops can be reconciled later.
   await removeMemberFromLoops(secondary.email, secondary.id);
 
-  // Delete secondary member
-  await db.delete(members).where(eq(members.id, secondaryMemberId));
-
   // Recalculate primary member's stats
-  const { recalculateMembershipForMember } = await import("@/lib/calculate-membership");
+  const { recalculateMembershipForMember } = await import(
+    "@/lib/calculate-membership"
+  );
   await recalculateMembershipForMember(primaryMemberId);
 
   revalidatePath("/community-members-list");
@@ -671,11 +1337,16 @@ export async function resyncAllEvents() {
 
   try {
     const res = await triggerNextChunk("/api/batch/resync-events");
-    console.log(`[resyncAllEvents] Trigger response: ${res.status} ${res.statusText}`);
+    console.log(
+      `[resyncAllEvents] Trigger response: ${res.status} ${res.statusText}`,
+    );
     return { success: true, batchJobStarted: true, progressTrackable: !!redis };
   } catch (error) {
     console.error("[resyncAllEvents] Failed to trigger batch:", error);
-    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
   }
 }
 
@@ -688,12 +1359,20 @@ export async function resyncByPeriod(dateFrom: string, dateTo: string) {
   const { redis } = await import("@/lib/redis");
 
   try {
-    const res = await triggerNextChunk("/api/batch/resync-events", { dateFrom, dateTo });
-    console.log(`[resyncByPeriod] Trigger response: ${res.status} (${dateFrom} to ${dateTo})`);
+    const res = await triggerNextChunk("/api/batch/resync-events", {
+      dateFrom,
+      dateTo,
+    });
+    console.log(
+      `[resyncByPeriod] Trigger response: ${res.status} (${dateFrom} to ${dateTo})`,
+    );
     return { success: true, batchJobStarted: true, progressTrackable: !!redis };
   } catch (error) {
     console.error("[resyncByPeriod] Failed to trigger batch:", error);
-    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
   }
 }
 
@@ -706,12 +1385,19 @@ export async function resyncFromOffset(startFromOffset: number) {
   const { redis } = await import("@/lib/redis");
 
   try {
-    const res = await triggerNextChunk("/api/batch/resync-events", { startFromOffset });
-    console.log(`[resyncFromOffset] Trigger response: ${res.status} (offset: ${startFromOffset})`);
+    const res = await triggerNextChunk("/api/batch/resync-events", {
+      startFromOffset,
+    });
+    console.log(
+      `[resyncFromOffset] Trigger response: ${res.status} (offset: ${startFromOffset})`,
+    );
     return { success: true, batchJobStarted: true, progressTrackable: !!redis };
   } catch (error) {
     console.error("[resyncFromOffset] Failed to trigger batch:", error);
-    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
   }
 }
 
@@ -719,7 +1405,9 @@ export async function resyncFromOffset(startFromOffset: number) {
  * Get the current status of a batch job by type
  * Used by client components to poll batch progress without exposing CRON_SECRET
  */
-export async function getBatchStatus(type: string): Promise<BatchJobState | null> {
+export async function getBatchStatus(
+  type: string,
+): Promise<BatchJobState | null> {
   "use server";
   return await getBatchJob(type);
 }
@@ -728,7 +1416,10 @@ export async function getBatchStatus(type: string): Promise<BatchJobState | null
  * Check if a swapped name match exists for given first/last name
  * Used by the add-manual-member dialog to warn about potential name swaps
  */
-export async function checkSwappedNameMatch(firstName: string, lastName: string) {
+export async function checkSwappedNameMatch(
+  firstName: string,
+  lastName: string,
+) {
   "use server";
 
   if (!firstName || !lastName) return { matches: [] };
@@ -739,12 +1430,12 @@ export async function checkSwappedNameMatch(firstName: string, lastName: string)
     .where(
       and(
         sql`LOWER(${members.firstName}) = LOWER(${lastName})`,
-        sql`LOWER(${members.lastName}) = LOWER(${firstName})`
-      )
+        sql`LOWER(${members.lastName}) = LOWER(${firstName})`,
+      ),
     );
 
   return {
-    matches: swappedMatches.map(m => ({
+    matches: swappedMatches.map((m) => ({
       id: m.id,
       email: m.email,
       firstName: m.firstName || "",
@@ -756,7 +1447,9 @@ export async function checkSwappedNameMatch(firstName: string, lastName: string)
 /**
  * Get lowercased emails of active community members who are attendees for a given event
  */
-export async function getCommunityMemberEmailsForEvent(eventId: string): Promise<string[]> {
+export async function getCommunityMemberEmailsForEvent(
+  eventId: string,
+): Promise<string[]> {
   const rows = await db.execute<{ email: string }>(sql`
     SELECT DISTINCT LOWER(m.email) AS email
     FROM ${members} m
@@ -836,8 +1529,8 @@ export async function createManualAttendee(data: {
     .where(
       and(
         eq(attendees.eventId, data.eventId),
-        eq(attendees.email, normalizedEmail)
-      )
+        eq(attendees.email, normalizedEmail),
+      ),
     )
     .limit(1);
 
@@ -866,7 +1559,7 @@ export async function createManualAttendee(data: {
   await upsertMemberHelper(
     normalizedEmail,
     data.firstName.trim(),
-    data.lastName.trim()
+    data.lastName.trim(),
   );
 
   revalidatePath("/");
@@ -885,11 +1578,12 @@ export async function createManualAttendee(data: {
 export async function updateAttendeeDetails(
   attendeeId: string,
   field: "email" | "firstName" | "lastName",
-  value: string
+  value: string,
 ) {
   "use server";
 
-  const normalizedValue = field === "email" ? value.toLowerCase().trim() : value.trim();
+  const normalizedValue =
+    field === "email" ? value.toLowerCase().trim() : value.trim();
 
   // Get current attendee
   const [currentAttendee] = await db
@@ -903,7 +1597,8 @@ export async function updateAttendeeDetails(
   }
 
   // Check if email is changing
-  const emailChanged = field === "email" && normalizedValue !== currentAttendee.email;
+  const emailChanged =
+    field === "email" && normalizedValue !== currentAttendee.email;
 
   if (emailChanged) {
     // Check if new email already exists in members table
@@ -917,14 +1612,14 @@ export async function updateAttendeeDetails(
       // Update existing member's data
       // Don't create duplicate member
       console.log(
-        `[update-attendee] Email ${normalizedValue} exists in members, updating that member's record`
+        `[update-attendee] Email ${normalizedValue} exists in members, updating that member's record`,
       );
     } else {
       // Create new member record for new email
       await upsertMemberHelper(
         normalizedValue,
         currentAttendee.firstName || "",
-        currentAttendee.lastName || ""
+        currentAttendee.lastName || "",
       );
     }
   }
@@ -941,7 +1636,9 @@ export async function updateAttendeeDetails(
   // Recalculate membership when email changes
   // This ensures attendance counts are correct for both old and new email addresses
   if (emailChanged) {
-    const { recalculateMembershipForMember } = await import("@/lib/calculate-membership");
+    const { recalculateMembershipForMember } = await import(
+      "@/lib/calculate-membership"
+    );
 
     // Recalculate for the NEW email's member
     const [newMember] = await db
@@ -1131,7 +1828,11 @@ export async function swapAttendeeName(attendeeId: string) {
 
       // Sync to Loops if active
       if (member.isActiveMember) {
-        const updatedMember = { ...member, firstName: oldLast, lastName: oldFirst };
+        const updatedMember = {
+          ...member,
+          firstName: oldLast,
+          lastName: oldFirst,
+        };
         await syncMemberToLoops(updatedMember);
       }
     }
@@ -1204,7 +1905,10 @@ export async function swapMemberName(memberId: string) {
 /**
  * Bulk swap firstName/lastName for multiple attendees or members
  */
-export async function bulkSwapNames(ids: string[], type: "attendee" | "member") {
+export async function bulkSwapNames(
+  ids: string[],
+  type: "attendee" | "member",
+) {
   "use server";
 
   const results: Array<{ id: string; success: boolean; error?: string }> = [];
@@ -1229,6 +1933,6 @@ export async function bulkSwapNames(ids: string[], type: "attendee" | "member") 
   revalidatePath("/");
   revalidatePath("/community-members-list");
 
-  const successCount = results.filter(r => r.success).length;
+  const successCount = results.filter((r) => r.success).length;
   return { success: true, total: ids.length, swapped: successCount, results };
 }

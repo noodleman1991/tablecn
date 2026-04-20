@@ -1,17 +1,25 @@
 import "server-only";
 
+import { fromZonedTime, toZonedTime } from "date-fns-tz";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { attendees, events, members, productSwapMap, type Attendee, type OrderStatus } from "@/db/schema";
-import { eq, and, inArray } from "drizzle-orm";
-import { getOrdersForProductCached } from "./woocommerce";
-import { getCacheAge, setCachedData, getCachedData } from "./cache-utils";
-import { toZonedTime, fromZonedTime } from "date-fns-tz";
+import {
+  type Attendee,
+  attendees,
+  events,
+  members,
+  type OrderStatus,
+  productSwapMap,
+} from "@/db/schema";
 import { isMembersOnlyProduct } from "@/lib/event-patterns";
+import { resolveMemberEmail } from "@/lib/resolve-member-email";
+import { getCacheAge, getCachedData, setCachedData } from "./cache-utils";
+import { getOrdersForProductCached } from "./woocommerce";
 
 /**
  * Helper: Find a meta value in WooCommerce meta_data array
  */
-function findMetaValue(metaData: any[], key: string): string | null {
+function _findMetaValue(metaData: any[], key: string): string | null {
   const meta = metaData?.find((m: any) => m.key === key);
   return meta?.value || null;
 }
@@ -33,21 +41,27 @@ interface TicketDataEntry {
 function getTicketTypeFromLineItem(lineItem: any): string | null {
   // Method 1: Check variation_attributes meta (most reliable)
   const variationAttrsMeta = lineItem.meta_data?.find(
-    (m: any) => m.key === '_variation_attributes' || m.key === 'variation_attributes'
+    (m: any) =>
+      m.key === "_variation_attributes" || m.key === "variation_attributes",
   );
   if (variationAttrsMeta?.value) {
     const attrs = variationAttrsMeta.value;
     if (Array.isArray(attrs)) {
       const ticketTypeAttr = attrs.find(
-        (a: any) => a.name?.toLowerCase().includes('ticket type') || a.key?.toLowerCase().includes('ticket-type')
+        (a: any) =>
+          a.name?.toLowerCase().includes("ticket type") ||
+          a.key?.toLowerCase().includes("ticket-type"),
       ) as { option?: string; value?: string } | undefined;
       if (ticketTypeAttr?.option || ticketTypeAttr?.value) {
         return ticketTypeAttr.option || ticketTypeAttr.value || null;
       }
-    } else if (typeof attrs === 'object') {
+    } else if (typeof attrs === "object") {
       // Handle object format: {"pa_ticket-type": "standard"}
       for (const [key, value] of Object.entries(attrs)) {
-        if (key.toLowerCase().includes('ticket-type') || key.toLowerCase().includes('ticket_type')) {
+        if (
+          key.toLowerCase().includes("ticket-type") ||
+          key.toLowerCase().includes("ticket_type")
+        ) {
           return value as string;
         }
       }
@@ -56,19 +70,24 @@ function getTicketTypeFromLineItem(lineItem: any): string | null {
 
   // Method 1.5: Direct meta_data key lookup (not nested inside _variation_attributes)
   const ticketTypeMeta = lineItem.meta_data?.find((m: any) => {
-    const key = (m.key || '').toLowerCase();
-    return key === 'pa_ticket-type' || key === 'ticket-type' || key === 'ticket_type'
-      || key.includes('ticket-type') || key.includes('ticket_type');
+    const key = (m.key || "").toLowerCase();
+    return (
+      key === "pa_ticket-type" ||
+      key === "ticket-type" ||
+      key === "ticket_type" ||
+      key.includes("ticket-type") ||
+      key.includes("ticket_type")
+    );
   });
-  if (ticketTypeMeta?.value && typeof ticketTypeMeta.value === 'string') {
+  if (ticketTypeMeta?.value && typeof ticketTypeMeta.value === "string") {
     return ticketTypeMeta.value;
   }
 
   // Method 1.75: Line item attributes field (WooCommerce variable product variation selections)
   if (Array.isArray(lineItem.attributes)) {
     const ticketAttr = lineItem.attributes.find((a: any) => {
-      const name = (a.name || a.slug || '').toLowerCase();
-      return name.includes('ticket-type') || name.includes('ticket_type');
+      const name = (a.name || a.slug || "").toLowerCase();
+      return name.includes("ticket-type") || name.includes("ticket_type");
     });
     if (ticketAttr?.option || ticketAttr?.value) {
       return ticketAttr.option || ticketAttr.value;
@@ -76,20 +95,27 @@ function getTicketTypeFromLineItem(lineItem: any): string | null {
   }
 
   // Method 2: Parse from line item name suffix (e.g., "Event Name - Standard")
-  const name = lineItem.name || '';
-  const dashIndex = name.lastIndexOf(' - ');
+  const name = lineItem.name || "";
+  const dashIndex = name.lastIndexOf(" - ");
   if (dashIndex !== -1) {
     const suffix = name.substring(dashIndex + 3).trim();
     // Validate it looks like a ticket type (not just random text)
-    const knownTypes = ['standard', 'under 30', 'struggling financially', 'with donation', 'member', 'reduced'];
-    if (knownTypes.some(t => suffix.toLowerCase().includes(t))) {
+    const knownTypes = [
+      "standard",
+      "under 30",
+      "struggling financially",
+      "with donation",
+      "member",
+      "reduced",
+    ];
+    if (knownTypes.some((t) => suffix.toLowerCase().includes(t))) {
       return suffix;
     }
   }
 
   console.warn(
     `[sync-attendees] Could not extract ticket type for line item ${lineItem.id}. ` +
-    `Name: "${lineItem.name}". Meta keys: [${(lineItem.meta_data || []).map((m: any) => m.key).join(', ')}]`
+      `Name: "${lineItem.name}". Meta keys: [${(lineItem.meta_data || []).map((m: any) => m.key).join(", ")}]`,
   );
 
   return null;
@@ -100,10 +126,10 @@ function getTicketTypeFromLineItem(lineItem: any): string | null {
  * Validated 2026-03-31: all 38 products tested use these same global hash keys.
  * The ticketing plugin generates these hashes from the field labels.
  */
-const KNOWN_HASH_KEYS: Record<string, 'firstName' | 'lastName' | 'email'> = {
-  'd6d93e88becfc567bb30ca978a237726': 'lastName',
-  'ddf0c5e3362962d29180d9226f2e5be8': 'firstName',
-  'c276b415493b81614a98b061f511e8ff': 'email',
+const KNOWN_HASH_KEYS: Record<string, "firstName" | "lastName" | "email"> = {
+  d6d93e88becfc567bb30ca978a237726: "lastName",
+  ddf0c5e3362962d29180d9226f2e5be8: "firstName",
+  c276b415493b81614a98b061f511e8ff: "email",
 };
 
 /**
@@ -118,30 +144,32 @@ const KNOWN_HASH_KEYS: Record<string, 'firstName' | 'lastName' | 'email'> = {
  */
 function parseHtmlTicketMeta(
   lineItem: any,
-  ticketId: string
+  ticketId: string,
 ): { firstName: string; lastName: string; email: string } | null {
   // Find the HTML meta entry for this specific ticket
-  const htmlMeta = lineItem.meta_data?.find((m: any) =>
-    typeof m.key === 'string' && m.key.includes(`ticket-id-${ticketId}`)
+  const htmlMeta = lineItem.meta_data?.find(
+    (m: any) =>
+      typeof m.key === "string" && m.key.includes(`ticket-id-${ticketId}`),
   );
 
-  if (!htmlMeta?.value || typeof htmlMeta.value !== 'string') return null;
+  if (!htmlMeta?.value || typeof htmlMeta.value !== "string") return null;
 
   const labelRegex = /<strong>(.*?)<\/strong>:\s*<span[^>]*>(.*?)<\/span>/g;
-  let firstName = '';
-  let lastName = '';
-  let email = '';
+  let firstName = "";
+  let lastName = "";
+  let email = "";
   let match;
 
   while ((match = labelRegex.exec(htmlMeta.value)) !== null) {
-    const label = match[1]!.toLowerCase().trim();
-    const value = match[2]!.trim();
+    const label = match[1]?.toLowerCase().trim();
+    const value = match[2]?.trim();
+    if (!label || value === undefined) continue;
 
-    if (label.includes('first')) {
+    if (label.includes("first")) {
       firstName = value;
-    } else if (label.includes('last') || label.includes('family')) {
+    } else if (label.includes("last") || label.includes("family")) {
       lastName = value;
-    } else if (label.includes('email')) {
+    } else if (label.includes("email")) {
       email = value.toLowerCase();
     }
   }
@@ -161,45 +189,56 @@ function extractFieldsFromHashedData(
   fields: TicketFields,
   order: any,
   productId: string,
-  swapCache?: Map<string, boolean>
+  swapCache?: Map<string, boolean>,
 ): { firstName: string; lastName: string; email: string; method: string } {
   // Try known hash key mapping first
-  const mappedFields: Partial<Record<'firstName' | 'lastName' | 'email', string>> = {};
+  const mappedFields: Partial<
+    Record<"firstName" | "lastName" | "email", string>
+  > = {};
   let knownKeysMatched = 0;
 
   for (const [hashKey, value] of Object.entries(fields)) {
     const fieldType = KNOWN_HASH_KEYS[hashKey];
     if (fieldType) {
-      mappedFields[fieldType] = typeof value === 'string' ? value : '';
+      mappedFields[fieldType] = typeof value === "string" ? value : "";
       knownKeysMatched++;
     }
   }
 
-  if (knownKeysMatched >= 2 && (mappedFields.firstName || mappedFields.lastName)) {
+  if (
+    knownKeysMatched >= 2 &&
+    (mappedFields.firstName || mappedFields.lastName)
+  ) {
     return {
-      firstName: mappedFields.firstName || '',
-      lastName: mappedFields.lastName || '',
-      email: (mappedFields.email || '').toLowerCase(),
-      method: 'known_hash',
+      firstName: mappedFields.firstName || "",
+      lastName: mappedFields.lastName || "",
+      email: (mappedFields.email || "").toLowerCase(),
+      method: "known_hash",
     };
   }
 
   // Fallback: alphabetical sort + swap detection (legacy logic for unknown hash keys)
-  const sortedEntries = Object.entries(fields).sort(([a], [b]) => a.localeCompare(b));
-
-  const emailEntry = sortedEntries.find(([_, value]) =>
-    typeof value === 'string' && value.includes('@')
+  const sortedEntries = Object.entries(fields).sort(([a], [b]) =>
+    a.localeCompare(b),
   );
-  const email = emailEntry ? emailEntry[1].toLowerCase() : '';
+
+  const emailEntry = sortedEntries.find(
+    ([_, value]) => typeof value === "string" && value.includes("@"),
+  );
+  const email = emailEntry ? emailEntry[1].toLowerCase() : "";
 
   const nameFields = sortedEntries
     .map(([_, v]) => v)
     .filter((v: string) => {
-      if (!v || typeof v !== 'string') return false;
-      if (v.includes('@')) return false;
+      if (!v || typeof v !== "string") return false;
+      if (v.includes("@")) return false;
       if (v.length >= 50) return false;
       const lower = v.toLowerCase().trim();
-      if (lower === 'first name' || lower === 'last name' || lower === 'family name') {
+      if (
+        lower === "first name" ||
+        lower === "last name" ||
+        lower === "family name"
+      ) {
         console.warn(`[sync-attendees] Skipping corrupted field value: "${v}"`);
         return false;
       }
@@ -211,17 +250,27 @@ function extractFieldsFromHashedData(
     if (swapCache.has(productId)) {
       isSwapped = swapCache.get(productId)!;
     } else if (nameFields.length >= 2) {
-      const billingEmail = order.billing?.email?.toLowerCase() || '';
-      const billingFirst = (order.billing?.first_name || '').trim().toLowerCase();
-      const billingLast = (order.billing?.last_name || '').trim().toLowerCase();
+      const billingEmail = order.billing?.email?.toLowerCase() || "";
+      const billingFirst = (order.billing?.first_name || "")
+        .trim()
+        .toLowerCase();
+      const billingLast = (order.billing?.last_name || "").trim().toLowerCase();
 
-      if (email && billingEmail && email === billingEmail && billingFirst && billingLast) {
-        const field0 = nameFields[0]!.trim().toLowerCase();
-        const field1 = nameFields[1]!.trim().toLowerCase();
+      if (
+        email &&
+        billingEmail &&
+        email === billingEmail &&
+        billingFirst &&
+        billingLast
+      ) {
+        const field0 = nameFields[0]?.trim().toLowerCase();
+        const field1 = nameFields[1]?.trim().toLowerCase();
 
         if (field0 === billingLast && field1 === billingFirst) {
           isSwapped = true;
-          console.log(`[sync-attendees] Detected name swap for product ${productId} (unknown hash keys, fallback detection)`);
+          console.log(
+            `[sync-attendees] Detected name swap for product ${productId} (unknown hash keys, fallback detection)`,
+          );
         }
         swapCache.set(productId, isSwapped);
       }
@@ -229,10 +278,10 @@ function extractFieldsFromHashedData(
   }
 
   return {
-    firstName: isSwapped ? (nameFields[1] || '') : (nameFields[0] || ''),
-    lastName: isSwapped ? (nameFields[0] || '') : (nameFields[1] || ''),
+    firstName: isSwapped ? nameFields[1] || "" : nameFields[0] || "",
+    lastName: isSwapped ? nameFields[0] || "" : nameFields[1] || "",
     email,
-    method: 'alphabetical_fallback',
+    method: "alphabetical_fallback",
   };
 }
 
@@ -250,34 +299,59 @@ function extractFieldsFromHashedData(
 function extractTicketAttendees(
   order: any,
   lineItem: any,
-  swapCache?: Map<string, boolean>
-): Array<{ firstName: string; lastName: string; email: string; ticketId: string; uid: string; bookerFirstName: string; bookerLastName: string; bookerEmail: string; ticketType: string | null; billingAddress: string; billingCity: string; billingPostcode: string; billingCountry: string; billingPhone: string; nameResolutionMethod: string }> {
+  swapCache?: Map<string, boolean>,
+): Array<{
+  firstName: string;
+  lastName: string;
+  email: string;
+  ticketId: string;
+  uid: string;
+  bookerFirstName: string;
+  bookerLastName: string;
+  bookerEmail: string;
+  ticketType: string | null;
+  billingAddress: string;
+  billingCity: string;
+  billingPostcode: string;
+  billingCountry: string;
+  billingPhone: string;
+  nameResolutionMethod: string;
+}> {
   const attendees = [];
 
   // Extract billing address (available on all orders, not hashed)
-  const billingAddress = [order.billing?.address_1, order.billing?.address_2].filter(Boolean).join(', ') || '';
-  const billingCity = order.billing?.city || '';
-  const billingPostcode = order.billing?.postcode || '';
-  const billingCountry = order.billing?.country || '';
-  const billingPhone = order.billing?.phone || '';
+  const billingAddress =
+    [order.billing?.address_1, order.billing?.address_2]
+      .filter(Boolean)
+      .join(", ") || "";
+  const billingCity = order.billing?.city || "";
+  const billingPostcode = order.billing?.postcode || "";
+  const billingCountry = order.billing?.country || "";
+  const billingPhone = order.billing?.phone || "";
 
   // Find _ticket_data in line item meta_data
-  const ticketDataMeta = lineItem.meta_data?.find((m: any) => m.key === '_ticket_data');
+  const ticketDataMeta = lineItem.meta_data?.find(
+    (m: any) => m.key === "_ticket_data",
+  );
 
   if (!ticketDataMeta || !Array.isArray(ticketDataMeta.value)) {
-    console.warn(`[sync-attendees] No _ticket_data found for line item ${lineItem.id}`);
+    console.warn(
+      `[sync-attendees] No _ticket_data found for line item ${lineItem.id}`,
+    );
     return [];
   }
 
   const ticketDataArray: TicketDataEntry[] = ticketDataMeta.value;
-  const productId = lineItem.product_id?.toString() || '';
+  const productId = lineItem.product_id?.toString() || "";
 
   for (const ticketData of ticketDataArray) {
     const { uid, index, fields } = ticketData;
 
     // Find the actual WooCommerce ticket ID (needed for HTML meta lookup)
     const ticketIdKey = `_ticket_id_for_${uid}`;
-    const ticketIdMeta = lineItem.meta_data?.find((m: any) => m.key === ticketIdKey);
+    const ticketIdMeta = lineItem.meta_data?.find(
+      (m: any) => m.key === ticketIdKey,
+    );
     const ticketId = ticketIdMeta?.value || `${lineItem.id}-${index}`;
 
     // Priority 1: Parse from HTML ticket meta (has explicit field labels)
@@ -292,10 +366,15 @@ function extractTicketAttendees(
       firstName = htmlParsed.firstName;
       lastName = htmlParsed.lastName;
       email = htmlParsed.email;
-      nameResolutionMethod = 'html';
+      nameResolutionMethod = "html";
     } else {
       // Priority 2 & 3: Known hash key mapping, then alphabetical fallback
-      const extracted = extractFieldsFromHashedData(fields, order, productId, swapCache);
+      const extracted = extractFieldsFromHashedData(
+        fields,
+        order,
+        productId,
+        swapCache,
+      );
       firstName = extracted.firstName;
       lastName = extracted.lastName;
       email = extracted.email;
@@ -312,9 +391,9 @@ function extractTicketAttendees(
       ticketId,
       uid,
       // Booker information (person who placed the order)
-      bookerFirstName: order.billing?.first_name || '',
-      bookerLastName: order.billing?.last_name || '',
-      bookerEmail: order.billing?.email?.toLowerCase() || '',
+      bookerFirstName: order.billing?.first_name || "",
+      bookerLastName: order.billing?.last_name || "",
+      bookerEmail: order.billing?.email?.toLowerCase() || "",
       ticketType,
       billingAddress,
       billingCity,
@@ -327,27 +406,29 @@ function extractTicketAttendees(
 
   // Fallback: if no tickets found, create one from billing info
   if (attendees.length === 0) {
-    const quantity = parseInt(lineItem.quantity) || 1;
-    console.warn(`[sync-attendees] No ticket data extracted, falling back to billing info for ${quantity} ticket(s)`);
+    const quantity = parseInt(lineItem.quantity, 10) || 1;
+    console.warn(
+      `[sync-attendees] No ticket data extracted, falling back to billing info for ${quantity} ticket(s)`,
+    );
 
     for (let i = 0; i < quantity; i++) {
       attendees.push({
-        firstName: order.billing?.first_name || '',
-        lastName: order.billing?.last_name || '',
-        email: order.billing?.email?.toLowerCase() || '',
+        firstName: order.billing?.first_name || "",
+        lastName: order.billing?.last_name || "",
+        email: order.billing?.email?.toLowerCase() || "",
         ticketId: `${lineItem.id}-fallback-${i}`,
         uid: `fallback-${lineItem.id}-${i}`,
         // In fallback, booker and ticket holder are the same
-        bookerFirstName: order.billing?.first_name || '',
-        bookerLastName: order.billing?.last_name || '',
-        bookerEmail: order.billing?.email?.toLowerCase() || '',
+        bookerFirstName: order.billing?.first_name || "",
+        bookerLastName: order.billing?.last_name || "",
+        bookerEmail: order.billing?.email?.toLowerCase() || "",
         ticketType: getTicketTypeFromLineItem(lineItem),
         billingAddress,
         billingCity,
         billingPostcode,
         billingCountry,
         billingPhone,
-        nameResolutionMethod: 'billing_fallback',
+        nameResolutionMethod: "billing_fallback",
       });
     }
   }
@@ -365,7 +446,7 @@ function extractTicketAttendees(
 export async function syncAttendeesForEvent(
   eventId: string,
   forceRefresh: boolean = false,
-  bypassCutoff: boolean = false
+  bypassCutoff: boolean = false,
 ) {
   // Get the event
   const event = await db
@@ -382,7 +463,7 @@ export async function syncAttendeesForEvent(
   // Calculate cutoff time: 23:00 London time on the event date
   // After this time, the attendee list is "frozen" and we only use database records
   const eventDate = new Date(eventData.eventDate);
-  const LONDON_TZ = 'Europe/London';
+  const LONDON_TZ = "Europe/London";
 
   // Create cutoff: event date at 23:00 London time
   // FIXED: Convert event date to London timezone first, then create 23:00 in London,
@@ -391,7 +472,7 @@ export async function syncAttendeesForEvent(
 
   // Create a date representing 23:00 London time on the event date
   // We construct a date string in ISO format with London's 23:00 time
-  const cutoffLondonStr = `${eventDateLondon.getFullYear()}-${String(eventDateLondon.getMonth() + 1).padStart(2, '0')}-${String(eventDateLondon.getDate()).padStart(2, '0')}T23:00:00`;
+  const cutoffLondonStr = `${eventDateLondon.getFullYear()}-${String(eventDateLondon.getMonth() + 1).padStart(2, "0")}-${String(eventDateLondon.getDate()).padStart(2, "0")}T23:00:00`;
 
   // fromZonedTime converts a "wall clock time in London" to the equivalent UTC instant
   const cutoffUTC = fromZonedTime(cutoffLondonStr, LONDON_TZ);
@@ -481,25 +562,27 @@ export async function syncAttendeesForEvent(
       const orders = await getOrdersForProductCached(
         productId,
         shouldFilterByDate ? eventDate : undefined,
-        forceRefresh
+        forceRefresh,
       );
 
       // Determine if this product is a members-only variant
       // We check based on event name patterns (since we don't have product names here)
       // For merged events, the members-only product ID is typically in mergedProductIds
-      const isMembers = productId !== eventData.woocommerceProductId ||
+      const isMembers =
+        productId !== eventData.woocommerceProductId ||
         isMembersOnlyProduct(eventData.name);
 
       for (const order of orders) {
         allOrdersWithSource.push({
           order,
           sourceProductId: productId,
-          isMembersOnlyProduct: isMembers && productId !== eventData.woocommerceProductId,
+          isMembersOnlyProduct:
+            isMembers && productId !== eventData.woocommerceProductId,
         });
       }
 
       console.log(
-        `[sync-attendees] Found ${orders.length} orders for product ${productId}${isMembers && productId !== eventData.woocommerceProductId ? ' (members-only)' : ''}`,
+        `[sync-attendees] Found ${orders.length} orders for product ${productId}${isMembers && productId !== eventData.woocommerceProductId ? " (members-only)" : ""}`,
       );
     } catch (error) {
       console.error(
@@ -538,22 +621,30 @@ export async function syncAttendeesForEvent(
       .from(productSwapMap)
       .where(inArray(productSwapMap.productId, allProductIds));
   } catch (error) {
-    console.warn(`[sync-attendees] Failed to read product swap map (table may not exist), continuing without swap cache:`, error instanceof Error ? error.message : error);
+    console.warn(
+      `[sync-attendees] Failed to read product swap map (table may not exist), continuing without swap cache:`,
+      error instanceof Error ? error.message : error,
+    );
   }
   for (const swap of existingSwaps) {
     swapCache.set(swap.productId, swap.isSwapped);
   }
   // Track which product IDs were already known before this sync
-  const previouslyKnownSwaps = new Set(existingSwaps.map(s => s.productId));
+  const previouslyKnownSwaps = new Set(existingSwaps.map((s) => s.productId));
 
   // Process each order (now with source product tracking)
-  for (const { order, sourceProductId, isMembersOnlyProduct: isMembersProduct } of allOrdersWithSource) {
+  for (const {
+    order,
+    sourceProductId,
+    isMembersOnlyProduct: isMembersProduct,
+  } of allOrdersWithSource) {
     // Process line items to get tickets per product
-    const relevantLineItems = order.line_items?.filter((item: any) => {
-      const itemProductId = item.product_id?.toString();
-      // Match line items for this specific source product
-      return itemProductId === sourceProductId;
-    }) || [];
+    const relevantLineItems =
+      order.line_items?.filter((item: any) => {
+        const itemProductId = item.product_id?.toString();
+        // Match line items for this specific source product
+        return itemProductId === sourceProductId;
+      }) || [];
 
     if (relevantLineItems.length === 0) {
       console.warn(
@@ -564,27 +655,43 @@ export async function syncAttendeesForEvent(
 
     // Map WooCommerce order status to our OrderStatus type
     const orderStatus: OrderStatus = (
-      ["completed", "processing", "on-hold", "pending", "cancelled", "refunded", "failed"].includes(order.status)
+      [
+        "completed",
+        "processing",
+        "on-hold",
+        "pending",
+        "cancelled",
+        "refunded",
+        "failed",
+      ].includes(order.status)
         ? order.status
         : "completed"
     ) as OrderStatus;
 
     // Parse order date
-    const orderDate = order.date_created ? new Date(order.date_created) : undefined;
+    const orderDate = order.date_created
+      ? new Date(order.date_created)
+      : undefined;
 
     // Process each line item
     for (const lineItem of relevantLineItems) {
       // Use line item total (price after discounts) divided by quantity for per-ticket revenue
-      const lineItemQuantity = parseInt(lineItem.quantity) || 1;
-      const orderTotal = parseFloat(lineItem.total || '0') / lineItemQuantity;
+      const lineItemQuantity = parseInt(lineItem.quantity, 10) || 1;
+      const orderTotal = parseFloat(lineItem.total || "0") / lineItemQuantity;
       // Extract all tickets from this line item
-      const ticketsFromLineItem = extractTicketAttendees(order, lineItem, swapCache);
+      const ticketsFromLineItem = extractTicketAttendees(
+        order,
+        lineItem,
+        swapCache,
+      );
 
       // Create/update attendee for each ticket
       for (const ticket of ticketsFromLineItem) {
         // Skip if no email
         if (!ticket.email) {
-          console.warn(`[sync-attendees] Ticket ${ticket.ticketId} has no email, skipping`);
+          console.warn(
+            `[sync-attendees] Ticket ${ticket.ticketId} has no email, skipping`,
+          );
           continue;
         }
 
@@ -600,15 +707,15 @@ export async function syncAttendeesForEvent(
 
         // Only check by ticketId AND eventId (matches UNIQUE constraint)
         // IMPORTANT: Must check both to prevent false positives across events
-        if (ticket.ticketId && !ticket.ticketId.includes('fallback')) {
+        if (ticket.ticketId && !ticket.ticketId.includes("fallback")) {
           const byTicketId = await db
             .select()
             .from(attendees)
             .where(
               and(
                 eq(attendees.ticketId, ticket.ticketId),
-                eq(attendees.eventId, eventId)
-              )
+                eq(attendees.eventId, eventId),
+              ),
             )
             .limit(1);
           existingAttendee = byTicketId[0];
@@ -620,16 +727,19 @@ export async function syncAttendeesForEvent(
         if (existingAttendee) {
           // Skip update if locally modified
           if (existingAttendee.locallyModified) {
-            console.log(`[sync-attendees] Attendee ${existingAttendee.id} is locally modified, skipping`);
+            console.log(
+              `[sync-attendees] Attendee ${existingAttendee.id} is locally modified, skipping`,
+            );
             continue;
           }
 
           // Determine the orderStatus to use:
           // - If attendee was soft-deleted via UI ("deleted"), preserve that status
           // - Otherwise, use the WooCommerce order status
-          const effectiveOrderStatus = existingAttendee.orderStatus === "deleted"
-            ? "deleted"  // Preserve soft-delete, don't overwrite
-            : orderStatus; // Use WooCommerce status (completed, cancelled, refunded, etc.)
+          const effectiveOrderStatus =
+            existingAttendee.orderStatus === "deleted"
+              ? "deleted" // Preserve soft-delete, don't overwrite
+              : orderStatus; // Use WooCommerce status (completed, cancelled, refunded, etc.)
 
           // Update existing attendee (preserve check-in status and local modifications)
           await db
@@ -698,13 +808,15 @@ export async function syncAttendeesForEvent(
           ticket.email,
           ticket.firstName,
           ticket.lastName,
-          isSelfPurchase ? {
-            address: ticket.billingAddress,
-            city: ticket.billingCity,
-            postcode: ticket.billingPostcode,
-            country: ticket.billingCountry,
-            phone: ticket.billingPhone,
-          } : undefined,
+          isSelfPurchase
+            ? {
+                address: ticket.billingAddress,
+                city: ticket.billingCity,
+                postcode: ticket.billingPostcode,
+                country: ticket.billingCountry,
+                phone: ticket.billingPhone,
+              }
+            : undefined,
         );
       }
     }
@@ -732,12 +844,17 @@ export async function syncAttendeesForEvent(
             },
           });
         if (isSwapped) {
-          console.log(`[sync-attendees] Persisted swap detection for product ${productId}`);
+          console.log(
+            `[sync-attendees] Persisted swap detection for product ${productId}`,
+          );
         }
       }
     }
   } catch (error) {
-    console.warn(`[sync-attendees] Failed to persist swap detections (table may not exist):`, error instanceof Error ? error.message : error);
+    console.warn(
+      `[sync-attendees] Failed to persist swap detections (table may not exist):`,
+      error instanceof Error ? error.message : error,
+    );
   }
 
   // NOTE: Cross-reference heuristic and retroactive correction were REMOVED.
@@ -760,7 +877,7 @@ export async function syncAttendeesForEvent(
       updated: updatedCount,
       timestamp: Date.now(),
     },
-    8 * 60 * 60
+    8 * 60 * 60,
   );
 
   return {
@@ -775,6 +892,10 @@ export async function syncAttendeesForEvent(
  * Creates if doesn't exist, updates name if changed
  * Stores billing address from self-purchase tickets
  * Uses atomic onConflictDoUpdate to avoid race conditions
+ *
+ * Alias-aware: if the booking email is a known alias (past merge) or is on
+ * the ignore-list, we redirect bookings to the canonical member instead of
+ * creating a ghost. See src/lib/resolve-member-email.ts.
  */
 async function upsertMember(
   email: string,
@@ -788,6 +909,28 @@ async function upsertMember(
     phone: string;
   },
 ) {
+  const resolution = await resolveMemberEmail(email);
+
+  // Ignored email (typo / deleted person): don't create a member, and
+  // rewrite any attendee rows matching this email to empty so they don't
+  // surface in review. The resolver's caller must have already decided
+  // attendee persistence.
+  if (resolution.kind === "ignored") {
+    return;
+  }
+
+  // Known alias: redirect bookings to the canonical member. Rewrite the
+  // attendee rows we just inserted/updated for this booking email so that
+  // membership calculation (which joins on attendees.email = members.email)
+  // attributes them correctly. Do NOT create a new member.
+  if (resolution.kind === "member" && resolution.canonicalEmail !== email) {
+    await db
+      .update(attendees)
+      .set({ email: resolution.canonicalEmail })
+      .where(eq(attendees.email, email));
+    return;
+  }
+
   const insertValues: any = {
     email,
     firstName,
@@ -805,7 +948,8 @@ async function upsertMember(
   if (billingDetails) {
     if (billingDetails.address) insertValues.address = billingDetails.address;
     if (billingDetails.city) insertValues.city = billingDetails.city;
-    if (billingDetails.postcode) insertValues.postcode = billingDetails.postcode;
+    if (billingDetails.postcode)
+      insertValues.postcode = billingDetails.postcode;
     if (billingDetails.country) insertValues.country = billingDetails.country;
     if (billingDetails.phone) insertValues.phone = billingDetails.phone;
 
@@ -818,18 +962,18 @@ async function upsertMember(
     if (billingDetails.phone) updateSet.phone = billingDetails.phone;
   }
 
-  await db
-    .insert(members)
-    .values(insertValues)
-    .onConflictDoUpdate({
-      target: members.email,
-      set: updateSet,
-    });
+  await db.insert(members).values(insertValues).onConflictDoUpdate({
+    target: members.email,
+    set: updateSet,
+  });
 }
 
 /**
  * Get attendees for an event (no sync, just fetch from DB)
  */
 export async function getAttendeesForEvent(eventId: string) {
-  return await db.select().from(attendees).where(eq(attendees.eventId, eventId));
+  return await db
+    .select()
+    .from(attendees)
+    .where(eq(attendees.eventId, eventId));
 }

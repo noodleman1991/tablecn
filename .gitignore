@@ -63,3 +63,4 @@ CLAUDE.md
 # manual fix scripts (one-time data fixes, not part of the app)
 /scripts/
 .scratch/
+docs/superpowers/specs/2026-04-20-past-speakers-loops-import-design.md

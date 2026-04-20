@@ -1,26 +1,31 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
+import { format } from "date-fns";
 import * as React from "react";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { type Member } from "@/db/schema";
-import { format } from "date-fns";
+import type { Member } from "@/db/schema";
 import { EditableCell } from "./editable-cell";
 import { MemberActionsCell } from "./member-actions-cell";
 
 interface MembersTableHandlers {
-  onUpdateMember: (memberId: string, field: string, value: string) => Promise<void>;
+  onUpdateMember: (
+    memberId: string,
+    field: string,
+    value: string,
+  ) => Promise<void>;
   onStatusChange: (member: Member) => void;
   onSwapName: (member: Member) => void;
   onDelete: (member: Member) => void;
+  onManageEmails: (member: Member) => void;
 }
 
 export type { MembersTableHandlers };
 
 export function getMembersTableColumns(
-  handlers: MembersTableHandlers
+  handlers: MembersTableHandlers,
 ): ColumnDef<Member>[] {
   return [
     {
@@ -316,6 +321,7 @@ export function getMembersTableColumns(
           onStatusChange={handlers.onStatusChange}
           onSwapName={handlers.onSwapName}
           onDelete={handlers.onDelete}
+          onManageEmails={handlers.onManageEmails}
         />
       ),
       meta: {

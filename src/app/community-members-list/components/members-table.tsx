@@ -1,19 +1,28 @@
 "use client";
 
 import * as React from "react";
-import { DataTable } from "@/components/data-table/data-table";
-import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
-import { useDataTable } from "@/hooks/use-data-table";
-import type { Member } from "@/db/schema";
-import { getMembersTableColumns, type MembersTableHandlers } from "./members-table-columns";
-import { updateMemberDetails, deleteMember, swapMemberName, bulkSwapNames } from "@/app/actions";
-import { MemberDeleteDialog } from "./member-delete-dialog";
-import { MemberStatusDialog } from "./member-status-dialog";
-import { MemberMergeDialog } from "./member-merge-dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import {
+  bulkSwapNames,
+  deleteMember,
+  swapMemberName,
+  updateMemberDetails,
+} from "@/app/actions";
+import { DataTable } from "@/components/data-table/data-table";
 import { DataTableScrollToggle } from "@/components/data-table/data-table-scroll-toggle";
+import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import type { Member } from "@/db/schema";
+import { useDataTable } from "@/hooks/use-data-table";
+import { MemberAliasesDialog } from "./member-aliases-dialog";
+import { MemberDeleteDialog } from "./member-delete-dialog";
+import { MemberMergeDialog } from "./member-merge-dialog";
+import { MemberStatusDialog } from "./member-status-dialog";
+import {
+  getMembersTableColumns,
+  type MembersTableHandlers,
+} from "./members-table-columns";
 
 interface MembersTableProps {
   members: Member[];
@@ -23,52 +32,87 @@ export function MembersTable({ members }: MembersTableProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = React.useState(false);
   const [mergeDialogOpen, setMergeDialogOpen] = React.useState(false);
-  const [selectedMember, setSelectedMember] = React.useState<Member | null>(null);
+  const [aliasesDialogOpen, setAliasesDialogOpen] = React.useState(false);
+  const [selectedMember, setSelectedMember] = React.useState<Member | null>(
+    null,
+  );
   const [isDeletingBulk, setIsDeletingBulk] = React.useState(false);
   const [isSwappingBulk, setIsSwappingBulk] = React.useState(false);
-  const [horizontalScrollEnabled, setHorizontalScrollEnabled] = React.useState(false);
+  const [horizontalScrollEnabled, setHorizontalScrollEnabled] =
+    React.useState(false);
 
   const handleSwapMemberName = React.useCallback(async (member: Member) => {
     try {
       await swapMemberName(member.id);
       toast.success(`Swapped name: ${member.lastName} ${member.firstName}`);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to swap name");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to swap name",
+      );
     }
   }, []);
 
-  const handlers = React.useMemo<MembersTableHandlers>(() => ({
-    onUpdateMember: async (memberId: string, field: string, value: string) => {
-      await updateMemberDetails({
-        memberId,
-        [field]: value,
-      });
-    },
-    onStatusChange: (member: Member) => {
-      setSelectedMember(member);
-      setStatusDialogOpen(true);
-    },
-    onSwapName: handleSwapMemberName,
-    onDelete: (member: Member) => {
-      setSelectedMember(member);
-      setDeleteDialogOpen(true);
-    },
-  }), [handleSwapMemberName]);
+  const handlers = React.useMemo<MembersTableHandlers>(
+    () => ({
+      onUpdateMember: async (
+        memberId: string,
+        field: string,
+        value: string,
+      ) => {
+        await updateMemberDetails({
+          memberId,
+          [field]: value,
+        });
+      },
+      onStatusChange: (member: Member) => {
+        setSelectedMember(member);
+        setStatusDialogOpen(true);
+      },
+      onSwapName: handleSwapMemberName,
+      onDelete: (member: Member) => {
+        setSelectedMember(member);
+        setDeleteDialogOpen(true);
+      },
+      onManageEmails: (member: Member) => {
+        setSelectedMember(member);
+        setAliasesDialogOpen(true);
+      },
+    }),
+    [handleSwapMemberName],
+  );
 
-  const columns = React.useMemo(() => getMembersTableColumns(handlers), [handlers]);
+  const columns = React.useMemo(
+    () => getMembersTableColumns(handlers),
+    [handlers],
+  );
+
+  // Stable initialState reference: TanStack Table re-applies initialState when
+  // the object identity changes. Without memoisation, every parent re-render
+  // (e.g. after revalidatePath following an edit/merge) would recreate this
+  // object and snap the page index back to 0.
+  const initialState = React.useMemo(
+    () => ({
+      pagination: { pageIndex: 0, pageSize: 100 },
+      sorting: [
+        { id: "isActiveMember", desc: true } as const,
+        { id: "lastName", desc: false } as const,
+      ],
+      columnVisibility: {
+        postcode: false,
+        city: false,
+        country: false,
+        phone: false,
+        address: false,
+      },
+    }),
+    [],
+  );
 
   const { table } = useDataTable({
     data: members,
     columns,
     // pageCount removed - TanStack Table calculates automatically when manualPagination: false
-    initialState: {
-      pagination: { pageIndex: 0, pageSize: 100 },
-      sorting: [
-        { id: "isActiveMember", desc: true },
-        { id: "lastName", desc: false },
-      ],
-      columnVisibility: { postcode: false, city: false, country: false, phone: false, address: false },
-    },
+    initialState,
     enableAdvancedFilter: false,
     enableRowSelection: true,
     manualPagination: false, // Enable client-side pagination
@@ -93,12 +137,14 @@ export function MembersTable({ members }: MembersTableProps) {
 
     setIsSwappingBulk(true);
     try {
-      const ids = selectedMembers.map(m => m.id);
+      const ids = selectedMembers.map((m) => m.id);
       const result = await bulkSwapNames(ids, "member");
       toast.success(`Swapped names for ${result.swapped} member(s)`);
       table.resetRowSelection();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to swap names");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to swap names",
+      );
     } finally {
       setIsSwappingBulk(false);
     }
@@ -110,7 +156,11 @@ export function MembersTable({ members }: MembersTableProps) {
       return;
     }
 
-    if (!confirm(`Are you sure you want to delete ${selectedMembers.length} member(s)?`)) {
+    if (
+      !confirm(
+        `Are you sure you want to delete ${selectedMembers.length} member(s)?`,
+      )
+    ) {
       return;
     }
 
@@ -123,7 +173,7 @@ export function MembersTable({ members }: MembersTableProps) {
       table.resetRowSelection();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to delete members"
+        error instanceof Error ? error.message : "Failed to delete members",
       );
     } finally {
       setIsDeletingBulk(false);
@@ -137,12 +187,14 @@ export function MembersTable({ members }: MembersTableProps) {
   return (
     <>
       {selectedMembers.length > 0 && (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 rounded-lg border bg-muted/50 p-3 mb-4">
+        <div className="mb-4 flex flex-col items-start gap-2 rounded-lg border bg-muted/50 p-3 sm:flex-row sm:items-center">
           <Badge variant="secondary" className="font-normal text-xs sm:text-sm">
             <span className="sm:hidden">{selectedMembers.length} sel.</span>
-            <span className="hidden sm:inline">{selectedMembers.length} selected</span>
+            <span className="hidden sm:inline">
+              {selectedMembers.length} selected
+            </span>
           </Badge>
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:ml-auto">
+          <div className="flex w-full flex-col gap-2 sm:ml-auto sm:w-auto sm:flex-row">
             <Button
               variant="outline"
               size="sm"
@@ -181,7 +233,9 @@ export function MembersTable({ members }: MembersTableProps) {
         <DataTableToolbar table={table}>
           <DataTableScrollToggle
             enabled={horizontalScrollEnabled}
-            onToggle={() => setHorizontalScrollEnabled(!horizontalScrollEnabled)}
+            onToggle={() =>
+              setHorizontalScrollEnabled(!horizontalScrollEnabled)
+            }
           />
         </DataTableToolbar>
       </DataTable>
@@ -200,6 +254,11 @@ export function MembersTable({ members }: MembersTableProps) {
         open={mergeDialogOpen}
         onOpenChange={setMergeDialogOpen}
         onMergeComplete={handleMergeComplete}
+      />
+      <MemberAliasesDialog
+        member={selectedMember}
+        open={aliasesDialogOpen}
+        onOpenChange={setAliasesDialogOpen}
       />
     </>
   );

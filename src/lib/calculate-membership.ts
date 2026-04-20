@@ -1,9 +1,10 @@
 import "server-only";
 
+import { and, eq, gte, inArray, isNull, lte, not, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { attendees, events, members } from "@/db/schema";
-import { eq, and, gte, lte, isNull, not, inArray, sql } from "drizzle-orm";
-import { syncMemberToLoops, removeMemberFromLoops } from "@/lib/loops-sync";
+import { removeMemberFromLoops, syncMemberToLoops } from "@/lib/loops-sync";
+import { resolveMemberEmail } from "@/lib/resolve-member-email";
 
 /**
  * Recalculate membership status for a specific member
@@ -39,7 +40,14 @@ export async function recalculateMembershipForMember(memberId: string) {
       and(
         eq(attendees.email, memberData.email),
         eq(attendees.checkedIn, true),
-        not(inArray(attendees.orderStatus, ["cancelled", "refunded", "deleted", "failed"])),
+        not(
+          inArray(attendees.orderStatus, [
+            "cancelled",
+            "refunded",
+            "deleted",
+            "failed",
+          ]),
+        ),
         isNull(events.mergedIntoEventId),
         eq(events.isQualifyingEvent, true),
         eq(events.status, "active"),
@@ -60,7 +68,14 @@ export async function recalculateMembershipForMember(memberId: string) {
       and(
         eq(attendees.email, memberData.email),
         eq(attendees.checkedIn, true),
-        not(inArray(attendees.orderStatus, ["cancelled", "refunded", "deleted", "failed"])),
+        not(
+          inArray(attendees.orderStatus, [
+            "cancelled",
+            "refunded",
+            "deleted",
+            "failed",
+          ]),
+        ),
         isNull(events.mergedIntoEventId),
         eq(events.isQualifyingEvent, true),
         eq(events.status, "active"),
@@ -69,8 +84,12 @@ export async function recalculateMembershipForMember(memberId: string) {
     );
 
   // Deduplicate by eventId (multiple tickets for the same event should count as one)
-  const uniqueAllEvents = [...new Map(allAttendedEvents.map(e => [e.eventId, e])).values()];
-  const uniqueRecentEvents = [...new Map(recentAttendedEvents.map(e => [e.eventId, e])).values()];
+  const uniqueAllEvents = [
+    ...new Map(allAttendedEvents.map((e) => [e.eventId, e])).values(),
+  ];
+  const uniqueRecentEvents = [
+    ...new Map(recentAttendedEvents.map((e) => [e.eventId, e])).values(),
+  ];
 
   const countableAllEvents = uniqueAllEvents;
   const countableRecentEvents = uniqueRecentEvents;
@@ -79,10 +98,12 @@ export async function recalculateMembershipForMember(memberId: string) {
   const recentEventsAttended = countableRecentEvents.length;
 
   // NEW RULE: Active if 3+ total events AND 1+ event in last 9 months
-  const eventBasedActive = totalEventsAttended >= 3 && recentEventsAttended >= 1;
-  const manuallyActive = memberData.manuallyAdded && memberData.manualExpiresAt
-    ? new Date(memberData.manualExpiresAt) > new Date()
-    : false;
+  const eventBasedActive =
+    totalEventsAttended >= 3 && recentEventsAttended >= 1;
+  const manuallyActive =
+    memberData.manuallyAdded && memberData.manualExpiresAt
+      ? new Date(memberData.manualExpiresAt) > new Date()
+      : false;
   const isActiveMember = eventBasedActive || manuallyActive;
 
   // Calculate membership expiry (9 months from last countable event attended)
@@ -106,8 +127,8 @@ export async function recalculateMembershipForMember(memberId: string) {
       membershipExpiresAt = new Date(
         Math.max(
           new Date(memberData.manualExpiresAt).getTime(),
-          eventBasedExpiresAt.getTime()
-        )
+          eventBasedExpiresAt.getTime(),
+        ),
       );
     } else {
       // No events attended yet, keep manual expiration
@@ -141,10 +162,14 @@ export async function recalculateMembershipForMember(memberId: string) {
   if (updatedMember && statusChanged) {
     if (updatedMember.isActiveMember) {
       await syncMemberToLoops(updatedMember);
-      console.log(`[calculate-membership] Synced ${updatedMember.email} to Loops (became active)`);
+      console.log(
+        `[calculate-membership] Synced ${updatedMember.email} to Loops (became active)`,
+      );
     } else {
       await removeMemberFromLoops(updatedMember.email, updatedMember.id);
-      console.log(`[calculate-membership] Removed ${updatedMember.email} from Loops (became inactive)`);
+      console.log(
+        `[calculate-membership] Removed ${updatedMember.email} from Loops (became inactive)`,
+      );
     }
   }
 
@@ -160,17 +185,40 @@ export async function recalculateMembershipForMember(memberId: string) {
 /**
  * Recalculate membership status for a member by email
  * Creates the member if they don't exist
+ *
+ * Alias-aware: if the input email is a known alias (past merge), recalculates
+ * for the canonical member instead. If the email is on the ignore-list,
+ * this is a no-op (the email has been marked as "not a real member").
  */
 export async function recalculateMembershipByEmail(
   email: string,
   firstName?: string | null,
   lastName?: string | null,
 ) {
+  const resolution = await resolveMemberEmail(email);
+
+  if (resolution.kind === "ignored") {
+    return {
+      email,
+      totalEventsAttended: 0,
+      isActiveMember: false,
+      membershipExpiresAt: null,
+      lastEventDate: null,
+      created: false,
+      updated: false,
+      skipped: "ignored" as const,
+    };
+  }
+
+  // If aliased, operate on the canonical member's email.
+  const lookupEmail =
+    resolution.kind === "member" ? resolution.canonicalEmail : email;
+
   // Find or create member record
   let memberRecord = await db
     .select()
     .from(members)
-    .where(eq(members.email, email))
+    .where(eq(members.email, lookupEmail))
     .limit(1);
 
   let wasCreated = false;
@@ -179,7 +227,7 @@ export async function recalculateMembershipByEmail(
   if (memberRecord.length === 0) {
     // Create member if doesn't exist
     await db.insert(members).values({
-      email,
+      email: lookupEmail,
       firstName: firstName || null,
       lastName: lastName || null,
       isActiveMember: false,
@@ -190,7 +238,7 @@ export async function recalculateMembershipByEmail(
     memberRecord = await db
       .select()
       .from(members)
-      .where(eq(members.email, email))
+      .where(eq(members.email, lookupEmail))
       .limit(1);
 
     wasCreated = true;
@@ -200,7 +248,7 @@ export async function recalculateMembershipByEmail(
 
   const currentMember = memberRecord[0];
   if (!currentMember) {
-    throw new Error(`Failed to create/find member: ${email}`);
+    throw new Error(`Failed to create/find member: ${lookupEmail}`);
   }
 
   // Recalculate their membership
@@ -231,17 +279,24 @@ export async function recalculateMembershipForEvent(eventId: string) {
   const results = [];
 
   for (const attendee of checkedInAttendees) {
+    const resolution = await resolveMemberEmail(attendee.email);
+
+    if (resolution.kind === "ignored") continue;
+
+    const lookupEmail =
+      resolution.kind === "member" ? resolution.canonicalEmail : attendee.email;
+
     // Find or create member record
     const memberRecord = await db
       .select()
       .from(members)
-      .where(eq(members.email, attendee.email))
+      .where(eq(members.email, lookupEmail))
       .limit(1);
 
     if (memberRecord.length === 0) {
       // Create member if doesn't exist (shouldn't happen, but just in case)
       await db.insert(members).values({
-        email: attendee.email,
+        email: lookupEmail,
         firstName: attendee.firstName,
         lastName: attendee.lastName,
         isActiveMember: false,
@@ -252,7 +307,7 @@ export async function recalculateMembershipForEvent(eventId: string) {
       const newMember = await db
         .select()
         .from(members)
-        .where(eq(members.email, attendee.email))
+        .where(eq(members.email, lookupEmail))
         .limit(1);
 
       const newMemberData = newMember[0];

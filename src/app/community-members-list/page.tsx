@@ -1,10 +1,10 @@
-import { Suspense } from "react";
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MembersPage } from "./components/members-page";
-import { getMembers } from "../actions";
 import { requireAuth } from "@/lib/auth";
 import { getActiveCommunityMemberCount } from "@/lib/community-count";
+import { getMembers, getOrphanBookers } from "../actions";
+import { MembersPage } from "./components/members-page";
 
 export const metadata: Metadata = {
   title: "Community Members List",
@@ -35,10 +35,17 @@ export default async function CommunityMembersListPage() {
 }
 
 async function MembersPageWrapper() {
-  const [members, activeMemberCount] = await Promise.all([
+  const [members, activeMemberCount, orphans] = await Promise.all([
     getMembers(),
     getActiveCommunityMemberCount(),
+    getOrphanBookers(),
   ]);
 
-  return <MembersPage members={members} activeMemberCount={activeMemberCount} />;
+  return (
+    <MembersPage
+      members={members}
+      activeMemberCount={activeMemberCount}
+      orphans={orphans}
+    />
+  );
 }
